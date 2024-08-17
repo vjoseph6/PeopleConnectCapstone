@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "252587270466",
+    "project_id": "peopleconnect-aaf57",
+    "storage_bucket": "peopleconnect-aaf57.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:252587270466:android:6e94473ba32fe3156a28db",
+        "android_client_info": {
+          "package_name": "com.capstone.peopleconnect"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDootniinGecG7b75ZgbzYPW4TC6qLnQLQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
