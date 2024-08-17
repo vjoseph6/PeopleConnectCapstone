@@ -3,15 +3,16 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".Client.Fragments.HomeFragmentClient">
+    tools:context=".SPrvoider.Fragments.ProfileFragmentSProvider">
 
     <!-- TODO: Update blank fragment layout -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="Home Client"
+        android:text="Profile SProvider"
         android:gravity="center"
         android:textSize="30sp"
         android:fontFamily="@font/regular_poppins"
         android:textColor="@color/black"/>
+
 </FrameLayout>

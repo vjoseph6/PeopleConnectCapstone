@@ -15,29 +15,47 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PeopleConnect"
         tools:targetApi="31">
-
-      <activity
-            android:name=".Client.ClientMainActivity"
-            android:exported="true">
+        <activity
+            android:name=".SPrvoider.SProviderMainActivity"
+            android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".SelectAccount"
-            android:exported="false">
 
-        </activity>
         <activity
-            android:name=".Client.C7ChoosingInterestClient"
+            android:name=".Client.ClientMainActivity"
             android:exported="false">
 <!--            <intent-filter>-->
 <!--                <action android:name="android.intent.action.MAIN" />-->
 
 <!--                <category android:name="android.intent.category.LAUNCHER" />-->
 <!--            </intent-filter>-->
+        </activity>
+        <activity
+            android:name=".SelectAccount"
+            android:exported="false">
+
+            <!-- <intent-filter> -->
+            <!-- <action android:name="android.intent.action.MAIN" /> -->
+
+
+            <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
+            <!-- </intent-filter> -->
+
+        </activity>
+        <activity
+            android:name=".Client.C7ChoosingInterestClient"
+            android:exported="false">
+
+            <!-- <intent-filter> -->
+            <!-- <action android:name="android.intent.action.MAIN" /> -->
+
+
+            <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
+            <!-- </intent-filter> -->
         </activity>
         <activity
             android:name=".SPrvoider.SP8BackgroundAuthorizationSProvider"

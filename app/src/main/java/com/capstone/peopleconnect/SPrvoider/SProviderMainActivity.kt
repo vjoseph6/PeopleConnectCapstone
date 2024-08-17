@@ -1,26 +1,20 @@
-package com.capstone.peopleconnect.Client
+package com.capstone.peopleconnect.SPrvoider
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentManager
-import androidx.fragment.app.FragmentTransaction
-import com.capstone.peopleconnect.Client.Fragments.ActivityFragmentClient
-import com.capstone.peopleconnect.Client.Fragments.CategoryFragmentClient
-import com.capstone.peopleconnect.Client.Fragments.HomeFragmentClient
-import com.capstone.peopleconnect.Client.Fragments.MicFragmentClient
-import com.capstone.peopleconnect.Client.Fragments.ProfileFragmentClient
 import com.capstone.peopleconnect.R
+import com.capstone.peopleconnect.SPrvoider.Fragments.ActivityFragmentSProvider
+import com.capstone.peopleconnect.SPrvoider.Fragments.HomeFragmentSProvider
+import com.capstone.peopleconnect.SPrvoider.Fragments.MicFragmentSProvider
+import com.capstone.peopleconnect.SPrvoider.Fragments.ProfileFragmentSProvider
+import com.capstone.peopleconnect.SPrvoider.Fragments.SkillsFragmentSProvider
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
-
-class ClientMainActivity : AppCompatActivity() {
-
-
+class SProviderMainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_client_main)
-
+        setContentView(R.layout.activity_sprovider_main)
         // Reference to BottomNavigationView
         val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
 
@@ -28,23 +22,23 @@ class ClientMainActivity : AppCompatActivity() {
         bottomNavigationView.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.home -> {
-                    loadFragment(HomeFragmentClient())
+                    loadFragment(HomeFragmentSProvider())
                     true
                 }
                 R.id.activities -> {
-                    loadFragment(ActivityFragmentClient())
+                    loadFragment(ActivityFragmentSProvider())
                     true
                 }
                 R.id.mic -> {
-                    loadFragment(MicFragmentClient())
+                    loadFragment(MicFragmentSProvider())
                     true
                 }
-                R.id.categories -> {
-                    loadFragment(CategoryFragmentClient())
+                R.id.skills -> {
+                    loadFragment(SkillsFragmentSProvider())
                     true
                 }
                 R.id.profile -> {
-                    loadFragment(ProfileFragmentClient())
+                    loadFragment(ProfileFragmentSProvider())
                     true
                 }
                 else -> false
