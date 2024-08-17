@@ -76,12 +76,14 @@
                     android:src="@drawable/message_sprovider_" />
 
                 <EditText
+                    android:id="@+id/email"
                     android:layout_width="0dp"
                     android:layout_height="50dp"
                     android:layout_weight="1"
                     android:background="@drawable/blue_border"
                     android:textSize="12sp"
                     android:hint="Email"
+                    android:singleLine="true"
                     android:fontFamily="@font/regular_poppins"
                     android:paddingStart="16dp" />
             </LinearLayout>
@@ -100,12 +102,14 @@
                     android:src="@drawable/lock_sprovider_" />
 
                 <EditText
+                    android:id="@+id/pass"
                     android:layout_width="0dp"
                     android:layout_height="50dp"
                     android:layout_weight="1"
                     android:background="@drawable/blue_border"
                     android:textSize="12sp"
                     android:hint="Password"
+                    android:singleLine="true"
                     android:inputType="textPassword"
                     android:fontFamily="@font/regular_poppins"
                     android:paddingStart="16dp" />

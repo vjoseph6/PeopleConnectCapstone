@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -12,27 +15,27 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PeopleConnect"
         tools:targetApi="31">
+
         <activity
             android:name=".SPrvoider.SP8BackgroundAuthorizationSProvider"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:exported="false"
+            android:theme="@style/Theme.PeopleConnect"></activity>
         <activity
             android:name=".SPrvoider.SP5LoginSProvider"
-            android:exported="false">
-<!--            <intent-filter>-->
-<!--                <action android:name="android.intent.action.MAIN" />-->
+            android:exported="false"
+            android:theme="@style/Theme.PeopleConnect">
 
-<!--                <category android:name="android.intent.category.LAUNCHER" />-->
-<!--            </intent-filter>-->
+            <!-- <intent-filter> -->
+            <!-- <action android:name="android.intent.action.MAIN" /> -->
+
+
+            <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
+            <!-- </intent-filter> -->
         </activity>
         <activity
             android:name=".SPrvoider.SP6RegisterSProvider"
-            android:exported="false">
+            android:exported="false"
+            android:theme="@style/Theme.PeopleConnect">
 
             <!-- <intent-filter> -->
             <!-- <action android:name="android.intent.action.MAIN" /> -->
@@ -43,7 +46,8 @@
         </activity>
         <activity
             android:name=".SPrvoider.SP7ChooseSkillSProvider"
-            android:exported="false">
+            android:exported="false"
+            android:theme="@style/Theme.PeopleConnect">
 
             <!-- <intent-filter> -->
             <!-- <action android:name="android.intent.action.MAIN" /> -->
@@ -54,7 +58,8 @@
         </activity>
         <activity
             android:name=".Client.C5LoginClient"
-            android:exported="false">
+            android:exported="false"
+            android:theme="@style/Theme.PeopleConnect">
 
             <!-- <intent-filter> -->
             <!-- <action android:name="android.intent.action.MAIN" /> -->
@@ -65,27 +70,24 @@
         </activity>
         <activity
             android:name=".Client.C6RegisterClient"
-            android:exported="false">
-
-            <!-- <intent-filter> -->
-            <!-- <action android:name="android.intent.action.MAIN" /> -->
-
-
-            <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
-            <!-- </intent-filter> -->
-        </activity>
+            android:exported="false"
+            android:theme="@style/Theme.PeopleConnect"></activity>
         <activity
             android:name=".SPrvoider.SP4Getstarted3SProvider"
-            android:exported="false" />
+            android:exported="false"
+            android:theme="@style/Theme.PeopleConnect" />
         <activity
             android:name=".SPrvoider.SP3Getstarted2SProvider"
-            android:exported="false" />
+            android:exported="false"
+            android:theme="@style/Theme.PeopleConnect" />
         <activity
             android:name=".SPrvoider.SP2Getstarted1SProvider"
-            android:exported="false" />
+            android:exported="false"
+            android:theme="@style/Theme.PeopleConnect" />
         <activity
             android:name=".Client.C4Getstarted3Client"
-            android:exported="false">
+            android:exported="false"
+            android:theme="@style/Theme.PeopleConnect">
 
             <!--
             <intent-filter>
@@ -97,7 +99,8 @@
         </activity>
         <activity
             android:name=".Client.C3Getstarted2Client"
-            android:exported="false">
+            android:exported="false"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
             <!--
             <intent-filter>
@@ -109,7 +112,8 @@
         </activity>
         <activity
             android:name=".Client.C2Getstarted1Client"
-            android:exported="false">
+            android:exported="false"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
             <!-- <intent-filter> -->
             <!-- <action android:name="android.intent.action.MAIN" /> -->
@@ -120,17 +124,24 @@
         </activity>
         <activity
             android:name=".SPrvoider.SP1WelcomeSProvider"
-            android:exported="false" />
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
         <activity
             android:name=".Client.C1WelcomeClient"
-            android:exported="false">
-
-            <!-- <intent-filter> -->
-            <!-- <action android:name="android.intent.action.MAIN" /> -->
+            android:exported="false"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
 
-            <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
-            <!-- </intent-filter> -->
+
         </activity>
     </application>
 

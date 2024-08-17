@@ -66,6 +66,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"/>
 
+
         <!-- Form Layout -->
         <LinearLayout
             android:id="@+id/formLayout"
@@ -75,6 +76,41 @@
             app:layout_constraintTop_toBottomOf="@id/createAccount"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
+
+            <!-- Profile Field -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="15dp"
+                android:layout_weight="3"
+                android:orientation="horizontal">
+
+                <!-- Spacer View -->
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"/>
+
+                <!-- Image View -->
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/profile"
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
+                    android:src="@drawable/profile1"
+                    android:scaleType="centerCrop"
+                    app:layout_constraintTop_toBottomOf="@id/createAccount"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:shapeAppearanceOverlay="@style/CircularImageViewStyle" />
+
+
+                <!-- Spacer View -->
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"/>
+
+            </LinearLayout>
 
             <!-- First Name Field -->
             <LinearLayout
@@ -91,10 +127,12 @@
                     android:src="@drawable/profile_sprovider_" />
 
                 <EditText
+                    android:id="@+id/fName"
                     android:layout_width="0dp"
                     android:layout_height="50dp"
                     android:layout_weight="1"
                     android:textSize="12sp"
+                    android:singleLine="true"
                     android:background="@drawable/blue_border"
                     android:fontFamily="@font/regular_poppins"
                     android:hint="First Name"
@@ -115,10 +153,12 @@
                     android:src="@drawable/profile_sprovider_" />
 
                 <EditText
+                    android:id="@+id/mName"
                     android:layout_width="0dp"
                     android:layout_height="50dp"
                     android:layout_weight="1"
                     android:textSize="12sp"
+                    android:singleLine="true"
                     android:background="@drawable/blue_border"
                     android:fontFamily="@font/regular_poppins"
                     android:hint="Middle Name"
@@ -139,10 +179,12 @@
                     android:src="@drawable/profile_sprovider_" />
 
                 <EditText
+                    android:id="@+id/lName"
                     android:layout_width="0dp"
                     android:layout_height="50dp"
                     android:layout_weight="1"
                     android:textSize="12sp"
+                    android:singleLine="true"
                     android:background="@drawable/blue_border"
                     android:fontFamily="@font/regular_poppins"
                     android:hint="Last Name"
@@ -163,14 +205,50 @@
                     android:src="@drawable/message_sprovider_" />
 
                 <EditText
+                    android:id="@+id/email"
                     android:layout_width="0dp"
                     android:layout_height="50dp"
                     android:layout_weight="1"
                     android:background="@drawable/blue_border"
                     android:textSize="12sp"
                     android:hint="Email"
+                    android:singleLine="true"
                     android:fontFamily="@font/regular_poppins"
                     android:paddingStart="16dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:contentDescription="Email Icon"
+                    android:src="@drawable/message_sprovider_" />
+
+                <EditText
+                    android:id="@+id/address"
+                    android:layout_width="0dp"
+                    android:layout_height="50dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/blue_border"
+                    android:textSize="12sp"
+                    android:hint="Address"
+                    android:singleLine="true"
+                    android:fontFamily="@font/regular_poppins"
+                    android:paddingStart="16dp" />
+
+                <ImageView
+                    android:id="@+id/locationBtn"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_marginStart="5dp"
+                    android:contentDescription="Password Icon"
+                    android:src="@drawable/location1" />
+
             </LinearLayout>
 
             <!-- Password Field -->
@@ -187,6 +265,7 @@
                     android:src="@drawable/lock_sprovider_" />
 
                 <EditText
+                    android:id="@+id/password"
                     android:layout_width="0dp"
                     android:layout_height="50dp"
                     android:layout_weight="1"
@@ -194,6 +273,7 @@
                     android:textSize="12sp"
                     android:hint="Password"
                     android:inputType="textPassword"
+                    android:singleLine="true"
                     android:fontFamily="@font/regular_poppins"
                     android:paddingStart="16dp" />
             </LinearLayout>
@@ -212,6 +292,7 @@
                     android:src="@drawable/lock_sprovider_" />
 
                 <EditText
+                    android:id="@+id/confirmpassword"
                     android:layout_width="0dp"
                     android:layout_height="50dp"
                     android:layout_weight="1"
@@ -219,12 +300,25 @@
                     android:background="@drawable/blue_border"
                     android:hint="Confirm Password"
                     android:inputType="textPassword"
+                    android:singleLine="true"
                     android:fontFamily="@font/regular_poppins"
                     android:paddingStart="16dp" />
             </LinearLayout>
         </LinearLayout>
 
         <!-- Register Button -->
+
+        <ProgressBar
+            android:id="@+id/progressbar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:layout_centerHorizontal="true"
+            app:layout_constraintTop_toBottomOf="@id/formLayout"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            />
+
         <Button
             android:id="@+id/registerButton"
             android:layout_width="0dp"
@@ -235,10 +329,26 @@
             android:textAllCaps="false"
             android:fontFamily="@font/regular_poppins"
             android:background="@drawable/btn_rounded_corner_sprovider"
-            app:layout_constraintTop_toBottomOf="@id/formLayout"
+            app:layout_constraintTop_toBottomOf="@id/progressbar"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             />
+
+        <TextView
+            android:id="@+id/signupLink"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="30dp"
+            android:layout_centerHorizontal="true"
+            android:fontFamily="@font/regular_poppins"
+            android:text="Already have an account? Sign In"
+            android:textColor="#0593D8"
+            android:textSize="14sp"
+            android:layout_below="@id/registerButton"
+            app:layout_constraintTop_toBottomOf="@id/registerButton"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
