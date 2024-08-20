@@ -4,4 +4,8 @@
     <color name="white">#FFFFFFFF</color>
     <color name="green">#59A52C</color>
     <color name="blue">#0593D8</color>
+    <color name="highlighted_button">#00FF00</color> <!-- Green color -->
+    <color name="default_button">#FFFFFF</color> <!-- White color -->
+    <color name="gray">#E5E5E5</color>
+    <color name="light_gray">#C3C3C3</color>
 </resources>

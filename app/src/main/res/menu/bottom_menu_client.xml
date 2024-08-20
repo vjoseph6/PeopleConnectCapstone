@@ -2,11 +2,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/home"
-        android:title="Home"
+        android:title="@string/home"
         android:icon="@drawable/client_home"/>
     <item
         android:id="@+id/activities"
-        android:title="Activity"
+        android:title="@string/activity"
         android:icon="@drawable/client_activity"/>
     <item
         android:id="@+id/mic"
@@ -14,10 +14,10 @@
         android:icon="@drawable/client_mic"/>
     <item
         android:id="@+id/categories"
-        android:title="Category"
+        android:title="@string/category"
         android:icon="@drawable/client_category"/>
     <item
         android:id="@+id/profile"
-        android:title="Profile"
+        android:title="@string/profile"
         android:icon="@drawable/client_myprofile"/>
 </menu>

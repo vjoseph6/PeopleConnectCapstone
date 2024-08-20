@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Header with title -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Filter By"
+            android:textSize="18sp"
+            android:textColor="@color/black"
+            android:gravity="center"
+            android:fontFamily="@font/semibold_poppins"
+            android:paddingBottom="12dp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/black" />
+
+        <!-- Filter Option Buttons -->
+        <Button
+            android:id="@+id/btnToday"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/white"
+            android:gravity="center"
+            android:text="Today"
+            android:textAllCaps="false"
+            android:textColor="@color/blue"
+            android:paddingVertical="12dp"
+            android:fontFamily="@font/regular_poppins"
+            android:textSize="16sp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/black" />
+
+        <Button
+            android:id="@+id/btnTomorrow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/white"
+            android:gravity="center"
+            android:text="Tomorrow"
+            android:textAllCaps="false"
+            android:textColor="@color/blue"
+            android:paddingVertical="12dp"
+            android:fontFamily="@font/regular_poppins"
+            android:textSize="16sp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/black" />
+
+        <Button
+            android:id="@+id/btnUpcoming"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/white"
+            android:gravity="center"
+            android:text="Upcoming"
+            android:textAllCaps="false"
+            android:textColor="@color/blue"
+            android:paddingVertical="12dp"
+            android:fontFamily="@font/regular_poppins"
+            android:textSize="16sp" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/black" />
+
+    </LinearLayout>
+</LinearLayout>

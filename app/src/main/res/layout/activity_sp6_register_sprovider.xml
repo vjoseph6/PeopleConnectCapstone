@@ -37,32 +37,17 @@
             app:layout_constraintTop_toBottomOf="@id/backButton"
             app:layout_constraintWidth_percent="0.7"/>
 
-        <!-- Subtitle Text -->
-        <TextView
-            android:id="@+id/subtitleText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:fontFamily="@font/medium_poppins"
-            android:text="Client Service App"
-            android:textColor="#7A7A7A"
-            android:textSize="16sp"
-            app:layout_constraintTop_toBottomOf="@id/titleText"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.5"/>
 
         <!-- Create Account Text -->
         <TextView
             android:id="@+id/createAccount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
             android:fontFamily="@font/medium_poppins"
             android:text="Create your account"
             android:textColor="@color/black"
-            android:textSize="14sp"
-            app:layout_constraintTop_toBottomOf="@id/subtitleText"
+            android:textSize="16sp"
+            app:layout_constraintTop_toBottomOf="@id/titleText"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"/>
 
@@ -92,19 +77,20 @@
                     android:layout_weight="1"/>
 
                 <!-- Image View -->
-                <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/profile"
-                    android:layout_width="120dp"
-                    android:layout_height="120dp"
-                    android:src="@drawable/profile1"
-                    android:scaleType="centerCrop"
-                    app:layout_constraintTop_toBottomOf="@id/createAccount"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:shapeAppearanceOverlay="@style/CircularImageViewStyle" />
 
 
                 <!-- Spacer View -->
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/profile"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/profile1"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/createAccount"
+                    app:shapeAppearanceOverlay="@style/CircularImageViewStyle" />
+
                 <View
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -323,7 +309,6 @@
             android:id="@+id/registerButton"
             android:layout_width="0dp"
             android:layout_height="50dp"
-            android:layout_marginTop="30dp"
             android:text="Register"
             android:textColor="@color/white"
             android:textAllCaps="false"
@@ -338,7 +323,7 @@
             android:id="@+id/signupLink"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="5dp"
             android:layout_marginBottom="30dp"
             android:layout_centerHorizontal="true"
             android:fontFamily="@font/regular_poppins"

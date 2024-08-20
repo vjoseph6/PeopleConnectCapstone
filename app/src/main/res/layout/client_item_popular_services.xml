@@ -14,6 +14,7 @@
             android:id="@+id/ivServiceIcon"
             android:layout_width="match_parent"
             android:layout_height="80dp"
+            android:src="@drawable/sample_image"
             android:layout_alignParentTop="true"
             android:scaleType="centerInside"
             />

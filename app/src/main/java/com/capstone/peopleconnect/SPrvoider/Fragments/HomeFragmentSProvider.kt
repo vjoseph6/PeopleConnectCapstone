@@ -5,7 +5,14 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.ImageView
+import android.widget.LinearLayout
+import androidx.core.content.ContextCompat
+import com.capstone.peopleconnect.Client.Fragments.MessageFragmentClient
+import com.capstone.peopleconnect.Client.Fragments.NotificationFragmentClient
 import com.capstone.peopleconnect.R
+import com.google.android.material.bottomsheet.BottomSheetDialog
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -36,6 +43,77 @@ class HomeFragmentSProvider : Fragment() {
     ): View? {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_home_s_provider, container, false)
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        // Assume ivFilter is the ImageView for the filter icon
+        val ivFilter: ImageView = view.findViewById(R.id.ivFilter)
+        ivFilter.setOnClickListener {
+            showFilterDialog()
+        }
+
+        // Notification icons
+        val notificationIcons: LinearLayout = view.findViewById(R.id.notificationLayout_sprovider)
+        notificationIcons.setOnClickListener {
+            val notificationFragment = NotificationFragmentSProvider()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, notificationFragment)
+                .addToBackStack(null)
+                .commit()
+
+        }
+
+        // Message icons
+        val messageIcons: LinearLayout = view.findViewById(R.id.messageLayout_sprovider)
+        messageIcons.setOnClickListener {
+            val messageFragment = MessageFragmentSProvider()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, messageFragment)
+                .addToBackStack(null)
+                .commit()
+
+        }
+
+
+    }
+
+    private fun showFilterDialog() {
+        val dialogView = LayoutInflater.from(context).inflate(R.layout.sprovider_dialog_filter_options, null)
+        val bottomSheetDialog = BottomSheetDialog(requireContext())
+        bottomSheetDialog.setContentView(dialogView)
+
+        // Find buttons
+        val btnToday = dialogView.findViewById<Button>(R.id.btnToday)
+        val btnTomorrow = dialogView.findViewById<Button>(R.id.btnTomorrow)
+        val btnUpcoming = dialogView.findViewById<Button>(R.id.btnUpcoming)
+
+        // Function to handle button click
+        fun handleButtonClick(button: Button) {
+            // Set button background to green
+            button.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.gray))
+
+            // Delay for 200 milliseconds to allow the user to see the green background
+            button.postDelayed({
+                bottomSheetDialog.dismiss()  // Dismiss dialog and return to home
+            }, 200)
+        }
+
+        // Setting up click listeners for each button
+        btnToday.setOnClickListener {
+            handleButtonClick(btnToday)
+        }
+
+        btnTomorrow.setOnClickListener {
+            handleButtonClick(btnTomorrow)
+        }
+
+        btnUpcoming.setOnClickListener {
+            handleButtonClick(btnUpcoming)
+        }
+
+        bottomSheetDialog.show()
     }
 
     companion object {

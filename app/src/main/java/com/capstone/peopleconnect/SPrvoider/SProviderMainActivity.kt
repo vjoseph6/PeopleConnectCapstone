@@ -3,6 +3,7 @@ package com.capstone.peopleconnect.SPrvoider
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.fragment.app.Fragment
+import com.capstone.peopleconnect.Client.Fragments.HomeFragmentClient
 import com.capstone.peopleconnect.R
 import com.capstone.peopleconnect.SPrvoider.Fragments.ActivityFragmentSProvider
 import com.capstone.peopleconnect.SPrvoider.Fragments.HomeFragmentSProvider
@@ -17,6 +18,11 @@ class SProviderMainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_sprovider_main)
         // Reference to BottomNavigationView
         val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+
+        // Load the HomeFragmentSProvider as the default fragment
+        if (savedInstanceState == null) {
+            loadFragment(HomeFragmentSProvider())
+        }
 
         // Set the item selected listener
         bottomNavigationView.setOnItemSelectedListener { item ->

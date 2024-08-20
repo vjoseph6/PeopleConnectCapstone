@@ -1,19 +1,143 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".SPrvoider.Fragments.HomeFragmentSProvider">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="Home SProvider"
-        android:gravity="center"
-        android:textSize="30sp"
-        android:fontFamily="@font/regular_poppins"
-        android:textColor="@color/black"/>
+        android:padding="16dp">
 
+        <!-- Top Bar -->
+        <TextView
+            android:id="@+id/tvDate_SPROVIDER"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/regular_poppins"
+            android:text="Thursday, July 18 2024"
+            android:textSize="12sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Hello Message -->
+        <TextView
+            android:id="@+id/tvHello"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Hello,"
+            android:fontFamily="@font/bold_poppins"
+            android:textColor="@color/black"
+            android:textSize="24sp"
+            android:layout_marginTop="16dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvDate_SPROVIDER" />
+
+        <TextView
+            android:id="@+id/tvName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:fontFamily="@font/bold_poppins"
+            android:text="Name"
+            android:textColor="@color/black"
+            android:textSize="24sp"
+            app:layout_constraintStart_toEndOf="@+id/tvHello"
+            app:layout_constraintTop_toBottomOf="@id/tvDate_SPROVIDER" />
+
+        <TextView
+            android:id="@+id/tvSubtext"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Good day !"
+            android:fontFamily="@font/regular_poppins"
+            android:textSize="16sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvHello" />
+
+        <!-- LinearLayout containing MessageIcon -->
+        <LinearLayout
+            android:id="@+id/messageLayout_sprovider"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:paddingStart="10dp"
+            android:layout_marginStart="8dp">
+
+            <ImageView
+                android:id="@+id/messageIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/client_message"
+                android:background="@drawable/back_button_background_client"
+                android:contentDescription="Chat Icon" />
+        </LinearLayout>
+
+        <!-- LinearLayout containing NotificationIcon -->
+        <LinearLayout
+            android:id="@+id/notificationLayout_sprovider"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingEnd="10dp"
+            app:layout_constraintEnd_toStartOf="@id/messageLayout_sprovider"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <ImageView
+                android:id="@+id/notificationIcons"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:background="@drawable/back_button_background_client"
+                android:src="@drawable/client_notification"
+                android:contentDescription="Notification Icon" />
+        </LinearLayout>
+
+        <!-- Task Overview Title -->
+        <TextView
+            android:id="@+id/tvTaskOverView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/black"
+            android:fontFamily="@font/semibold_poppins"
+            android:text="Task Overview"
+            android:textSize="20sp"
+            android:layout_marginTop="16dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvSubtext" />
+
+        <!-- Filter Icon Next to Task Overview -->
+        <ImageButton
+            android:id="@+id/ivFilter"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginTop="5dp"
+            android:src="@drawable/client_filter"
+            android:background="@drawable/back_button_background_client"
+            android:contentDescription="Filter Icon"
+            android:layout_marginStart="8dp"
+            app:layout_constraintStart_toEndOf="@id/tvTaskOverView"
+            app:layout_constraintTop_toTopOf="@id/tvTaskOverView"
+            android:visibility="visible" />
+
+        <!-- RecyclerView for Task List -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvInterests"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            tools:listitem="@layout/sprovider_taskoverview_item"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvTaskOverView"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:orientation="vertical"
+            android:scrollbars="vertical"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </FrameLayout>
