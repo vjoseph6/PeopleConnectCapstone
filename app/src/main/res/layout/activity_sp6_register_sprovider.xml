@@ -117,12 +117,12 @@
                     android:layout_width="0dp"
                     android:layout_height="50dp"
                     android:layout_weight="1"
-                    android:textSize="12sp"
-                    android:singleLine="true"
                     android:background="@drawable/blue_border"
                     android:fontFamily="@font/regular_poppins"
                     android:hint="First Name"
-                    android:paddingStart="16dp" />
+                    android:paddingStart="16dp"
+                    android:singleLine="true"
+                    android:textSize="12sp" />
             </LinearLayout>
 
             <!-- Middle Name Field -->

@@ -5,6 +5,9 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
+import com.capstone.peopleconnect.Client.Fragments.LocationFragmentClient
+import com.capstone.peopleconnect.Client.Fragments.MyProfileFragmentClient
 import com.capstone.peopleconnect.R
 
 // TODO: Rename parameter arguments, choose names that match
@@ -36,6 +39,36 @@ class ProfileFragmentSProvider : Fragment() {
     ): View? {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_profile_s_provider, container, false)
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+
+        // Profile icons
+        val profileIcons: LinearLayout = view.findViewById(R.id.profileMenuLayout_sprovider)
+        profileIcons.setOnClickListener {
+            val profileFragment = MyProfileFragmentSProvider()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, profileFragment)
+                .addToBackStack(null)
+                .commit()
+
+        }
+
+        // location icons
+        val locationIcons: LinearLayout = view.findViewById(R.id.locationMenuLayout_sprovider)
+        locationIcons.setOnClickListener {
+            val locationFragment = LocationFragmentSProvider()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, locationFragment)
+                .addToBackStack(null)
+                .commit()
+
+        }
+
+
+
     }
 
     companion object {

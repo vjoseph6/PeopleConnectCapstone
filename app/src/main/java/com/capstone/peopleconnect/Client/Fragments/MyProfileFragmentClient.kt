@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.LinearLayout
 import com.capstone.peopleconnect.R
 
 // TODO: Rename parameter arguments, choose names that match
@@ -16,10 +15,10 @@ private const val ARG_PARAM2 = "param2"
 
 /**
  * A simple [Fragment] subclass.
- * Use the [ProfileFragmentClient.newInstance] factory method to
+ * Use the [MyProfileFragmentClient.newInstance] factory method to
  * create an instance of this fragment.
  */
-class ProfileFragmentClient : Fragment() {
+class MyProfileFragmentClient : Fragment() {
     // TODO: Rename and change types of parameters
     private var param1: String? = null
     private var param2: String? = null
@@ -37,37 +36,16 @@ class ProfileFragmentClient : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_profile_client, container, false)
-    }
+        val view = inflater.inflate(R.layout.fragment_my_profile_client, container, false)
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-
-        // Profile icons
-        val profileIcons: LinearLayout = view.findViewById(R.id.profileMenuLayout)
-        profileIcons.setOnClickListener {
-            val profileFragment = MyProfileFragmentClient()
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.frame_layout, profileFragment)
-                .addToBackStack(null)
-                .commit()
-
+        // Find the back button and set an OnClickListener
+        val backButton: ImageView = view.findViewById(R.id.btnBackClient)
+        backButton.setOnClickListener {
+            // Navigate back to the HomeFragmentClient
+            requireActivity().supportFragmentManager.popBackStack()
         }
 
-        // Profile icons
-        val locationIcons: LinearLayout = view.findViewById(R.id.locationMenuLayout)
-        locationIcons.setOnClickListener {
-            val locationFragment = LocationFragmentClient()
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.frame_layout, locationFragment)
-                .addToBackStack(null)
-                .commit()
-
-        }
-
-
-
+        return view
     }
 
     companion object {
@@ -77,12 +55,12 @@ class ProfileFragmentClient : Fragment() {
          *
          * @param param1 Parameter 1.
          * @param param2 Parameter 2.
-         * @return A new instance of fragment ProfileFragmentClient.
+         * @return A new instance of fragment MyProfileFragmentClient.
          */
         // TODO: Rename and change types and number of parameters
         @JvmStatic
         fun newInstance(param1: String, param2: String) =
-            ProfileFragmentClient().apply {
+            MyProfileFragmentClient().apply {
                 arguments = Bundle().apply {
                     putString(ARG_PARAM1, param1)
                     putString(ARG_PARAM2, param2)
