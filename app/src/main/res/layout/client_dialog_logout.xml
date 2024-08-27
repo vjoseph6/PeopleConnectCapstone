@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/client_dialoglogut_background"
+    android:padding="20dp">
+
+
+    <TextView
+        android:id="@+id/tvLogoutTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Are you leaving?"
+        android:textSize="18sp"
+        android:textColor="@color/green"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="20dp"
+        android:fontFamily="@font/semibold_poppins" />
+
+    <CheckBox
+        android:id="@+id/cbRememberLogin"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Remember my login info"
+        android:checked="true"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/tvLogoutTitle"
+        android:layout_marginBottom="20dp"
+        android:textColor="@color/black"
+        android:fontFamily="@font/regular_poppins" />
+
+    <Button
+        android:id="@+id/btnLogout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Logout"
+        android:textColor="@color/white"
+        android:background="@drawable/btn_rounded_corner_client"
+        android:textAllCaps="false"
+        android:layout_below="@id/cbRememberLogin"
+        android:layout_marginBottom="10dp"
+        android:fontFamily="@font/regular_poppins" />
+
+    <TextView
+        android:id="@+id/tvCancel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Cancel"
+        android:textColor="@color/black"
+        android:textSize="14sp"
+        android:layout_below="@id/btnLogout"
+        android:layout_centerHorizontal="true"
+        android:fontFamily="@font/regular_poppins" />
+
+
+</RelativeLayout>

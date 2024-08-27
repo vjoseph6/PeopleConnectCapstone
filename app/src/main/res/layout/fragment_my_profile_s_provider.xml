@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<ScrollView
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
@@ -8,206 +8,213 @@
     android:background="@color/blue"
     tools:context=".SPrvoider.Fragments.MyProfileFragmentSProvider">
 
-    <!-- Profile Section (New Layout) -->
-    <ImageButton
-        android:id="@+id/btnBack"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="44dp"
-        android:background="@drawable/back_button_background_sprovider"
-        android:contentDescription="Back Button"
-        android:elevation="4dp"
-        android:src="@drawable/backbtn2_sprovider_"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/filter_by_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="26dp"
-        android:fontFamily="@font/semibold_poppins"
-        android:text="My Profile"
-        android:textColor="@color/white"
-        android:textSize="18sp"
-        app:layout_constraintBottom_toBottomOf="@id/btnBack"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.393"
-        app:layout_constraintStart_toEndOf="@id/btnBack"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="1.0" />
-
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_marginTop="120dp"
-        android:background="@drawable/client_card_background_top_corners"
-        android:padding="16dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/filter_by_title">
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/blue"
+        >
 
-        <!-- Profile Picture with Edit Icon -->
-        <ImageView
-            android:id="@+id/profilePicture"
-            android:layout_width="90dp"
-            android:layout_height="90dp"
-            android:layout_marginTop="16dp"
-            android:background="@drawable/profile_image_background"
-            android:scaleType="centerCrop"
-            android:src="@drawable/profile1"
-            app:layout_constraintEnd_toEndOf="parent"
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="44dp"
+            android:background="@drawable/back_button_background_sprovider"
+            android:contentDescription="Back Button"
+            android:elevation="4dp"
+            android:src="@drawable/backbtn2_sprovider_"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- Edit Icon -->
-        <ImageView
-            android:id="@+id/editIcon"
-            android:layout_width="25dp"
-            android:layout_height="26dp"
-            android:src="@drawable/sprovider_edit"
-            app:layout_constraintBottom_toBottomOf="@id/profilePicture"
-            app:layout_constraintEnd_toEndOf="@id/profilePicture"
-            app:tint="@color/blue" />
-
-        <!-- First Name Input -->
         <TextView
-            android:id="@+id/tvFirstName"
+            android:id="@+id/filter_by_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginTop="24dp"
-            android:fontFamily="@font/medium_poppins"
-            android:text="First Name"
-            android:textColor="@color/blue"
-            android:textSize="14sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/profilePicture" />
-
-        <EditText
-            android:id="@+id/etFirstName"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="12dp"
-            android:background="@drawable/sprovider_edit_text_rounded_corner"
-            android:fontFamily="@font/regular_poppins"
-            android:hint="First Name"
-            android:padding="12dp"
-            android:textSize="12sp"
+            android:fontFamily="@font/semibold_poppins"
+            android:text="My Profile"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            app:layout_constraintBottom_toBottomOf="@id/btnBack"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvFirstName" />
+            />
 
-        <!-- Middle Name Input -->
-        <TextView
-            android:id="@+id/tvMiddleName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginTop="24dp"
-            android:fontFamily="@font/medium_poppins"
-            android:text="Middle Name"
-            android:textColor="@color/blue"
-            android:textSize="14sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/etFirstName" />
-
-        <EditText
-            android:id="@+id/etMiddleName"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="12dp"
-            android:background="@drawable/sprovider_edit_text_rounded_corner"
-            android:fontFamily="@font/regular_poppins"
-            android:hint="Middle Name"
-            android:padding="12dp"
-            android:textSize="12sp"
+        <!-- Scrollable Content -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="597dp"
+            android:layout_marginTop="50dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvMiddleName" />
+            app:layout_constraintTop_toBottomOf="@id/filter_by_title"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:background="@drawable/sprovider_card_background_top_corners"
+            android:padding="16dp">
 
-        <!-- Last Name Input -->
-        <TextView
-            android:id="@+id/tvLastName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginTop="24dp"
-            android:fontFamily="@font/medium_poppins"
-            android:text="Last Name"
-            android:textColor="@color/blue"
-            android:textSize="14sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/etMiddleName" />
+            <!-- Profile Picture with Edit Icon -->
+            <ImageView
+                android:id="@+id/profilePicture"
+                android:layout_width="65dp"
+                android:layout_height="65dp"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/profile_image_background"
+                android:scaleType="centerCrop"
+                android:src="@drawable/profile1"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
-        <EditText
-            android:id="@+id/etLastName"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="12dp"
-            android:background="@drawable/sprovider_edit_text_rounded_corner"
-            android:fontFamily="@font/regular_poppins"
-            android:hint="Last Name"
-            android:padding="12dp"
-            android:textSize="12sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvLastName" />
+            <!-- Edit Icon -->
+            <ImageView
+                android:id="@+id/editIcon"
+                android:layout_width="25dp"
+                android:layout_height="26dp"
+                android:src="@drawable/sprovider_edit"
+                app:layout_constraintBottom_toBottomOf="@id/profilePicture"
+                app:layout_constraintEnd_toEndOf="@id/profilePicture"
+                app:tint="@color/blue" />
 
-        <!-- Email Input -->
-        <TextView
-            android:id="@+id/tvEmail"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginTop="24dp"
-            android:fontFamily="@font/medium_poppins"
-            android:text="Email"
-            android:textColor="@color/blue"
-            android:textSize="14sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/etLastName" />
+            <!-- First Name Input -->
+            <TextView
+                android:id="@+id/tvFirstName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginTop="15dp"
+                android:fontFamily="@font/medium_poppins"
+                android:text="First Name"
+                android:textColor="@color/blue"
+                android:textSize="14sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/profilePicture" />
 
-        <EditText
-            android:id="@+id/etEmail"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="12dp"
-            android:background="@drawable/sprovider_edit_text_rounded_corner"
-            android:fontFamily="@font/regular_poppins"
-            android:hint="Gmail"
-            android:padding="12dp"
-            android:textSize="12sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvEmail" />
+            <EditText
+                android:id="@+id/etFirstName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                android:background="@drawable/sprovider_edit_text_rounded_corner"
+                android:fontFamily="@font/regular_poppins"
+                android:hint="First Name"
+                android:padding="12dp"
+                android:textSize="12sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvFirstName" />
 
-        <!-- Save Button -->
-        <Button
-            android:id="@+id/btnSave"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginTop="32dp"
-            android:layout_marginEnd="12dp"
-            android:background="@drawable/btn_rounded_corner_sprovider"
-            android:backgroundTint="@color/blue"
-            android:fontFamily="@font/medium_poppins"
-            android:text="Save"
-            android:textAllCaps="false"
-            android:textColor="@android:color/white"
-            android:textSize="14sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/etEmail" />
+            <!-- Middle Name Input -->
+            <TextView
+                android:id="@+id/tvMiddleName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginTop="15dp"
+                android:fontFamily="@font/medium_poppins"
+                android:text="Middle Name"
+                android:textColor="@color/blue"
+                android:textSize="14sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/etFirstName" />
 
+            <EditText
+                android:id="@+id/etMiddleName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                android:background="@drawable/sprovider_edit_text_rounded_corner"
+                android:fontFamily="@font/regular_poppins"
+                android:hint="Middle Name"
+                android:padding="12dp"
+                android:textSize="12sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvMiddleName" />
+
+            <!-- Last Name Input -->
+            <TextView
+                android:id="@+id/tvLastName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginTop="15dp"
+                android:fontFamily="@font/medium_poppins"
+                android:text="Last Name"
+                android:textColor="@color/blue"
+                android:textSize="14sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/etMiddleName" />
+
+            <EditText
+                android:id="@+id/etLastName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                android:background="@drawable/sprovider_edit_text_rounded_corner"
+                android:fontFamily="@font/regular_poppins"
+                android:hint="Last Name"
+                android:padding="12dp"
+                android:textSize="12sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvLastName" />
+
+            <!-- Email Input -->
+            <TextView
+                android:id="@+id/tvEmail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginTop="15dp"
+                android:fontFamily="@font/medium_poppins"
+                android:text="Email"
+                android:textColor="@color/blue"
+                android:textSize="14sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/etLastName" />
+
+            <EditText
+                android:id="@+id/etEmail"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                android:background="@drawable/sprovider_edit_text_rounded_corner"
+                android:fontFamily="@font/regular_poppins"
+                android:hint="Gmail"
+                android:padding="12dp"
+                android:textSize="12sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvEmail" />
+
+            <!-- Save Button -->
+            <Button
+                android:id="@+id/btnSave"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginTop="25dp"
+                android:layout_marginEnd="12dp"
+                android:background="@drawable/btn_rounded_corner_sprovider"
+                android:backgroundTint="@color/blue"
+                android:fontFamily="@font/medium_poppins"
+                android:text="Save"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                android:textSize="14sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/etEmail" />
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+
+
+</ScrollView>

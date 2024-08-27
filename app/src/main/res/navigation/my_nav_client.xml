@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/my_nav_client"
+    app:startDestination="@id/clientSplashWelcomeFragment">
+    <fragment
+        android:id="@+id/clientSplashWelcomeFragment"
+        android:name="com.capstone.peopleconnect.Client.Welcome.ClientSplashWelcomeFragment"
+        android:label="fragment_client_splash_welcome"
+        tools:layout="@layout/fragment_client_splash_welcome" >
+        <action
+            android:id="@+id/action_clientSplashWelcomeFragment_to_clientViewPageFragment"
+            app:destination="@id/clientViewPageFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/clientViewPageFragment"
+        android:name="com.capstone.peopleconnect.Client.Welcome.onboarding.ClientViewPageFragment"
+        android:label="fragment_client_view_page"
+        tools:layout="@layout/fragment_client_view_page" />
+</navigation>
