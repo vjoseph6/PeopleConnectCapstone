@@ -16,27 +16,28 @@
         android:theme="@style/Theme.PeopleConnect"
         tools:targetApi="31">
         <activity
-            android:name=".Client.Welcome.ClientWelcomeMainActivity"
-            android:exported="true"
-            android:label="@string/title_activity_client_welcome_main"
-            android:theme="@style/Theme.PeopleConnect">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+            android:name=".SPrvoider.SProviderViewPager"
+            android:exported="false">
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+            <!--            <intent-filter>-->
+            <!--                <action android:name="android.intent.action.MAIN" />-->
+
+            <!--                <category android:name="android.intent.category.LAUNCHER" />-->
+            <!--            </intent-filter>-->
+
+        </activity>
+        <activity
+            android:name=".Client.ClientViewPager"
+            android:exported="false">
+            <!--            <intent-filter>-->
+            <!--                <action android:name="android.intent.action.MAIN" />-->
+
+            <!--                <category android:name="android.intent.category.LAUNCHER" />-->
+            <!--            </intent-filter>-->
         </activity>
         <activity
             android:name=".SPrvoider.SProviderMainActivity"
-            android:exported="false">
-
-            <!-- <intent-filter> -->
-            <!-- <action android:name="android.intent.action.MAIN" /> -->
-
-
-            <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
-            <!-- </intent-filter> -->
-        </activity>
+            android:exported="false" />
         <activity
             android:name=".Client.ClientMainActivity"
             android:exported="false">
@@ -50,15 +51,14 @@
         </activity>
         <activity
             android:name=".SelectAccount"
-            android:exported="false">
+            android:exported="true">
 
-            <!-- <intent-filter> -->
-            <!-- <action android:name="android.intent.action.MAIN" /> -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
 
 
-            <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
-            <!-- </intent-filter> -->
-
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
         </activity>
         <activity
             android:name=".Client.C7ChoosingInterestClient"

@@ -10,8 +10,7 @@
   <androidx.constraintlayout.widget.ConstraintLayout
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:padding="16dp"
-      >
+      android:padding="16dp">
 
     <!-- Top Bar -->
     <TextView
@@ -52,7 +51,7 @@
         android:id="@+id/tvPopularServices"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Popular Services"
+        android:text="Service Categories"
         android:textColor="@color/black"
         android:textSize="20sp"
         android:fontFamily="@font/semibold_poppins"
@@ -73,6 +72,7 @@
         app:layout_constraintTop_toBottomOf="@id/tvPopularServices"
         android:clipToPadding="false"
         android:orientation="horizontal"
+        tools:listitem="@layout/categories_list"
         android:scrollbars="horizontal"/>
 
     <!-- Choose your interest -->
@@ -121,10 +121,5 @@
         android:layout_marginTop="16dp" />
 
   </androidx.constraintlayout.widget.ConstraintLayout>
-
-
-
-
-
 
 </ScrollView>

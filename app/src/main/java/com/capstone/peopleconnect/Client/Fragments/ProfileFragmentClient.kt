@@ -1,149 +1,168 @@
 package com.capstone.peopleconnect.Client.Fragments
 
-import android.app.AlertDialog
 import android.os.Bundle
-import androidx.fragment.app.Fragment
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.fragment.app.Fragment
+import com.capstone.peopleconnect.Classes.User
 import com.capstone.peopleconnect.R
-import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.capstone.peopleconnect.SProvider.Fragments.MyProfileFragmentSProvider
+import com.capstone.peopleconnect.SProvider.Fragments.ProfileFragmentSProvider
+import com.capstone.peopleconnect.SPrvoider.Fragments.LocationFragmentSProvider
+import com.google.android.material.imageview.ShapeableImageView
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.Query
+import com.google.firebase.database.ValueEventListener
+import com.squareup.picasso.Picasso
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-/**
- * A simple [Fragment] subclass.
- * Use the [ProfileFragmentClient.newInstance] factory method to
- * create an instance of this fragment.
- */
 class ProfileFragmentClient : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
+
+    private var firstName: String? = null
+    private var middleName: String? = null
+    private var lastName: String? = null
+    private var userAddress: String? = null
+    private var email: String? = null
+    private var profileImageUrl: String? = null
+
+    private lateinit var userQuery: Query
+    private lateinit var valueEventListener: ValueEventListener
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
+            firstName = it.getString("FIRST_NAME")
+            middleName = it.getString("MIDDLE_NAME")
+            lastName = it.getString("LAST_NAME")
+            userAddress = it.getString("USER_ADDRESS")
+            email = it.getString("EMAIL")
+            profileImageUrl = it.getString("PROFILE_IMAGE_URL")
         }
+
+        email?.let {
+            userQuery = FirebaseDatabase.getInstance().getReference("users")
+                .orderByChild("email").equalTo(it)
+        } ?: run {
+            // Handle case when email is null
+            // Consider showing an error or using a default value
+        }
+
     }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_profile_client, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setupProfile(view)
+    }
 
-        // Inside the onViewCreated method
-        val bottomNavigationView = activity?.findViewById<BottomNavigationView>(R.id.bottom_navigation)
+    override fun onStart() {
+        super.onStart()
+
+        valueEventListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    val data = snapshot.children.firstOrNull()
+                    val user = data?.getValue(User::class.java)
+                    user?.let {
+                        updateUI(user)
+                    }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                // Handle possible errors
+                // Consider showing a user-friendly message
+            }
+        }
+        userQuery.addValueEventListener(valueEventListener)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        userQuery.removeEventListener(valueEventListener)
+    }
+
+    private fun setupProfile(view: View) {
+        val tvName: TextView = view.findViewById(R.id.tvName)
+        val tvEmail: TextView = view.findViewById(R.id.tvEmail)
+        val address: TextView = view.findViewById(R.id.tvLocation)
+        val ivProfileImage: ShapeableImageView = view.findViewById(R.id.ivProfileImage)
+
+        // Set default values or placeholders if needed
+        tvName.text = ""
+        address.text = ""
+        tvEmail.text = ""
+        ivProfileImage.setImageResource(R.drawable.profile) // Placeholder
 
         // Profile icons
         val profileIcons: LinearLayout = view.findViewById(R.id.profileMenuLayout)
         profileIcons.setOnClickListener {
-            val profileFragment = MyProfileFragmentClient()
+            val profileFragment = MyProfileFragmentClient.newInstance(
+                firstName = firstName,
+                middleName = middleName,
+                lastName = lastName ,
+                email = email,
+                profileImageUrl = profileImageUrl
+            )
             parentFragmentManager.beginTransaction()
                 .replace(R.id.frame_layout, profileFragment)
                 .addToBackStack(null)
                 .commit()
-
-            // Hide the bottom navigation bar
-            bottomNavigationView?.visibility = View.GONE
         }
 
         // Location icons
         val locationIcons: LinearLayout = view.findViewById(R.id.locationMenuLayout)
         locationIcons.setOnClickListener {
-            val locationFragment = LocationFragmentClient()
+            val locationFragment = LocationFragmentSProvider()
             parentFragmentManager.beginTransaction()
                 .replace(R.id.frame_layout, locationFragment)
                 .addToBackStack(null)
                 .commit()
-
-            // Hide the bottom navigation bar
-            bottomNavigationView?.visibility = View.GONE
         }
-
-        // Settings icons
-        val settingsIcons: LinearLayout = view.findViewById(R.id.settingsMenuLayout)
-        settingsIcons.setOnClickListener {
-            val settingsFragment = SettingsFragmentClient()
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.frame_layout, settingsFragment)
-                .addToBackStack(null)
-                .commit()
-
-            // Hide the bottom navigation bar
-            bottomNavigationView?.visibility = View.GONE
-        }
-
-        // Logout button click listener
-        val logoutButton: LinearLayout = view.findViewById(R.id.logoutMenuLayout)
-        logoutButton.setOnClickListener {
-            showLogoutDialog()
-        }
-
     }
 
-    override fun onResume() {
-        super.onResume()
-        val bottomNavigationView = activity?.findViewById<BottomNavigationView>(R.id.bottom_navigation)
-        bottomNavigationView?.visibility = View.VISIBLE
-    }
+    private fun updateUI(user: User) {
+        view?.let { view ->
+            val tvName: TextView = view.findViewById(R.id.tvName)
+            val tvEmail: TextView = view.findViewById(R.id.tvEmail)
+            val address: TextView = view.findViewById(R.id.tvLocation)
+            val ivProfileImage: ShapeableImageView = view.findViewById(R.id.ivProfileImage)
 
-    private fun showLogoutDialog() {
-        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.client_dialog_logout, null)
-        val alertDialogBuilder = AlertDialog.Builder(requireContext())
-        alertDialogBuilder.setView(dialogView)
+            val fullName = "${user.firstName} ${user.middleName} ${user.lastName}".trim()
+            tvName.text = fullName
+            address.text = user.address
+            tvEmail.text = user.email
 
-        val alertDialog = alertDialogBuilder.create()
-        alertDialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-        alertDialog.show()
-
-        val btnLogout = dialogView.findViewById<Button>(R.id.btnLogout)
-        val tvCancel = dialogView.findViewById<TextView>(R.id.tvCancel)
-        val cbRememberLogin = dialogView.findViewById<CheckBox>(R.id.cbRememberLogin)
-
-        btnLogout.setOnClickListener {
-            // Perform logout action
-            alertDialog.dismiss()
-            // Add your logout logic here
-        }
-
-        tvCancel.setOnClickListener {
-            alertDialog.dismiss()
+            Picasso.get()
+                .load(user.profileImageUrl)
+                .placeholder(R.drawable.profile)
+                .error(R.drawable.profile)
+                .into(ivProfileImage)
         }
     }
 
     companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment ProfileFragmentClient.
-         */
-        // TODO: Rename and change types and number of parameters
         @JvmStatic
-        fun newInstance(param1: String, param2: String) =
+        fun newInstance(firstName: String?, middleName: String?, lastName: String?, email: String?, profileImageUrl: String?) =
             ProfileFragmentClient().apply {
                 arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
+                    putString("FIRST_NAME", firstName)
+                    putString("MIDDLE_NAME", middleName)
+                    putString("LAST_NAME", lastName)
+                    putString("EMAIL", email)
+                    putString("PROFILE_IMAGE_URL", profileImageUrl)
                 }
             }
     }

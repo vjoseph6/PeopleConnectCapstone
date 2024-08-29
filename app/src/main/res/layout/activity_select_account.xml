@@ -18,7 +18,7 @@
             android:id="@+id/tvSelectAccountType"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="104dp"
+            android:layout_marginTop="100dp"
             android:fontFamily="@font/semibold_poppins"
             android:gravity="center"
             android:text="Select your account type"

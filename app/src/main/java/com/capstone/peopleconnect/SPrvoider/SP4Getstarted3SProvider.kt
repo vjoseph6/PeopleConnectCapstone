@@ -12,19 +12,5 @@ class SP4Getstarted3SProvider : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sp4_getstarted3_sprovider)
 
-        val next = findViewById<Button>(R.id.getstarted3_button_sprovider)
-        next.setOnClickListener {
-
-            val intent = Intent(this, SP5LoginSProvider::class.java)
-            startActivity(intent)
-        }
-
-        val skip = findViewById<TextView>(R.id.skip)
-        skip.setOnClickListener {
-
-            val intent = Intent(this, SP5LoginSProvider::class.java)
-            startActivity(intent)
-        }
-
     }
 }

@@ -118,7 +118,7 @@
 
         <!-- Forgot Password -->
         <TextView
-            android:id="@+id/forgotPassword"
+            android:id="@+id/forgotPasswordLink"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
@@ -140,7 +140,7 @@
             android:textAllCaps="false"
             android:fontFamily="@font/regular_poppins"
             android:background="@drawable/btn_rounded_corner_client"
-            app:layout_constraintTop_toBottomOf="@id/forgotPassword"
+            app:layout_constraintTop_toBottomOf="@id/forgotPasswordLink"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
