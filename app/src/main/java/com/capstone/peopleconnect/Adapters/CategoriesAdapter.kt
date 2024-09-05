@@ -14,7 +14,7 @@ import com.squareup.picasso.Picasso
 // CategoriesAdapter.kt
 class CategoriesAdapter(
     private var categories: List<Category>,
-    private val onCategoryClick: (Category) -> Unit
+    private val onCategoryClick: (Category) -> Unit // Pass the selected category
 ) : RecyclerView.Adapter<CategoriesAdapter.ViewHolder>() {
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -26,7 +26,7 @@ class CategoriesAdapter(
             Picasso.get().load(category.image).placeholder(R.drawable.profile).into(categoryImage)
 
             itemView.setOnClickListener {
-                onCategoryClick(category)
+                onCategoryClick(category) // Pass the category when clicked
             }
         }
     }
@@ -47,5 +47,6 @@ class CategoriesAdapter(
         notifyDataSetChanged()
     }
 }
+
 
 

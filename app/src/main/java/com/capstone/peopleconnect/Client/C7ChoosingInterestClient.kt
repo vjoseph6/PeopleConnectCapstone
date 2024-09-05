@@ -33,6 +33,7 @@ class C7ChoosingInterestClient : AppCompatActivity() {
     private lateinit var address: String
     private lateinit var profileImage: String
     private val selectedInterests = mutableListOf<String>()
+    private val allInterests = mutableListOf<Interest>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,7 +42,7 @@ class C7ChoosingInterestClient : AppCompatActivity() {
         // Initialize Firebase Database reference
         database = FirebaseDatabase.getInstance().reference.child("category")
 
-        // Retrieve email from intent
+        // Retrieve email and other data from intent
         email = intent.getStringExtra("EMAIL") ?: ""
 
         firstName = intent.getStringExtra("FIRST_NAME") ?: ""
@@ -51,8 +52,7 @@ class C7ChoosingInterestClient : AppCompatActivity() {
         address = intent.getStringExtra("USER_ADDRESS") ?: ""
         profileImage = intent.getStringExtra("PROFILE_IMAGE_URL") ?: ""
 
-
-        // Set name
+        // Set welcome message
         val name = findViewById<TextView>(R.id.tvWelcome)
         name.text = "Welcome $firstName"
 
@@ -60,7 +60,8 @@ class C7ChoosingInterestClient : AppCompatActivity() {
         findViewById<RecyclerView>(R.id.rvPopularServices).apply {
             layoutManager = LinearLayoutManager(this@C7ChoosingInterestClient, LinearLayoutManager.HORIZONTAL, false)
             categoriesAdapter = CategoriesAdapter(emptyList()) { category ->
-                // No action needed for category clicks
+                // Filter interests based on the selected category
+                filterInterestsByCategory(category)
             }
             adapter = categoriesAdapter
         }
@@ -69,10 +70,9 @@ class C7ChoosingInterestClient : AppCompatActivity() {
         findViewById<RecyclerView>(R.id.rvInterests).apply {
             layoutManager = LinearLayoutManager(this@C7ChoosingInterestClient)
             interestsAdapter = InterestAdapter(mutableListOf()) { selectedInterest ->
-                // Handle interest selection here
+                // Handle interest selection
                 updateSelectedInterests(selectedInterest)
             }
-
             adapter = interestsAdapter
         }
 
@@ -90,7 +90,6 @@ class C7ChoosingInterestClient : AppCompatActivity() {
 
         categoriesRef.get().addOnSuccessListener { snapshot ->
             if (snapshot.exists()) {
-                val allInterests = mutableListOf<Interest>()
                 val categories = mutableListOf<Category>()
 
                 for (categorySnapshot in snapshot.children) {
@@ -108,8 +107,9 @@ class C7ChoosingInterestClient : AppCompatActivity() {
                     }
                     categories.add(Category(image = image, name = name, interests = interests))
                 }
+
                 setupCategoriesRecyclerView(categories)
-                setupInterestsRecyclerView(allInterests)
+                setupInterestsRecyclerView(allInterests) // Display all interests initially
             } else {
                 Toast.makeText(this, "No categories found in the database.", Toast.LENGTH_SHORT).show()
             }
@@ -119,11 +119,22 @@ class C7ChoosingInterestClient : AppCompatActivity() {
     }
 
     private fun setupCategoriesRecyclerView(categories: List<Category>) {
-        categoriesAdapter.updateData(categories) // Update the adapter with the fetched categories
+        categoriesAdapter.updateData(categories)
     }
 
     private fun setupInterestsRecyclerView(interests: List<Interest>) {
-        interestsAdapter.updateData(interests) // Update the adapter with all interests
+        interestsAdapter.updateData(interests)
+    }
+
+    private fun filterInterestsByCategory(category: Category) {
+        if (category.name == "All") {
+            // Display all interests if "All" is selected or no category selected yet
+            setupInterestsRecyclerView(allInterests)
+        } else {
+            // Filter interests based on the selected category
+            val filteredInterests = category.interests
+            setupInterestsRecyclerView(filteredInterests)
+        }
     }
 
     private fun updateSelectedInterests(selectedInterest: Interest) {
@@ -139,16 +150,13 @@ class C7ChoosingInterestClient : AppCompatActivity() {
     private fun saveSelectedInterests(email: String) {
         val databaseReference = FirebaseDatabase.getInstance().reference.child("users")
 
-        // Fetch the user by email
         databaseReference.orderByChild("email").equalTo(email)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (snapshot.exists()) {
                         for (userSnapshot in snapshot.children) {
                             val userId = userSnapshot.key
-                            // Get the selected interests from the adapter
                             val selectedInterests = interestsAdapter.getSelectedInterests()
-                            // Update the user's interests
                             userSnapshot.ref.child("interest").setValue(selectedInterests)
                                 .addOnSuccessListener {
                                     val intent = Intent(this@C7ChoosingInterestClient, ClientMainActivity::class.java).apply {
@@ -176,5 +184,4 @@ class C7ChoosingInterestClient : AppCompatActivity() {
                 }
             })
     }
-
 }

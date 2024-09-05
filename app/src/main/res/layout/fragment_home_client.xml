@@ -8,14 +8,12 @@
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        >
+        android:layout_height="match_parent">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:padding="16dp"
-            >
+            android:layout_height="wrap_content"
+            android:padding="16dp">
 
             <!-- Top Bar -->
             <TextView
@@ -25,9 +23,8 @@
                 android:fontFamily="@font/regular_poppins"
                 android:text="Thursday, July 18 2024"
                 android:textSize="12sp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
+                android:layout_alignParentTop="true"
+                android:layout_alignParentStart="true" />
 
             <!-- Welcome Message -->
             <TextView
@@ -39,9 +36,8 @@
                 android:textColor="@color/black"
                 android:textSize="24sp"
                 android:layout_marginTop="16dp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tvDate" />
-
+                android:layout_below="@id/tvDate"
+                android:layout_alignParentStart="true" />
 
             <TextView
                 android:id="@+id/tvName"
@@ -53,8 +49,8 @@
                 android:text="Name"
                 android:textColor="@color/black"
                 android:textSize="24sp"
-                app:layout_constraintStart_toEndOf="@+id/tvWelcome"
-                app:layout_constraintTop_toBottomOf="@id/tvDate" />
+                android:layout_toEndOf="@id/tvWelcome"
+                android:layout_below="@id/tvDate" />
 
             <TextView
                 android:id="@+id/tvSubtext"
@@ -63,8 +59,8 @@
                 android:text="Have a nice day !"
                 android:fontFamily="@font/regular_poppins"
                 android:textSize="16sp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tvWelcome" />
+                android:layout_below="@id/tvWelcome"
+                android:layout_alignParentStart="true" />
 
             <!-- LinearLayout containing MessageIcon -->
             <LinearLayout
@@ -72,9 +68,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
                 android:paddingStart="10dp"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentTop="true"
                 android:layout_marginStart="8dp">
 
                 <ImageView
@@ -93,8 +89,8 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:paddingEnd="10dp"
-                app:layout_constraintEnd_toStartOf="@id/messageLayout"
-                app:layout_constraintTop_toTopOf="parent">
+                android:layout_toStartOf="@id/messageLayout"
+                android:layout_alignParentTop="true">
 
                 <ImageView
                     android:id="@+id/notificationIcons"
@@ -114,8 +110,8 @@
                 android:background="@drawable/back_button_background_client"
                 android:contentDescription="Filter Icon"
                 android:layout_marginTop="16dp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tvSubtext" />
+                android:layout_below="@id/tvSubtext"
+                android:layout_alignParentStart="true" />
 
             <!-- Popular Projects -->
             <TextView
@@ -124,32 +120,27 @@
                 android:layout_height="wrap_content"
                 android:textColor="@color/black"
                 android:fontFamily="@font/semibold_poppins"
-                android:text="Popular Projects"
+                android:text="Recommended Providers"
                 android:textSize="20sp"
                 android:layout_marginTop="16dp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/ivFilter" />
+                android:layout_below="@id/ivFilter"
+                android:layout_alignParentStart="true" />
 
-
-
-            <!-- Ang list item ani kay kani e grid layout lng:
-            tools:listitem="@layout/client_item_popular_projects"
-            -->
+            <!-- RecyclerView -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvInterests"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tvPopularProjects"
                 android:clipToPadding="false"
                 android:orientation="vertical"
-                android:scrollbars="vertical"/>
+                android:scrollbars="vertical"
+                android:layout_below="@id/tvPopularProjects"
+                tools:listitem="@layout/provider_list" />
+        </RelativeLayout>
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+
 
     </ScrollView>
-
 
 </FrameLayout>

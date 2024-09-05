@@ -216,7 +216,7 @@ class SP5LoginSProvider : AppCompatActivity() {
                             saveCurrentUser(email, userName, userAddress, profileImageUrl)
 
                             // Pass user details to the next activity
-                            val intent = Intent(this@SP5LoginSProvider, SProviderMainActivity::class.java).apply {
+                            val intent = Intent(this@SP5LoginSProvider, SP7ChooseSkillSProvider::class.java).apply {
                                 putExtra("USER_NAME", userName)
                                 putExtra("FIRST_NAME", fName)
                                 putExtra("MIDDLE_NAME", mName)

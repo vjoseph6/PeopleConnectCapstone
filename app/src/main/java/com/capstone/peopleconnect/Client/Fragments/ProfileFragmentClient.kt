@@ -1,18 +1,14 @@
 package com.capstone.peopleconnect.Client.Fragments
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.capstone.peopleconnect.Classes.User
 import com.capstone.peopleconnect.R
-import com.capstone.peopleconnect.SProvider.Fragments.MyProfileFragmentSProvider
-import com.capstone.peopleconnect.SProvider.Fragments.ProfileFragmentSProvider
 import com.capstone.peopleconnect.SPrvoider.Fragments.LocationFragmentSProvider
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.firebase.database.DataSnapshot
@@ -131,6 +127,17 @@ class ProfileFragmentClient : Fragment() {
                 .addToBackStack(null)
                 .commit()
         }
+
+        // Security icons
+        val securityIcons: LinearLayout = view.findViewById(R.id.securityMenuLayout_client)
+        securityIcons.setOnClickListener {
+            val securityFragment = SettingsSecurityFragmentClient.newInstance(email = email)
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, securityFragment)
+                .addToBackStack(null)
+                .commit()
+        }
+
     }
 
     private fun updateUI(user: User) {

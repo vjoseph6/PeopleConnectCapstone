@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment
 import com.capstone.peopleconnect.Classes.User
 import com.capstone.peopleconnect.R
 import com.capstone.peopleconnect.SPrvoider.Fragments.LocationFragmentSProvider
+import com.capstone.peopleconnect.SPrvoider.Fragments.SettingsSecurityFragmentSProvider
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -127,6 +128,17 @@ class ProfileFragmentSProvider : Fragment() {
                 .addToBackStack(null)
                 .commit()
         }
+
+        // Security icons
+        val securityIcons: LinearLayout = view.findViewById(R.id.securityMenuLayout_sprovider)
+        securityIcons.setOnClickListener {
+            val securityFragment = SettingsSecurityFragmentSProvider()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, securityFragment)
+                .addToBackStack(null)
+                .commit()
+        }
+
     }
 
     private fun updateUI(user: User) {

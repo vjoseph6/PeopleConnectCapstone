@@ -202,34 +202,36 @@
         </LinearLayout>
 
         <!-- Settings Menu Item -->
+
+        <!-- Logout Menu Item -->
         <LinearLayout
+            android:id="@+id/securityMenuLayout_client"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="10dp"
             android:layout_marginStart="12dp"
-            android:padding="12dp"
-            android:gravity="center_vertical">
+            android:layout_marginTop="10dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="12dp">
 
             <ImageView
                 android:id="@+id/ivSettingsIcon"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
+                android:layout_marginEnd="16dp"
                 android:src="@drawable/client_settings"
-                app:tint="@color/green"
-                android:layout_marginEnd="16dp"/>
+                app:tint="@color/green" />
 
             <TextView
                 android:id="@+id/tvSettings"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Settings"
+                android:fontFamily="@font/regular_poppins"
+                android:text="Security"
                 android:textColor="@color/black"
-                android:textSize="12sp"
-                android:fontFamily="@font/regular_poppins"/>
+                android:textSize="12sp" />
         </LinearLayout>
 
-        <!-- Logout Menu Item -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
