@@ -148,7 +148,7 @@ class AddSkillsProviderRate : AppCompatActivity() {
                     }
                 } else {
                     val newUserSkills = hashMapOf(
-                        "email" to email,
+                        "user" to email,
                         "skillItems" to listOf(skillItem)
                     )
                     skillsReference.push().setValue(newUserSkills).addOnCompleteListener { task ->

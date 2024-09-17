@@ -3,7 +3,8 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:background="@drawable/client_dialoglogut_background"
-    android:padding="20dp">
+    android:layout_marginHorizontal="10dp"
+    android:padding="10dp">
 
 
     <TextView

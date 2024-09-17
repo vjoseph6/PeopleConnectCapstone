@@ -2,6 +2,7 @@ package com.capstone.peopleconnect.SPrvoider
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import com.capstone.peopleconnect.R
 import com.capstone.peopleconnect.SProvider.Fragments.ProfileFragmentSProvider
@@ -33,6 +34,8 @@ class SProviderMainActivity : AppCompatActivity() {
         if (fragmentToLoad != null) {
             when (fragmentToLoad) {
                 "SkillsFragmentSProvider" -> {
+                    val email = intent.getStringExtra("EMAIL")
+                    Log.d("email retrieved","$email")
                     loadFragment(SkillsFragmentSProvider(), fName, mName, lName, userName, userAddress, email, profileImageUrl)
                     bottomNavigationView.selectedItemId = R.id.skills
                 }

@@ -7,9 +7,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.RelativeLayout
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.capstone.peopleconnect.Adapters.SkillsAdapter
 import com.capstone.peopleconnect.Classes.SkillItem
 import com.capstone.peopleconnect.R
@@ -25,7 +28,9 @@ class SkillsFragmentSProvider : Fragment() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var database: DatabaseReference
     private var email: String? = null
+    private lateinit var emptyView: RelativeLayout
     private val TAG = "SkillsFragmentSProvider"
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,6 +48,18 @@ class SkillsFragmentSProvider : Fragment() {
         // Set up RecyclerView and Adapter
         recyclerView = view.findViewById(R.id.recyclerViewSkills)
         recyclerView.layoutManager = LinearLayoutManager(context)
+        emptyView = view.findViewById(R.id.emptyView) // Add reference to emptyView
+
+        // Load image into ImageView using Glide
+        val emptyImage: ImageView = view.findViewById(R.id.image)
+        Glide.with(this)
+            .load(R.drawable.nothing)  // Replace with your drawable resource or image URL
+            .into(emptyImage)
+
+        // Initialize both views as GONE until data is loaded
+        recyclerView.visibility = View.GONE
+        emptyView.visibility = View.GONE
+
         skillsAdapter = SkillsAdapter(
             emptyList(),
             { updatedSkill -> updateSkillVisibilityInDatabase(updatedSkill) },
@@ -80,14 +97,21 @@ class SkillsFragmentSProvider : Fragment() {
     }
 
     private fun retrieveUserSkills(email: String) {
-        // Reference the 'skills' collection directly
         val skillsReference = database.child("skills").orderByChild("user").equalTo(email)
 
         skillsReference.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val skillsList = mutableListOf<SkillItem>()
+                val skillItemsToFetch = snapshot.children.sumOf { it.child("skillItems").childrenCount.toInt() }
+                var fetchedSkillCount = 0
 
-                // Iterate over each skill document that matches the email
+                if (skillItemsToFetch.toLong() == 0L) {
+                    // No skills, so show empty view
+                    recyclerView.visibility = View.GONE
+                    emptyView.visibility = View.VISIBLE
+                    return
+                }
+
                 for (skillSnapshot in snapshot.children) {
                     val skillItemsSnapshot = skillSnapshot.child("skillItems")
 
@@ -95,14 +119,26 @@ class SkillsFragmentSProvider : Fragment() {
                         val skillName = skillItem.child("name").getValue(String::class.java) ?: ""
                         val isVisible = skillItem.child("visible").getValue(Boolean::class.java) ?: true
 
-                        // Retrieve the image from category
                         findImageForSkill(skillName) { imageUrl ->
                             val skillItemObj = SkillItem(name = skillName, visible = isVisible, image = imageUrl)
                             skillsList.add(skillItemObj)
 
-                            // Check the size of skillsList before updating the adapter
-                            Log.d(TAG, "Skills List Size: ${skillsList.size}")
-                            skillsAdapter.updateSkillsList(skillsList)
+                            // Once a skill is added, increase the fetched count
+                            fetchedSkillCount++
+
+                            // When all skills are fetched, update the adapter and views visibility
+                            if (fetchedSkillCount == skillItemsToFetch) {
+                                skillsAdapter.updateSkillsList(skillsList)
+
+                                // Show recyclerView if there are skills, otherwise show emptyView
+                                if (skillsList.isNotEmpty()) {
+                                    recyclerView.visibility = View.VISIBLE
+                                    emptyView.visibility = View.GONE
+                                } else {
+                                    recyclerView.visibility = View.GONE
+                                    emptyView.visibility = View.VISIBLE
+                                }
+                            }
                         }
                     }
                 }
@@ -113,6 +149,8 @@ class SkillsFragmentSProvider : Fragment() {
             }
         })
     }
+
+
 
     private fun findImageForSkill(skillName: String, callback: (String) -> Unit) {
         database.child("category").addListenerForSingleValueEvent(object : ValueEventListener {
