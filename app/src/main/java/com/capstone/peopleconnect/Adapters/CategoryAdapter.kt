@@ -10,14 +10,9 @@ import com.google.android.material.imageview.ShapeableImageView
 import com.squareup.picasso.Picasso
 import android.widget.TextView
 
-// Define a callback interface for item clicks
-interface OnCategoryClickListener {
-    fun onCategoryClick(category: Category)
-}
-
 class CategoryAdapter(
     private var categories: MutableList<Category>,
-    private val listener: OnCategoryClickListener  // Listener to handle item clicks
+    private val listener: (Category) -> Unit  // Listener to handle category clicks
 ) : RecyclerView.Adapter<CategoryAdapter.CategoryViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CategoryViewHolder {
@@ -31,12 +26,12 @@ class CategoryAdapter(
         holder.tvName.text = category.name
         Picasso.get()
             .load(category.image)
-            .error(R.drawable.profile) // Optional error image
+            .error(R.drawable.profile) // Default error image
             .into(holder.tvImage)
 
         // Set a click listener for each category item
         holder.itemView.setOnClickListener {
-            listener.onCategoryClick(category)
+            listener(category)
         }
     }
 
@@ -56,3 +51,4 @@ class CategoryAdapter(
         notifyDataSetChanged()  // Notify the adapter that the data has changed
     }
 }
+

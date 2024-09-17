@@ -2,8 +2,11 @@ package com.capstone.peopleconnect.SPrvoider
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
 import android.util.Log
+import android.widget.Toast
 import androidx.fragment.app.Fragment
+import com.capstone.peopleconnect.Client.Fragments.HomeFragmentClient
 import com.capstone.peopleconnect.R
 import com.capstone.peopleconnect.SProvider.Fragments.ProfileFragmentSProvider
 import com.capstone.peopleconnect.SPrvoider.Fragments.ActivityFragmentSProvider
@@ -14,20 +17,33 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class SProviderMainActivity : AppCompatActivity() {
 
+    private lateinit var email: String
+    private lateinit var firstName: String
+    private lateinit var userName: String
+    private lateinit var middleName: String
+    private lateinit var lastName: String
+    private lateinit var address: String
+    private lateinit var profileImage: String
+
+    private lateinit var bottomNavigationView: BottomNavigationView
+
+    private var backPressedOnce = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sprovider_main)
 
-        // Retrieve data from Intent
-        val userName = intent.getStringExtra("USER_NAME")
-        val fName = intent.getStringExtra("FIRST_NAME")
-        val mName = intent.getStringExtra("MIDDLE_NAME")
-        val lName = intent.getStringExtra("LAST_NAME")
-        val userAddress = intent.getStringExtra("USER_ADDRESS")
-        val email = intent.getStringExtra("EMAIL")
-        val profileImageUrl = intent.getStringExtra("PROFILE_IMAGE_URL")
+        email = intent.getStringExtra("EMAIL") ?: ""
+        firstName = intent.getStringExtra("FIRST_NAME") ?: ""
+        userName = intent.getStringExtra("USER_NAME") ?: ""
+        middleName = intent.getStringExtra("MIDDLE_NAME") ?: ""
+        lastName = intent.getStringExtra("LAST_NAME") ?: ""
+        address = intent.getStringExtra("USER_ADDRESS") ?: ""
+        profileImage = intent.getStringExtra("PROFILE_IMAGE_URL") ?: ""
 
-        val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+        // Initialize BottomNavigationView
+        bottomNavigationView = findViewById(R.id.bottom_navigation)
+
 
         // Check if an intent extra is provided to load a specific fragment
         val fragmentToLoad = intent.getStringExtra("FRAGMENT_TO_LOAD")
@@ -36,37 +52,37 @@ class SProviderMainActivity : AppCompatActivity() {
                 "SkillsFragmentSProvider" -> {
                     val email = intent.getStringExtra("EMAIL")
                     Log.d("email retrieved","$email")
-                    loadFragment(SkillsFragmentSProvider(), fName, mName, lName, userName, userAddress, email, profileImageUrl)
+                    loadFragment(SkillsFragmentSProvider(), "home", firstName, middleName, lastName, userName, address, email, profileImage)
                     bottomNavigationView.selectedItemId = R.id.skills
                 }
                 // Handle other fragments if needed
             }
         } else if (savedInstanceState == null) {
             // Default fragment
-            loadFragment(HomeFragmentSProvider(), fName, mName, lName, userName, userAddress, email, profileImageUrl)
+            loadFragment(HomeFragmentSProvider(), "home", firstName, middleName, lastName, userName, address, email, profileImage)
             bottomNavigationView.selectedItemId = R.id.home
         }
 
         bottomNavigationView.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.home -> {
-                    loadFragment(HomeFragmentSProvider(), fName, mName, lName, userName, userAddress, email, profileImageUrl)
+                    loadFragment(HomeFragmentSProvider(),  "home", firstName, middleName, lastName, userName, address, email, profileImage)
                     true
                 }
                 R.id.activities -> {
-                    loadFragment(ActivityFragmentSProvider(), fName, mName, lName, userName, userAddress, email, profileImageUrl)
+                    loadFragment(ActivityFragmentSProvider(),"activities", firstName, middleName, lastName, userName, address, email, profileImage)
                     true
                 }
                 R.id.mic -> {
-                    loadFragment(MicFragmentSProvider(), fName, mName, lName, userName, userAddress, email, profileImageUrl)
+                    loadFragment(MicFragmentSProvider(), "mic", firstName, middleName, lastName, userName, address, email, profileImage)
                     true
                 }
                 R.id.skills -> {
-                    loadFragment(SkillsFragmentSProvider(), fName, mName, lName, userName, userAddress, email, profileImageUrl)
+                    loadFragment(SkillsFragmentSProvider(), "skills", firstName, middleName, lastName, userName, address, email, profileImage)
                     true
                 }
                 R.id.profile -> {
-                    loadFragment(ProfileFragmentSProvider(), fName, mName, lName, userName, userAddress, email, profileImageUrl)
+                    loadFragment(ProfileFragmentSProvider(), "profile", firstName, middleName, lastName, userName, address, email, profileImage)
                     true
                 }
                 else -> false
@@ -74,7 +90,21 @@ class SProviderMainActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadFragment(fragment: Fragment, firstName: String?, middleName: String?, lastName: String?, userName: String?, userAddress: String?, email: String?, profileImageUrl: String?) {
+    override fun onBackPressed() {
+        if (backPressedOnce) {
+            finishAffinity()  // Exit the app
+            super.onBackPressed()
+        } else {
+            // Show a Toast message if back was pressed once
+            Toast.makeText(this, "Press back again to exit the application", Toast.LENGTH_SHORT).show()
+            backPressedOnce = true
+            // Reset the flag after a short delay
+            Handler().postDelayed({ backPressedOnce = false }, 2000)
+        }
+    }
+
+
+    private fun loadFragment(fragment: Fragment, tag: String, firstName: String?, middleName: String?, lastName: String?, userName: String?, userAddress: String?, email: String?, profileImageUrl: String?) {
         // Create a new Bundle and add the data
         val bundle = Bundle().apply {
             putString("USER_NAME", userName)
@@ -89,9 +119,14 @@ class SProviderMainActivity : AppCompatActivity() {
         // Set the arguments on the fragment
         fragment.arguments = bundle
 
-        // Replace the current fragment with the new one
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.frame_layout, fragment)
-            .commit()
+        // Get the FragmentTransaction
+        val transaction = supportFragmentManager.beginTransaction()
+        transaction.replace(R.id.frame_layout, fragment, tag)
+
+        // Add the transaction to the back stack
+        transaction.addToBackStack(tag)
+
+        // Commit the transaction
+        transaction.commit()
     }
 }
