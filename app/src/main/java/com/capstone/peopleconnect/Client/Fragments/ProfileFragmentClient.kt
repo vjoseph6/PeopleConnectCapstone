@@ -126,7 +126,7 @@ class ProfileFragmentClient : Fragment() {
         // Location icons
         val locationIcons: LinearLayout = view.findViewById(R.id.locationMenuLayout)
         locationIcons.setOnClickListener {
-            val locationFragment = LocationFragmentSProvider()
+            val locationFragment = LocationFragmentClient()
             parentFragmentManager.beginTransaction()
                 .replace(R.id.frame_layout, locationFragment)
                 .addToBackStack(null)

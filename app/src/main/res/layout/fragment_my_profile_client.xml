@@ -40,7 +40,7 @@
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="597dp"
+            android:layout_height="600dp"
             android:layout_marginTop="50dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -184,6 +184,7 @@
                 android:fontFamily="@font/regular_poppins"
                 android:hint="Gmail"
                 android:padding="12dp"
+                android:enabled="false"
                 android:textSize="12sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"

@@ -43,7 +43,7 @@
         <!-- Scrollable Content -->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="597dp"
+            android:layout_height="600dp"
             android:layout_marginTop="50dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -188,6 +188,7 @@
                 android:hint="Gmail"
                 android:padding="12dp"
                 android:textSize="12sp"
+                android:enabled="false"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/tvEmail" />

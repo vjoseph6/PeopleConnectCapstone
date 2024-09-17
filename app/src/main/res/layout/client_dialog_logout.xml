@@ -36,6 +36,7 @@
         android:text="Cancel"
         android:textColor="@color/black"
         android:textSize="14sp"
+        android:layout_marginTop="10dp"
         android:layout_below="@id/btnLogout"
         android:layout_centerHorizontal="true"
         android:fontFamily="@font/regular_poppins" />

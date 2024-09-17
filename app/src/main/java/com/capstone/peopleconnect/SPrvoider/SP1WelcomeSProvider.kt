@@ -31,14 +31,14 @@ class SP1WelcomeSProvider : AppCompatActivity() {
                 val editor: SharedPreferences.Editor = sharedPreferences.edit()
                 editor.putBoolean("hasSeenWelcomeScreen", true)
                 editor.apply()
-            }, 1000) //
+            }, 1000)
         } else {
             // If the welcome screen has been shown, transition to SP5LoginSProvider after a delay
             Handler().postDelayed({
                 val intent = Intent(this, SP5LoginSProvider::class.java)
                 startActivity(intent)
                 finish()
-            }, 1500) // 1500 milliseconds = 1.5 seconds
+            }, 1000) // 1500 milliseconds = 1.5 seconds
         }
     }
 }
