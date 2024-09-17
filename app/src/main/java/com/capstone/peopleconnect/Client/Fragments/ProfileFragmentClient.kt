@@ -1,15 +1,20 @@
 package com.capstone.peopleconnect.Client.Fragments
 
+import android.content.Intent
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import com.capstone.peopleconnect.Classes.User
 import com.capstone.peopleconnect.R
 import com.capstone.peopleconnect.SPrvoider.Fragments.LocationFragmentSProvider
+import com.capstone.peopleconnect.SelectAccount
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -138,8 +143,35 @@ class ProfileFragmentClient : Fragment() {
                 .commit()
         }
 
+        val logoutIcons: LinearLayout = view.findViewById(R.id.logoutMenuLayout_client)
+        logoutIcons.setOnClickListener {
+            showLogoutDialog()
+        }
     }
 
+    private fun showLogoutDialog() {
+        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.client_dialog_logout, null)
+        val builder = AlertDialog.Builder(requireContext()).apply {
+            setView(dialogView)
+            setCancelable(false)
+        }
+
+        val dialog = builder.create()
+        dialog.window?.setBackgroundDrawable(ColorDrawable(0)) // Make background transparent
+        dialog.window?.attributes?.windowAnimations = R.style.DialogAnimation // Apply animations
+        dialog.show()
+
+        dialogView.findViewById<Button>(R.id.btnLogout).setOnClickListener {
+            dialog.dismiss()
+            val intent = Intent(requireContext(), SelectAccount::class.java)
+            startActivity(intent)
+            activity?.finish() // Close the current activity
+        }
+
+        dialogView.findViewById<TextView>(R.id.tvCancel).setOnClickListener {
+            dialog.dismiss()
+        }
+    }
     private fun updateUI(user: User) {
         view?.let { view ->
             val tvName: TextView = view.findViewById(R.id.tvName)

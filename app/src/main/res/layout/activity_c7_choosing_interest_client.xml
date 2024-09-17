@@ -89,10 +89,6 @@
         app:layout_constraintTop_toBottomOf="@id/rvPopularServices" />
 
 
-    <!-- Ang list item ani kato nlng naa sa choose your skills
-         katong pareha sa imoha: nga gihimo
-
-         -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvInterests"
         android:layout_width="0dp"

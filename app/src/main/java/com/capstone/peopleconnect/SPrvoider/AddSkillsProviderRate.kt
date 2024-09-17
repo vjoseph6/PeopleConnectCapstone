@@ -1,6 +1,7 @@
 package com.capstone.peopleconnect.SPrvoider
 
 import android.content.Intent
+import android.graphics.drawable.ColorDrawable
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -183,6 +184,13 @@ class AddSkillsProviderRate : AppCompatActivity() {
         }
 
         val dialog = builder.create()
+
+        // Set the animation style
+        dialog.window?.attributes?.windowAnimations = R.style.DialogAnimation
+
+        // Make the dialog background transparent
+        dialog.window?.setBackgroundDrawable(ColorDrawable(0))  // Transparent background
+
         dialog.show()
 
         dialogView.findViewById<Button>(R.id.btnDeleteSkillDialog).setOnClickListener {
@@ -194,6 +202,7 @@ class AddSkillsProviderRate : AppCompatActivity() {
             dialog.dismiss()
         }
     }
+
 
     private fun deleteSkill() {
         val skillsReference = FirebaseDatabase.getInstance().getReference("skills")

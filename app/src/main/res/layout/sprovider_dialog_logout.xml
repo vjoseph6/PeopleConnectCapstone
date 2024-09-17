@@ -17,18 +17,6 @@
         android:layout_marginBottom="20dp"
         android:fontFamily="@font/semibold_poppins" />
 
-    <CheckBox
-        android:id="@+id/cbRememberLogin"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Remember my login info"
-        android:checked="true"
-        android:layout_centerHorizontal="true"
-        android:layout_below="@id/tvLogoutTitle"
-        android:layout_marginBottom="20dp"
-        android:textColor="@color/black"
-        android:fontFamily="@font/regular_poppins" />
-
     <Button
         android:id="@+id/btnLogout"
         android:layout_width="match_parent"
@@ -37,7 +25,7 @@
         android:textColor="@color/white"
         android:background="@drawable/btn_rounded_corner_sprovider"
         android:textAllCaps="false"
-        android:layout_below="@id/cbRememberLogin"
+        android:layout_below="@id/tvLogoutTitle"
         android:layout_marginBottom="10dp"
         android:fontFamily="@font/regular_poppins" />
 
