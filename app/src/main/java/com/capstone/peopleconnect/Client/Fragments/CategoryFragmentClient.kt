@@ -1,60 +1,78 @@
 package com.capstone.peopleconnect.Client.Fragments
 
+
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.capstone.peopleconnect.Adapters.CategoryAdapter
+import com.capstone.peopleconnect.Adapters.OnCategoryClickListener
+import com.capstone.peopleconnect.Classes.Category
 import com.capstone.peopleconnect.R
+import com.google.firebase.database.*
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
+class CategoryFragmentClient : Fragment(), OnCategoryClickListener {
 
-/**
- * A simple [Fragment] subclass.
- * Use the [CategoryFragmentClient.newInstance] factory method to
- * create an instance of this fragment.
- */
-class CategoryFragmentClient : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-    }
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var categoryAdapter: CategoryAdapter
+    private lateinit var database: DatabaseReference
+    private var categoryList: MutableList<Category> = mutableListOf()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_category_client, container, false)
+        val view = inflater.inflate(R.layout.fragment_category_client, container, false)
+
+        // Set up RecyclerView with a GridLayoutManager of 3 columns
+        recyclerView = view.findViewById(R.id.rvCategories)
+        recyclerView.layoutManager = GridLayoutManager(requireContext(), 3)
+        categoryAdapter = CategoryAdapter(categoryList, this)  // Pass `this` as listener
+        recyclerView.adapter = categoryAdapter
+
+        // Initialize Firebase Database
+        database = FirebaseDatabase.getInstance().getReference("category")
+
+        // Retrieve categories from Firebase
+        loadCategoriesFromFirebase()
+
+        return view
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment CategoryFragmentClient.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            CategoryFragmentClient().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
+    // Method to load categories from Firebase
+    private fun loadCategoriesFromFirebase() {
+        database.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                categoryList.clear()
+                for (categorySnapshot in snapshot.children) {
+                    val name = categorySnapshot.key ?: continue
+                    val image = categorySnapshot.child("image").getValue(String::class.java) ?: ""
+
+                    // Create and add category to the list
+                    val category = Category(image = image, name = name)
+                    categoryList.add(category)
                 }
+                categoryAdapter.notifyDataSetChanged()
             }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("CategoryFragmentClient", "Database error: ${error.message}")
+            }
+        })
+    }
+
+    // Handle category click and navigate to subcategories
+    override fun onCategoryClick(category: Category) {
+        // Replace current fragment with the subcategories fragment
+        val subCategoryFragment = SubCategoryFragment.newInstance(category.name)
+        fragmentManager?.beginTransaction()
+            ?.replace(R.id.frame_layout, subCategoryFragment)
+            ?.addToBackStack(null)
+            ?.commit()
     }
 }
+

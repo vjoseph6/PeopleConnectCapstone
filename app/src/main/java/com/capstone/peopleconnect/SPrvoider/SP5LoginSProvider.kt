@@ -196,27 +196,31 @@ class SP5LoginSProvider : AppCompatActivity() {
                         var lName = ""
 
                         for (userSnapshot in snapshot.children) {
+                            // Check if the data matches the User class
                             val user = userSnapshot.getValue(User::class.java)
-                            val userRoles = user?.roles ?: listOf()
-                            if (userRoles.contains("Service Provider")) {
-                                isServiceProvider = true
-                                userName = user?.name ?: ""
-                                fName = user?.firstName ?: ""
-                                mName = user?.middleName ?: ""
-                                lName = user?.lastName ?: ""
-                                userAddress = user?.address ?: ""
-                                profileImageUrl = user?.profileImageUrl ?: ""
-                                break
+                            if (user != null) {
+                                val userRoles = user.roles ?: listOf()
+                                if (userRoles.contains("Service Provider")) {
+                                    isServiceProvider = true
+                                    userName = user.name ?: ""
+                                    fName = user.firstName ?: ""
+                                    mName = user.middleName ?: ""
+                                    lName = user.lastName ?: ""
+                                    userAddress = user.address ?: ""
+                                    profileImageUrl = user.profileImageUrl ?: ""
+                                    break
+                                }
+                            } else {
+                                Log.e("FirebaseError", "Unable to parse user data.")
                             }
                         }
 
                         if (isServiceProvider) {
-
                             // Save current user details in shared preferences
                             saveCurrentUser(email, userName, userAddress, profileImageUrl)
 
                             // Pass user details to the next activity
-                            val intent = Intent(this@SP5LoginSProvider, SP7ChooseSkillSProvider::class.java).apply {
+                            val intent = Intent(this@SP5LoginSProvider, SProviderMainActivity::class.java).apply {
                                 putExtra("USER_NAME", userName)
                                 putExtra("FIRST_NAME", fName)
                                 putExtra("MIDDLE_NAME", mName)
@@ -228,7 +232,6 @@ class SP5LoginSProvider : AppCompatActivity() {
                             Toast.makeText(this@SP5LoginSProvider, "Welcome Service Provider $fName", Toast.LENGTH_SHORT).show()
                             startActivity(intent)
                         } else {
-                            // User is not a Service Provider
                             Toast.makeText(this@SP5LoginSProvider, "User does not exist", Toast.LENGTH_SHORT).show()
                         }
                     } else {
@@ -242,6 +245,7 @@ class SP5LoginSProvider : AppCompatActivity() {
                 }
             })
     }
+
 
     private fun saveCurrentUser(email: String, firstName: String, address: String, profileImageUrl: String) {
         // Save the current user's details in shared preferences

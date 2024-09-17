@@ -84,6 +84,7 @@
                     android:src="@drawable/lock_sprovider_" />
 
                 <EditText
+                    android:id="@+id/currEt"
                     android:layout_width="0dp"
                     android:layout_height="50dp"
                     android:layout_weight="1"
@@ -113,6 +114,7 @@
                     android:src="@drawable/lock_sprovider_" />
 
                 <EditText
+                    android:id="@+id/newEt"
                     android:layout_width="0dp"
                     android:layout_height="50dp"
                     android:layout_weight="1"
@@ -142,6 +144,7 @@
                     android:src="@drawable/lock_sprovider_" />
 
                 <EditText
+                    android:id="@+id/confirmEt"
                     android:layout_width="0dp"
                     android:layout_height="50dp"
                     android:layout_weight="1"

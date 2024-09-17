@@ -132,7 +132,7 @@ class ProfileFragmentSProvider : Fragment() {
         // Security icons
         val securityIcons: LinearLayout = view.findViewById(R.id.securityMenuLayout_sprovider)
         securityIcons.setOnClickListener {
-            val securityFragment = SettingsSecurityFragmentSProvider()
+            val securityFragment = SettingsSecurityFragmentSProvider.newInstance(email = email)
             parentFragmentManager.beginTransaction()
                 .replace(R.id.frame_layout, securityFragment)
                 .addToBackStack(null)

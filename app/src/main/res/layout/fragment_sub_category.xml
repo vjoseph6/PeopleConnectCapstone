@@ -1,10 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".Client.Fragments.HomeFragmentClient">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/frame_layout"
+    tools:context=".Client.Fragments.SubCategoryFragment">
+
+    <!-- TODO: Update blank fragment layout -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:text="@string/hello_blank_fragment"
+        android:visibility="gone"/>
 
     <ScrollView
         android:layout_width="match_parent"
@@ -26,41 +34,6 @@
                 android:layout_alignParentTop="true"
                 android:layout_alignParentStart="true" />
 
-            <!-- Welcome Message -->
-            <TextView
-                android:id="@+id/tvWelcome"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Welcome"
-                android:fontFamily="@font/bold_poppins"
-                android:textColor="@color/black"
-                android:textSize="24sp"
-                android:layout_marginTop="16dp"
-                android:layout_below="@id/tvDate"
-                android:layout_alignParentStart="true" />
-
-            <TextView
-                android:id="@+id/tvName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="16dp"
-                android:fontFamily="@font/bold_poppins"
-                android:text="Name"
-                android:textColor="@color/black"
-                android:textSize="24sp"
-                android:layout_toEndOf="@id/tvWelcome"
-                android:layout_below="@id/tvDate" />
-
-            <TextView
-                android:id="@+id/tvSubtext"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Have a nice day !"
-                android:fontFamily="@font/regular_poppins"
-                android:textSize="16sp"
-                android:layout_below="@id/tvWelcome"
-                android:layout_alignParentStart="true" />
 
             <!-- LinearLayout containing MessageIcon -->
             <LinearLayout
@@ -101,17 +74,7 @@
                     android:contentDescription="Notification Icon" />
             </LinearLayout>
 
-            <!-- Popular Services -->
-            <ImageButton
-                android:id="@+id/ivFilter"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/client_filter"
-                android:background="@drawable/back_button_background_client"
-                android:contentDescription="Filter Icon"
-                android:layout_marginTop="16dp"
-                android:layout_below="@id/tvSubtext"
-                android:layout_alignParentStart="true" />
+
 
             <!-- Popular Projects -->
             <TextView
@@ -120,28 +83,64 @@
                 android:layout_height="wrap_content"
                 android:textColor="@color/black"
                 android:fontFamily="@font/semibold_poppins"
-                android:text="Recommended Providers"
+                android:text="Service Category"
                 android:textSize="20sp"
-                android:layout_marginTop="16dp"
-                android:layout_below="@id/ivFilter"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="10dp"
+                android:layout_below="@id/notificationLayout"
                 android:layout_alignParentStart="true" />
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/searchContainer"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                app:cardCornerRadius="10dp"
+                android:layout_centerHorizontal="true"
+                android:elevation="10dp"
+                android:layout_below="@id/tvPopularProjects">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <ImageView
+                        android:id="@+id/searchImg"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginStart="20dp"
+                        android:src="@drawable/search_icon"
+                        android:layout_centerVertical="true"
+                        />
+
+                    <EditText
+                        android:id="@+id/searchCategory"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:hint="What services do you need?"
+                        android:textSize="12sp"
+                        android:layout_marginStart="10dp"
+                        android:layout_toRightOf="@+id/searchImg"
+                        android:layout_centerVertical="true"
+                        android:background="@android:color/transparent"
+                        android:fontFamily="@font/medium_poppins"/>
+
+                </RelativeLayout>
+
+            </androidx.cardview.widget.CardView>
 
             <!-- RecyclerView -->
             <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvInterests"
+                android:id="@+id/rvSubcategories"
+                android:layout_below="@id/searchContainer"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:clipToPadding="false"
-                android:orientation="vertical"
+                android:layout_height="match_parent"
                 android:layout_centerHorizontal="true"
-                android:scrollbars="vertical"
-                android:layout_below="@id/tvPopularProjects"
-                tools:listitem="@layout/provider_list" />
+                tools:listitem="@layout/category_fragment_list"
+                android:layout_gravity="center"/>
         </RelativeLayout>
 
 
-
     </ScrollView>
+
 
 </FrameLayout>

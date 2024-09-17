@@ -1,32 +1,36 @@
 package com.capstone.peopleconnect.SPrvoider.Fragments
 
+import android.content.Intent
 import android.os.Bundle
-import androidx.fragment.app.Fragment
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
+import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.capstone.peopleconnect.Adapters.SkillsAdapter
+import com.capstone.peopleconnect.Classes.SkillItem
 import com.capstone.peopleconnect.R
+import com.capstone.peopleconnect.SPrvoider.AddSkillsProviderRate
+import com.capstone.peopleconnect.SPrvoider.AddSkillsSProvider
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
+import com.google.firebase.database.*
 
-/**
- * A simple [Fragment] subclass.
- * Use the [SkillsFragmentSProvider.newInstance] factory method to
- * create an instance of this fragment.
- */
 class SkillsFragmentSProvider : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
+    private lateinit var skillsAdapter: SkillsAdapter
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var database: DatabaseReference
+    private var email: String? = null
+    private val TAG = "SkillsFragmentSProvider"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
+            email = it.getString("EMAIL")
         }
     }
 
@@ -34,27 +38,140 @@ class SkillsFragmentSProvider : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_skills_s_provider, container, false)
+        val view = inflater.inflate(R.layout.fragment_skills_s_provider, container, false)
+
+        // Set up RecyclerView and Adapter
+        recyclerView = view.findViewById(R.id.recyclerViewSkills)
+        recyclerView.layoutManager = LinearLayoutManager(context)
+        skillsAdapter = SkillsAdapter(
+            emptyList(),
+            { updatedSkill -> updateSkillVisibilityInDatabase(updatedSkill) },
+            { selectedSkill -> // Handle item click here
+                val intent = Intent(requireContext(), AddSkillsProviderRate::class.java)
+                intent.putExtra("SUBCATEGORY_NAME", selectedSkill.name) // Pass the skill name
+                email?.let { intent.putExtra("EMAIL", it) } // Pass the email
+                startActivity(intent)
+            }
+        )
+        recyclerView.adapter = skillsAdapter
+
+        // Initialize Firebase Database
+        database = FirebaseDatabase.getInstance().reference
+
+        // Retrieve skills data
+        email?.let { retrieveUserSkills(it) }
+
+        //add skill button
+        val addBtn = view.findViewById<ImageButton>(R.id.addBtn)
+        addBtn.setOnClickListener {
+            // Create the intent to start AddSkillsSProvider activity
+            val intent = Intent(requireContext(), AddSkillsSProvider::class.java)
+
+            // Check if email is not null before adding it to the intent
+            email?.let { emailAddress ->
+                intent.putExtra("EMAIL", emailAddress)
+            }
+
+            // Start the activity
+            startActivity(intent)
+        }
+
+        return view
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment SkillsFragmentSProvider.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            SkillsFragmentSProvider().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
+    private fun retrieveUserSkills(email: String) {
+        // Reference the 'skills' collection directly
+        val skillsReference = database.child("skills").orderByChild("user").equalTo(email)
+
+        skillsReference.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val skillsList = mutableListOf<SkillItem>()
+
+                // Iterate over each skill document that matches the email
+                for (skillSnapshot in snapshot.children) {
+                    val skillItemsSnapshot = skillSnapshot.child("skillItems")
+
+                    for (skillItem in skillItemsSnapshot.children) {
+                        val skillName = skillItem.child("name").getValue(String::class.java) ?: ""
+                        val isVisible = skillItem.child("visible").getValue(Boolean::class.java) ?: true
+
+                        // Retrieve the image from category
+                        findImageForSkill(skillName) { imageUrl ->
+                            val skillItemObj = SkillItem(name = skillName, visible = isVisible, image = imageUrl)
+                            skillsList.add(skillItemObj)
+
+                            // Check the size of skillsList before updating the adapter
+                            Log.d(TAG, "Skills List Size: ${skillsList.size}")
+                            skillsAdapter.updateSkillsList(skillsList)
+                        }
+                    }
                 }
             }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "Error retrieving skills: ${error.message}")
+            }
+        })
+    }
+
+    private fun findImageForSkill(skillName: String, callback: (String) -> Unit) {
+        database.child("category").addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                for (category in snapshot.children) {
+                    val subCategoriesSnapshot = category.child("Sub Categories")
+
+                    // Search in each subcategory for the matching skill name
+                    for (subCategory in subCategoriesSnapshot.children) {
+                        val subName = subCategory.child("name").getValue(String::class.java)
+                        val image = subCategory.child("image").getValue(String::class.java)
+
+                        if (subName == skillName) {
+                            // Found the image for the skill, return it via the callback
+                            Log.d(TAG, "Match Found: $subName, Image: $image")
+                            callback(image ?: "")
+                            return // Exit loop once a match is found
+                        }
+                    }
+                }
+                // If no match found, return an empty string
+                callback("")
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "Error retrieving categories: ${error.message}")
+                callback("") // Return empty string on error
+            }
+        })
+    }
+
+    private fun updateSkillVisibilityInDatabase(skill: SkillItem) {
+        val databaseReference = FirebaseDatabase.getInstance().reference.child("skills")
+
+        // Find the skill item in the database
+        databaseReference.orderByChild("user").equalTo(email).addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                for (skillSnapshot in snapshot.children) {
+                    val skillItemsSnapshot = skillSnapshot.child("skillItems")
+
+                    for (skillItemSnapshot in skillItemsSnapshot.children) {
+                        val skillName = skillItemSnapshot.child("name").getValue(String::class.java)
+
+                        if (skillName == skill.name) {
+                            skillItemSnapshot.ref.child("visible").setValue(skill.visible)
+                                .addOnSuccessListener {
+                                    Log.d(TAG, "Skill visibility updated successfully")
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.e(TAG, "Failed to update skill visibility", e)
+                                }
+                        }
+                    }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "Database error: ${error.message}")
+            }
+        })
     }
 }

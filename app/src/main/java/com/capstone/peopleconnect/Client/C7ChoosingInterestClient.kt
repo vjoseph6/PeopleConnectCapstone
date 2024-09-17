@@ -97,19 +97,19 @@ class C7ChoosingInterestClient : AppCompatActivity() {
                     val image = categorySnapshot.child("image").getValue(String::class.java) ?: ""
 
                     val interests = mutableListOf<Interest>()
-                    for (interestSnapshot in categorySnapshot.children) {
-                        if (interestSnapshot.key?.toIntOrNull() != null) {
-                            val interestName = interestSnapshot.getValue(String::class.java) ?: continue
-                            val interest = Interest(name = interestName, type = interestSnapshot.key!!)
-                            interests.add(interest)
-                            allInterests.add(interest) // Add to all interests
-                        }
+                    for (interestSnapshot in categorySnapshot.child("Sub Categories").children) {
+                        val interestName = interestSnapshot.child("name").getValue(String::class.java) ?: continue
+                        val interestImage = interestSnapshot.child("image").getValue(String::class.java) ?: ""
+                        val interest = Interest(name = interestName, image = interestImage)
+                        interests.add(interest)
+                        allInterests.add(interest)
                     }
+
                     categories.add(Category(image = image, name = name, interests = interests))
                 }
 
                 setupCategoriesRecyclerView(categories)
-                setupInterestsRecyclerView(allInterests) // Display all interests initially
+                setupInterestsRecyclerView(allInterests)
             } else {
                 Toast.makeText(this, "No categories found in the database.", Toast.LENGTH_SHORT).show()
             }
@@ -117,6 +117,7 @@ class C7ChoosingInterestClient : AppCompatActivity() {
             Toast.makeText(this, "Failed to fetch categories from the database.", Toast.LENGTH_SHORT).show()
         }
     }
+
 
     private fun setupCategoriesRecyclerView(categories: List<Category>) {
         categoriesAdapter.updateData(categories)

@@ -84,7 +84,7 @@ class SettingsSecurityFragmentClient : Fragment() {
                             }
                         }
                     } else {
-                        // Handle re-authentication error
+                        Toast.makeText(requireContext(), "Current Password Incorrect", Toast.LENGTH_SHORT).show()
                     }
                 }
             }

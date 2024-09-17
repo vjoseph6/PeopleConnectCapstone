@@ -1,16 +1,24 @@
 package com.capstone.peopleconnect.Client.Fragments
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.capstone.peopleconnect.Adapters.ServiceProviderAdapter
+import com.capstone.peopleconnect.Classes.SkillItem
+import com.capstone.peopleconnect.Classes.Skills
 import com.capstone.peopleconnect.Classes.User
 import com.capstone.peopleconnect.R
-import com.google.firebase.database.*
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+
 
 class HomeFragmentClient : Fragment() {
 
@@ -42,17 +50,18 @@ class HomeFragmentClient : Fragment() {
         email?.let { clientEmail ->
             databaseReference = FirebaseDatabase.getInstance().getReference("users")
 
-            // Fetch client interests based on email, then fetch service providers
+            // Fetch client interests based on email
             fetchClientInterestsByEmail(clientEmail) { interests ->
                 clientInterests = interests
-                fetchServiceProviders() // Fetch providers only after interests are loaded
+
+                // Fetch service providers based on skills collection
+                fetchServiceProvidersBySkills(clientInterests, clientEmail)
             }
         }
     }
 
     // Function to fetch the logged-in client's interests using email
     private fun fetchClientInterestsByEmail(email: String, onInterestsFetched: (List<String>) -> Unit) {
-        // Query the database to find the user by email and retrieve their interests
         val clientReference = FirebaseDatabase.getInstance()
             .getReference("users")
             .orderByChild("email")
@@ -63,7 +72,9 @@ class HomeFragmentClient : Fragment() {
                 val interests = mutableListOf<String>()
                 for (userSnapshot in snapshot.children) {
                     val user = userSnapshot.getValue(User::class.java)
-                    user?.interest?.let { interests.addAll(it) } // Assuming interests are stored as a list
+                    user?.interest?.let { interestList ->
+                        interests.addAll(interestList) // Add all interests directly
+                    }
                 }
                 onInterestsFetched(interests) // Pass the interests list to the callback
             }
@@ -74,28 +85,68 @@ class HomeFragmentClient : Fragment() {
         })
     }
 
-    // Fetch service providers and filter by client's interests
-    private fun fetchServiceProviders() {
-        databaseReference.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
+    // Fetch service providers and filter by client's interests and skill visibility
+    private fun fetchServiceProvidersBySkills(clientInterests: List<String>, clientEmail: String) {
+        val skillsReference = FirebaseDatabase.getInstance().getReference("skills")
+
+        // Fetch all skill entries in the 'skills' collection
+        skillsReference.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(skillSnapshot: DataSnapshot) {
                 val serviceProviderList = mutableListOf<User>()
 
-                for (userSnapshot in snapshot.children) {
-                    val user = userSnapshot.getValue(User::class.java)
-                    if (user?.roles?.contains("Service Provider") == true) {
-                        val providerSkills = user.skills ?: emptyList() // Assuming user.skills is a list of skills
+                for (skillUserSnapshot in skillSnapshot.children) {
+                    val userEmail = skillUserSnapshot.child("user").getValue(String::class.java) ?: continue
 
-                        // Check if the provider has at least one matching skill with the client's interests
-                        if (providerSkills.any { skill -> clientInterests.contains(skill) }) {
-                            serviceProviderList.add(user)
+                    // Now fetch the corresponding user from 'users' collection using the email
+                    fetchUserByEmail(userEmail) { user ->
+                        // Check if the user is a "Service Provider"
+                        if (user?.roles?.contains("Service Provider") == true) {
+                            val skillItemsSnapshot = skillUserSnapshot.child("skillItems")
+
+                            // Collect skills where `visible` is true and match with client interests
+                            val visibleSkills = skillItemsSnapshot.children.filter { skillItem ->
+                                val skill = skillItem.getValue(SkillItem::class.java)
+                                skill != null && skill.visible && clientInterests.contains(skill.name)
+                            }
+
+                            // If the service provider has matching skills and isn't the logged-in user, add to the list
+                            if (visibleSkills.isNotEmpty() && user.email != clientEmail) {
+                                serviceProviderList.add(user)
+                            }
+
+                            // After processing all service providers, update the RecyclerView
+                            if (serviceProviderList.isNotEmpty()) {
+                                val serviceProviderAdapter = ServiceProviderAdapter(serviceProviderList)
+                                val gridLayoutManager = GridLayoutManager(requireContext(), 2)
+                                recyclerView.layoutManager = gridLayoutManager
+                                recyclerView.adapter = serviceProviderAdapter
+                            }
                         }
                     }
                 }
+            }
 
-                if (serviceProviderList.isNotEmpty()) {
-                    serviceProviderAdapter = ServiceProviderAdapter(serviceProviderList)
-                    recyclerView.adapter = serviceProviderAdapter
+            override fun onCancelled(error: DatabaseError) {
+                // Handle errors
+            }
+        })
+    }
+
+    // Fetch user by email from 'users' collection
+    private fun fetchUserByEmail(email: String, onUserFetched: (User?) -> Unit) {
+        val usersReference = FirebaseDatabase.getInstance()
+            .getReference("users")
+            .orderByChild("email")
+            .equalTo(email)
+
+        usersReference.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                for (userSnapshot in snapshot.children) {
+                    val user = userSnapshot.getValue(User::class.java)
+                    onUserFetched(user)
+                    return // Assuming only one user per email, so we return after the first match
                 }
+                onUserFetched(null) // No user found
             }
 
             override fun onCancelled(error: DatabaseError) {

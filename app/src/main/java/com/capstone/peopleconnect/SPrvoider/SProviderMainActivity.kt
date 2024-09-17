@@ -3,7 +3,6 @@ package com.capstone.peopleconnect.SPrvoider
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.fragment.app.Fragment
-import com.capstone.peopleconnect.Client.Fragments.HomeFragmentClient
 import com.capstone.peopleconnect.R
 import com.capstone.peopleconnect.SProvider.Fragments.ProfileFragmentSProvider
 import com.capstone.peopleconnect.SPrvoider.Fragments.ActivityFragmentSProvider
@@ -29,8 +28,20 @@ class SProviderMainActivity : AppCompatActivity() {
 
         val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
 
-        if (savedInstanceState == null) {
-            loadFragment(HomeFragmentSProvider(),  fName, mName, lName, userName, userAddress, email, profileImageUrl)
+        // Check if an intent extra is provided to load a specific fragment
+        val fragmentToLoad = intent.getStringExtra("FRAGMENT_TO_LOAD")
+        if (fragmentToLoad != null) {
+            when (fragmentToLoad) {
+                "SkillsFragmentSProvider" -> {
+                    loadFragment(SkillsFragmentSProvider(), fName, mName, lName, userName, userAddress, email, profileImageUrl)
+                    bottomNavigationView.selectedItemId = R.id.skills
+                }
+                // Handle other fragments if needed
+            }
+        } else if (savedInstanceState == null) {
+            // Default fragment
+            loadFragment(HomeFragmentSProvider(), fName, mName, lName, userName, userAddress, email, profileImageUrl)
+            bottomNavigationView.selectedItemId = R.id.home
         }
 
         bottomNavigationView.setOnItemSelectedListener { item ->

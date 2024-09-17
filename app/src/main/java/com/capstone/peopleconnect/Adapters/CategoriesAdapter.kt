@@ -23,7 +23,7 @@ class CategoriesAdapter(
 
         fun bind(category: Category) {
             categoryName.text = category.name
-            Picasso.get().load(category.image).placeholder(R.drawable.profile).into(categoryImage)
+            Picasso.get().load(category.image).into(categoryImage)
 
             itemView.setOnClickListener {
                 onCategoryClick(category) // Pass the category when clicked

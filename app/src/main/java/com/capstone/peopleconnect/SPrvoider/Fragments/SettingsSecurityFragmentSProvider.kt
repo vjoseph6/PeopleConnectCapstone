@@ -14,16 +14,6 @@ import com.capstone.peopleconnect.R
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-/**
- * A simple [Fragment] subclass.
- * Use the [SettingsSecurityFragmentSProvider.newInstance] factory method to
- * create an instance of this fragment.
- */
 class SettingsSecurityFragmentSProvider : Fragment() {
     private var email: String? = null
     private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
@@ -90,11 +80,11 @@ class SettingsSecurityFragmentSProvider : Fragment() {
                                 Toast.makeText(requireContext(), "Updated Password Successfully", Toast.LENGTH_SHORT).show()
                                 requireActivity().supportFragmentManager.popBackStack()
                             } else {
-                                Toast.makeText(requireContext(), "Current Password Incorrect", Toast.LENGTH_SHORT).show()
+
                             }
                         }
                     } else {
-                        // Handle re-authentication error
+                        Toast.makeText(requireContext(), "Current Password Incorrect", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -103,7 +93,7 @@ class SettingsSecurityFragmentSProvider : Fragment() {
 
     companion object {
         @JvmStatic
-        fun newInstance(email: String?) = SettingsSecurityFragmentClient().apply {
+        fun newInstance(email: String?) = SettingsSecurityFragmentSProvider().apply {
             arguments = Bundle().apply {
                 putString("EMAIL", email)
             }

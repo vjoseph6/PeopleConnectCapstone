@@ -49,4 +49,6 @@
         libero vel nunc consequat, quis tincidunt nisl eleifend. Cras bibendum enim a justo luctus
         vestibulum. Fusce dictum libero quis erat maximus, vitae volutpat diam dignissim.
     </string>
+    <string name="subText">Share your experience in service. Let them know why you are the best service provider in the city</string>
+    <string name="expText"><![CDATA[Service & Experience]]></string>
 </resources>

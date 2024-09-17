@@ -12,6 +12,8 @@ import com.capstone.peopleconnect.Adapters.CategoriesAdapter
 import com.capstone.peopleconnect.Adapters.InterestAdapter
 import com.capstone.peopleconnect.Classes.Category
 import com.capstone.peopleconnect.Classes.Interest
+import com.capstone.peopleconnect.Classes.SkillItem
+import com.capstone.peopleconnect.Classes.Skills
 import com.capstone.peopleconnect.Client.ClientMainActivity
 import com.capstone.peopleconnect.R
 import com.google.firebase.database.DataSnapshot
@@ -94,19 +96,19 @@ class SP7ChooseSkillSProvider : AppCompatActivity() {
                     val image = categorySnapshot.child("image").getValue(String::class.java) ?: ""
 
                     val interests = mutableListOf<Interest>()
-                    for (interestSnapshot in categorySnapshot.children) {
-                        if (interestSnapshot.key?.toIntOrNull() != null) {
-                            val interestName = interestSnapshot.getValue(String::class.java) ?: continue
-                            val interest = Interest(name = interestName, type = interestSnapshot.key!!)
-                            interests.add(interest)
-                            allInterests.add(interest) // Add to all interests
-                        }
+                    for (interestSnapshot in categorySnapshot.child("Sub Categories").children) {
+                        val interestName = interestSnapshot.child("name").getValue(String::class.java) ?: continue
+                        val interestImage = interestSnapshot.child("image").getValue(String::class.java) ?: ""
+                        val interest = Interest(name = interestName, image = interestImage)
+                        interests.add(interest)
+                        allInterests.add(interest)
                     }
+
                     categories.add(Category(image = image, name = name, interests = interests))
                 }
 
                 setupCategoriesRecyclerView(categories)
-                setupInterestsRecyclerView(allInterests) // Display all interests initially
+                setupInterestsRecyclerView(allInterests)
             } else {
                 Toast.makeText(this, "No categories found in the database.", Toast.LENGTH_SHORT).show()
             }
@@ -145,17 +147,30 @@ class SP7ChooseSkillSProvider : AppCompatActivity() {
     }
 
     private fun saveSelectedInterests(email: String) {
-        val databaseReference = FirebaseDatabase.getInstance().reference.child("users")
+        val databaseReference = FirebaseDatabase.getInstance().reference.child("skills")
 
-        databaseReference.orderByChild("email").equalTo(email)
+        // Check if the user exists based on the email
+        databaseReference.orderByChild("user").equalTo(email)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (snapshot.exists()) {
+                        // If the user already exists, update their skills list
                         for (userSnapshot in snapshot.children) {
-                            val userId = userSnapshot.key
+                            // Get the selected interests and create a list of SkillItem objects
                             val selectedInterests = interestsAdapter.getSelectedInterests()
-                            userSnapshot.ref.child("skills").setValue(selectedInterests)
+
+                            // Create a list of SkillItem objects with visible set to true for each interest
+                            val skillItems = selectedInterests.map { interestName ->
+                                SkillItem(name = interestName, visible = true)
+                            }
+
+                            // Create a Skills object with the list of skill items and the user's email
+                            val skills = Skills(skillItems = skillItems, user = email)
+
+                            // Save the Skills object under the 'skills' node
+                            userSnapshot.ref.setValue(skills)
                                 .addOnSuccessListener {
+                                    // Navigate to the next screen
                                     val intent = Intent(this@SP7ChooseSkillSProvider, SProviderMainActivity::class.java).apply {
                                         putExtra("USER_NAME", userName)
                                         putExtra("FIRST_NAME", firstName)
@@ -168,11 +183,38 @@ class SP7ChooseSkillSProvider : AppCompatActivity() {
                                     startActivity(intent)
                                 }
                                 .addOnFailureListener {
-                                    Toast.makeText(this@SP7ChooseSkillSProvider, "Failed to update interests.", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(this@SP7ChooseSkillSProvider, "Failed to update skills.", Toast.LENGTH_SHORT).show()
                                 }
                         }
                     } else {
-                        Toast.makeText(this@SP7ChooseSkillSProvider, "User not found.", Toast.LENGTH_SHORT).show()
+                        // If the user doesn't exist, save a new entry with the list of skill items
+                        val selectedInterests = interestsAdapter.getSelectedInterests()
+
+                        // Create a list of SkillItem objects with visible set to true for each interest
+                        val skillItems = selectedInterests.map { interestName ->
+                            SkillItem(name = interestName, visible = true)
+                        }
+
+                        // Create a Skills object with the list of skill items and the user's email
+                        val skills = Skills(skillItems = skillItems, user = email)
+
+                        // Push the Skills object to the 'skills' node in Firebase
+                        databaseReference.push().setValue(skills)
+                            .addOnSuccessListener {
+                                val intent = Intent(this@SP7ChooseSkillSProvider, SProviderMainActivity::class.java).apply {
+                                    putExtra("USER_NAME", userName)
+                                    putExtra("FIRST_NAME", firstName)
+                                    putExtra("MIDDLE_NAME", middleName)
+                                    putExtra("LAST_NAME", lastName)
+                                    putExtra("USER_ADDRESS", address)
+                                    putExtra("EMAIL", email)
+                                    putExtra("PROFILE_IMAGE_URL", profileImage)
+                                }
+                                startActivity(intent)
+                            }
+                            .addOnFailureListener {
+                                Toast.makeText(this@SP7ChooseSkillSProvider, "Failed to save skills.", Toast.LENGTH_SHORT).show()
+                            }
                     }
                 }
 
@@ -181,4 +223,7 @@ class SP7ChooseSkillSProvider : AppCompatActivity() {
                 }
             })
     }
+
+
+
 }

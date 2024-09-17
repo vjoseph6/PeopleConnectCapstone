@@ -16,6 +16,12 @@
         android:theme="@style/Theme.PeopleConnect"
         tools:targetApi="31">
         <activity
+            android:name=".SPrvoider.AddSkillsProviderRate"
+            android:exported="false" />
+        <activity
+            android:name=".SPrvoider.AddSkillsSProvider"
+            android:exported="false" />
+        <activity
             android:name=".SPrvoider.EmptyLayout"
             android:exported="false" />
         <activity
