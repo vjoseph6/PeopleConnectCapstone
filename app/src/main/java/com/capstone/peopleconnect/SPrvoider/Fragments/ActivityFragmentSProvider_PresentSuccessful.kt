@@ -5,8 +5,6 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import com.capstone.peopleconnect.R
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -18,10 +16,10 @@ private const val ARG_PARAM2 = "param2"
 
 /**
  * A simple [Fragment] subclass.
- * Use the [ActivityFragmentSProvider.newInstance] factory method to
+ * Use the [ActivityFragmentSProvider_PresentSuccessful.newInstance] factory method to
  * create an instance of this fragment.
  */
-class ActivityFragmentSProvider : Fragment() {
+class ActivityFragmentSProvider_PresentSuccessful : Fragment() {
     // TODO: Rename and change types of parameters
     private var param1: String? = null
     private var param2: String? = null
@@ -39,60 +37,38 @@ class ActivityFragmentSProvider : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_activity_s_provider, container, false)
+        return inflater.inflate(
+            R.layout.fragment_activity_s_provider__present_successful,
+            container,
+            false
+        )
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val bottomNavigationView = activity?.findViewById<BottomNavigationView>(R.id.bottom_navigation)
-
-        // Change the type to TextView instead of LinearLayout
-        val tvSuccessful: TextView = view.findViewById(R.id.tvSuccessful_Present)
-        tvSuccessful.setOnClickListener {
-            val presentSuccessfulFragment = ActivityFragmentSProvider_PresentSuccessful()
+        // Handle the click on the Booking TextView
+        val tvBooking: TextView = view.findViewById(R.id.tvBooking_Successful)
+        tvBooking.setOnClickListener {
+            val presentBookingFragment = ActivityFragmentSProvider()
             parentFragmentManager.beginTransaction()
-                .replace(R.id.frame_layout, presentSuccessfulFragment)
+                .replace(R.id.fragment_container_present_successful, presentBookingFragment)
                 .addToBackStack(null)
                 .commit()
-
-//            // Hide the bottom navigation bar
-//            bottomNavigationView?.visibility = View.GONE
-
         }
 
-        // Change the type to TextView instead of LinearLayout
-        val tvFailed: TextView = view.findViewById(R.id.tvFailed_Present)
+        // Handle the click on the Failed TextView
+        val tvFailed: TextView = view.findViewById(R.id.tvFailed_Successful)
         tvFailed.setOnClickListener {
             val presentFailedFragment = ActivityFragmentSProvider_PresentFailed()
             parentFragmentManager.beginTransaction()
-                .replace(R.id.frame_layout, presentFailedFragment)
+                .replace(R.id.fragment_container_present_successful, presentFailedFragment)
                 .addToBackStack(null)
                 .commit()
-
-//            // Hide the bottom navigation bar
-//            bottomNavigationView?.visibility = View.GONE
-
-        }
-
-        // Change the type to TextView instead of LinearLayout
-        val tvPast: TextView = view.findViewById(R.id.tvPast_Present)
-        tvPast.setOnClickListener {
-            val pastSuccessfulFragment = ActivityFragmentSProvider_PastSuccessful()
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.frame_layout, pastSuccessfulFragment)
-                .addToBackStack(null)
-                .commit()
-
-//            // Hide the bottom navigation bar
-//            bottomNavigationView?.visibility = View.GONE
-
         }
 
 
     }
-
-
 
     companion object {
         /**
@@ -101,12 +77,12 @@ class ActivityFragmentSProvider : Fragment() {
          *
          * @param param1 Parameter 1.
          * @param param2 Parameter 2.
-         * @return A new instance of fragment ActivityFragmentSProvider.
+         * @return A new instance of fragment ActivityFragmentSProvider_PresentSuccessful.
          */
         // TODO: Rename and change types and number of parameters
         @JvmStatic
         fun newInstance(param1: String, param2: String) =
-            ActivityFragmentSProvider().apply {
+            ActivityFragmentSProvider_PresentSuccessful().apply {
                 arguments = Bundle().apply {
                     putString(ARG_PARAM1, param1)
                     putString(ARG_PARAM2, param2)
