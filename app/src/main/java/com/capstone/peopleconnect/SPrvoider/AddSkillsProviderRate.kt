@@ -26,8 +26,8 @@ import com.google.firebase.database.ValueEventListener
 class AddSkillsProviderRate : AppCompatActivity() {
 
     private lateinit var email: String
-    private lateinit var subcategoryName: String
     private lateinit var skillName: String
+    private lateinit var profileImage: String
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_skills_provider_rate)
@@ -35,6 +35,7 @@ class AddSkillsProviderRate : AppCompatActivity() {
         // Retrieve the skill name and email from the intent
         skillName = intent.getStringExtra("SUBCATEGORY_NAME").toString()
         email = intent.getStringExtra("EMAIL").toString()
+        profileImage = intent.getStringExtra("PROFILE_IMAGE_URL").toString()
         Log.d("AddSkillProviderRate", email)
         Log.d("AddSkillProviderRate", skillName)
 
@@ -131,10 +132,10 @@ class AddSkillsProviderRate : AppCompatActivity() {
 
                         currentSkillsRef.setValue(existingSkills).addOnCompleteListener { task ->
                             if (task.isSuccessful) {
-                                // Send an intent to SProviderMainActivity to load SkillsFragmentSProvider
                                 val intent = Intent(this@AddSkillsProviderRate, SProviderMainActivity::class.java).apply {
                                     putExtra("FRAGMENT_TO_LOAD", "SkillsFragmentSProvider")
                                     putExtra("EMAIL", email)
+                                    putExtra("PROFILE_IMAGE_URL", profileImage)
                                 }
                                 startActivity(intent)
                                 finish() // Optionally finish this activity

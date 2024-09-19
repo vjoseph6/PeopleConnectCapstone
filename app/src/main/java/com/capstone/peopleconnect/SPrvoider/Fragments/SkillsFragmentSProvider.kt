@@ -28,6 +28,7 @@ class SkillsFragmentSProvider : Fragment() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var database: DatabaseReference
     private var email: String? = null
+    private var profileImage: String? = null
     private lateinit var emptyView: RelativeLayout
     private val TAG = "SkillsFragmentSProvider"
 
@@ -36,6 +37,8 @@ class SkillsFragmentSProvider : Fragment() {
         super.onCreate(savedInstanceState)
         arguments?.let {
             email = it.getString("EMAIL")
+            profileImage = it.getString("PROFILE_IMAGE_URL") ?: ""
+            Log.d("URL PASSED SKILLS", "$profileImage")
         }
     }
 
@@ -65,6 +68,7 @@ class SkillsFragmentSProvider : Fragment() {
             { updatedSkill -> updateSkillVisibilityInDatabase(updatedSkill) },
             { selectedSkill -> // Handle item click here
                 val intent = Intent(requireContext(), AddSkillsProviderRate::class.java)
+                intent.putExtra("PROFILE_IMAGE_URL", profileImage)
                 intent.putExtra("SUBCATEGORY_NAME", selectedSkill.name) // Pass the skill name
                 email?.let { intent.putExtra("EMAIL", it) } // Pass the email
                 startActivity(intent)

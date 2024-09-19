@@ -18,7 +18,6 @@ class AddSkillsSProvider : AppCompatActivity() {
     private lateinit var databaseReference: DatabaseReference
     private var categories = mutableListOf<Category>()
     private var isInSubcategoriesView = false  // Track if we're viewing subcategories
-    private var previousCategories = mutableListOf<Category>()  // Store the previous categories
     private lateinit var email: String
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

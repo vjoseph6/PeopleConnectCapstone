@@ -51,8 +51,7 @@ class SProviderMainActivity : AppCompatActivity() {
             when (fragmentToLoad) {
                 "SkillsFragmentSProvider" -> {
                     val email = intent.getStringExtra("EMAIL")
-                    Log.d("email retrieved","$email")
-                    loadFragment(SkillsFragmentSProvider(), "home", firstName, middleName, lastName, userName, address, email, profileImage)
+                    loadFragment(SkillsFragmentSProvider(), "skills", firstName, middleName, lastName, userName, address, email, profileImage)
                     bottomNavigationView.selectedItemId = R.id.skills
                 }
                 // Handle other fragments if needed
@@ -91,21 +90,25 @@ class SProviderMainActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        if (backPressedOnce) {
-            finishAffinity()  // Exit the app
-            super.onBackPressed()
+        val currentFragment = supportFragmentManager.findFragmentById(R.id.frame_layout)
+
+        if (currentFragment is HomeFragmentSProvider) {
+            if (backPressedOnce) {
+                finishAffinity()
+                return
+            } else {
+                Toast.makeText(this, "Press back again to exit the application", Toast.LENGTH_SHORT).show()
+                backPressedOnce = true
+                Handler().postDelayed({ backPressedOnce = false }, 2000)
+            }
         } else {
-            // Show a Toast message if back was pressed once
-            Toast.makeText(this, "Press back again to exit the application", Toast.LENGTH_SHORT).show()
-            backPressedOnce = true
-            // Reset the flag after a short delay
-            Handler().postDelayed({ backPressedOnce = false }, 2000)
+            super.onBackPressed() // Normal back press behavior for other fragments
         }
     }
 
 
+
     private fun loadFragment(fragment: Fragment, tag: String, firstName: String?, middleName: String?, lastName: String?, userName: String?, userAddress: String?, email: String?, profileImageUrl: String?) {
-        // Create a new Bundle and add the data
         val bundle = Bundle().apply {
             putString("USER_NAME", userName)
             putString("FIRST_NAME", firstName)
@@ -113,20 +116,15 @@ class SProviderMainActivity : AppCompatActivity() {
             putString("LAST_NAME", lastName)
             putString("USER_ADDRESS", userAddress)
             putString("EMAIL", email)
-            putString("PROFILE_IMAGE_URL", profileImageUrl)
+            putString("PROFILE_IMAGE_URL", profileImageUrl)  // Ensure profile image is passed here
         }
-
-        // Set the arguments on the fragment
         fragment.arguments = bundle
 
-        // Get the FragmentTransaction
-        val transaction = supportFragmentManager.beginTransaction()
-        transaction.replace(R.id.frame_layout, fragment, tag)
-
-        // Add the transaction to the back stack
-        transaction.addToBackStack(tag)
-
-        // Commit the transaction
-        transaction.commit()
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.frame_layout, fragment, tag)
+            .commit()
     }
+
+
+
 }
