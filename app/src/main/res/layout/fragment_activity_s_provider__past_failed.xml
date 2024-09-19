@@ -5,8 +5,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:id="@+id/fragment_container_present_booking"
-    tools:context=".SPrvoider.Fragments.ActivityFragmentSProvider">
+    android:id="@+id/fragment_container_past_failed"
+    tools:context=".SPrvoider.Fragments.ActivityFragmentSProvider_PastFailed">
 
     <TextView
         android:id="@+id/tvMyActivity"
@@ -63,28 +63,28 @@
         app:layout_constraintHorizontal_bias="0.5">
 
         <TextView
-            android:id="@+id/tvPresent"
+            android:id="@+id/tvPresent_Past_Failed"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Present"
             android:textSize="28sp"
-            android:textColor="@color/blue"
+            android:textColor="@color/black"
             android:fontFamily="@font/bold_poppins"
             android:layout_marginEnd="25dp"/>
 
         <TextView
-            android:id="@+id/tvPast_Present"
+            android:id="@+id/tvPast"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Past"
             android:textSize="28sp"
-            android:textColor="@color/black"
+            android:textColor="@color/blue"
             android:fontFamily="@font/bold_poppins"/>
     </LinearLayout>
 
     <!-- Sub-tabs for Bookings -->
     <LinearLayout
-        android:id="@+id/subBookingsLayout"
+        android:id="@+id/subBookingsLayout_Past_Failed"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -96,17 +96,7 @@
         app:layout_constraintHorizontal_bias="0.5">
 
         <TextView
-            android:id="@+id/tvBooking_Present"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Booking"
-            android:textSize="16sp"
-            android:textColor="@color/blue"
-            android:fontFamily="@font/bold_poppins"
-            android:layout_marginEnd="24dp"/>
-
-        <TextView
-            android:id="@+id/tvSuccessful_Present"
+            android:id="@+id/tvSuccessful_Past_Failed"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Successful"
@@ -116,12 +106,12 @@
             android:layout_marginEnd="24dp"/>
 
         <TextView
-            android:id="@+id/tvFailed_Present"
+            android:id="@+id/tvFailed_Past_Failed"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Failed"
             android:textSize="16sp"
-            android:textColor="@color/black"
+            android:textColor="@color/blue"
             android:fontFamily="@font/bold_poppins"/>
     </LinearLayout>
 
@@ -131,9 +121,10 @@
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        tools:listitem="@layout/present_item_booking"
-        app:layout_constraintTop_toBottomOf="@id/subBookingsLayout"
+        tools:listitem="@layout/past_item_successful"
+        app:layout_constraintTop_toBottomOf="@id/subBookingsLayout_Past_Failed"
         app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginTop="16dp"/>
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
