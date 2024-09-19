@@ -224,6 +224,7 @@ class AddSkillsProviderRate : AppCompatActivity() {
                                         val intent = Intent(this@AddSkillsProviderRate, SProviderMainActivity::class.java).apply {
                                             putExtra("FRAGMENT_TO_LOAD", "SkillsFragmentSProvider")
                                             putExtra("EMAIL", email)
+                                            putExtra("PROFILE_IMAGE_URL", profileImage)
                                         }
                                         startActivity(intent)
                                         finish() // Optionally finish this activity
