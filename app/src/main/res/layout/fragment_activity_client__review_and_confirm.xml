@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".Client.Fragments.ActivityFragmentClient_ReviewAndConfirm">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/green">
+
+
+        <ImageButton
+            android:id="@+id/btnBackClient"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="44dp"
+            android:background="@drawable/back_button_background_client"
+            android:src="@drawable/backbtn2_client_"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/filter_by_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Review and Confirm"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:fontFamily="@font/semibold_poppins"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="@id/btnBackClient"
+            app:layout_constraintTop_toTopOf="@id/btnBackClient" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="50dp"
+            android:background="@drawable/client_card_background_top_corners"
+            android:padding="16dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/filter_by_title">
+
+            <!-- User Info Section -->
+            <TextView
+                android:id="@+id/tvUserName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="John Doe"
+                android:textSize="24sp"
+                android:textColor="@color/black"
+                android:fontFamily="@font/bold_poppins"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <TextView
+                android:id="@+id/tvServiceType"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Landscaping"
+                android:fontFamily="@font/medium_poppins"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvUserName" />
+
+            <TextView
+                android:id="@+id/tvDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sunday, July 21, 2024"
+                android:textSize="14sp"
+                android:textColor="@color/gray"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvServiceType" />
+
+            <ImageView
+                android:id="@+id/userProfileImage"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:src="@drawable/profile"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <!-- Payment Info -->
+            <TextView
+                android:id="@+id/tvPayment"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="Payment"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:fontFamily="@font/medium_poppins"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvDate" />
+
+            <ImageView
+                android:id="@+id/paymentIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginStart="8dp"
+                android:src="@drawable/ic_payment_client"
+                app:layout_constraintEnd_toStartOf="@+id/paymentArrow"
+                app:layout_constraintStart_toEndOf="@id/tvPayment"
+                app:layout_constraintTop_toTopOf="@id/tvPayment" />
+
+            <TextView
+                android:id="@+id/tvPaymentInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="...19776423"
+                android:textSize="14sp"
+                android:textColor="@color/gray"
+                app:layout_constraintStart_toEndOf="@id/paymentIcon"
+                app:layout_constraintTop_toTopOf="@id/paymentIcon"
+                android:layout_marginStart="8dp" />
+
+            <ImageView
+                android:id="@+id/paymentArrow"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/arrow"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/tvPayment" />
+
+            <!-- Activity Summary Section -->
+            <TextView
+                android:id="@+id/tvActivitySummary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Activity Summary"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:fontFamily="@font/medium_poppins"
+                android:layout_marginTop="16dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvPayment" />
+
+            <!-- Activity Rows -->
+            <TextView
+                android:id="@+id/tvActivity1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Lorem Ipsum is simply dummy text"
+                android:textSize="14sp"
+                android:fontFamily="@font/regular_poppins"
+                android:textColor="@color/black"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvActivitySummary" />
+
+
+            <TextView
+                android:id="@+id/tvActivity1Price"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="₱567.00"
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/tvActivity1" />
+
+            <!-- Activity Rows -->
+            <TextView
+                android:id="@+id/tvActivity2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Lorem Ipsum is simply dummy text"
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                android:fontFamily="@font/regular_poppins"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvActivity1" />
+
+            <TextView
+                android:id="@+id/tvActivity2Price"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="₱567.00"
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/tvActivity2" />
+
+
+            <!-- Activity Rows -->
+            <TextView
+                android:id="@+id/tvActivity3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Lorem Ipsum is simply dummy text"
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                app:layout_constraintStart_toStartOf="parent"
+                android:fontFamily="@font/regular_poppins"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvActivity2" />
+
+            <TextView
+                android:id="@+id/tvActivity3Price"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="₱567.00"
+                android:textSize="14sp"
+                android:textColor="@color/black"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/tvActivity3" />
+
+
+
+            <!-- Total Rate -->
+            <TextView
+                android:id="@+id/tvTotalRate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Total Rate"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:fontFamily="@font/semibold_poppins"
+                android:layout_marginTop="16dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvActivity3" />
+
+            <TextView
+                android:id="@+id/tvTotalRatePrice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="₱944.00"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/tvTotalRate" />
+
+            <!-- Confirm and Chat Button -->
+            <Button
+                android:id="@+id/btnConfirmAndChat"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:textColor="@color/white"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/btn_rounded_corner_client"
+                android:backgroundTint="@color/green"
+                android:fontFamily="@font/medium_poppins"
+                android:text="Confirm and Chat"
+                android:textAllCaps="false"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvTotalRate" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+</ScrollView>

@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".Client.Fragments.ActivityFragmentClient_ProviderProfile">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/green">
+
+        <!-- Back Button -->
+        <ImageButton
+            android:id="@+id/btnBackClient"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="44dp"
+            android:background="@drawable/back_button_background_client"
+            android:src="@drawable/backbtn2_client_"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Provider Profile Title -->
+        <TextView
+            android:id="@+id/filter_by_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Provider Profile"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:fontFamily="@font/semibold_poppins"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="@id/btnBackClient"
+            app:layout_constraintTop_toTopOf="@id/btnBackClient" />
+
+        <!-- Profile Section -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="50dp"
+            android:background="@drawable/client_card_background_top_corners"
+            android:padding="16dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/filter_by_title">
+
+            <!-- Profile Image -->
+            <ImageView
+                android:id="@+id/profileImage"
+                android:layout_width="70dp"
+                android:layout_height="60dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:src="@drawable/profile"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <!-- Name and Book Now Button -->
+            <TextView
+                android:id="@+id/providerName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="John Doe"
+                android:textColor="@color/black"
+                android:textSize="25sp"
+            android:fontFamily="@font/bold_poppins"
+            android:layout_marginStart="8dp"
+            app:layout_constraintStart_toEndOf="@id/profileImage"
+            app:layout_constraintTop_toTopOf="@id/profileImage"
+            app:layout_constraintBottom_toBottomOf="@id/profileImage" />
+
+            <Button
+                android:id="@+id/bookNowButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Book Now"
+                android:textAllCaps="false"
+                android:textSize="12sp"
+                android:fontFamily="@font/regular_poppins"
+                android:background="@drawable/btn_rounded_corner_client"
+                android:backgroundTint="@color/green"
+                android:textColor="@color/white"
+                android:layout_marginEnd="16dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/providerName"
+                app:layout_constraintBottom_toBottomOf="@id/providerName" />
+
+            <!-- Rating -->
+            <TextView
+                android:id="@+id/providerRating"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="★ 4.9 (50 Reviews)"
+                android:textColor="@color/black"
+                android:textSize="14sp"
+                android:padding="4dp"
+                android:layout_marginTop="8dp"
+                app:layout_constraintStart_toStartOf="@id/providerName"
+                app:layout_constraintTop_toBottomOf="@id/providerName"
+                app:layout_constraintBottom_toBottomOf="@id/profileImage" />
+
+            <!-- Works Section Title -->
+            <TextView
+                android:id="@+id/worksTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Works"
+                android:textColor="@color/black"
+                android:textSize="18sp"
+                android:fontFamily="@font/semibold_poppins"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/profileImage"
+                android:layout_marginTop="16dp"/>
+
+            <!-- RecyclerView for Works -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/worksRecyclerView"
+                android:layout_width="0dp"
+                android:layout_height="120dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/worksTitle"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal"
+                tools:listitem="@layout/item_work_clientimage_for_provider"/>
+
+            <!-- Offered Services Section -->
+            <TextView
+                android:id="@+id/servicesTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Offered Services"
+                android:textColor="@color/black"
+                android:textSize="18sp"
+                android:fontFamily="@font/semibold_poppins"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/worksRecyclerView"
+                android:layout_marginTop="16dp"/>
+
+            <!-- RecyclerView for Services -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/servicesRecyclerView"
+                android:layout_width="0dp"
+                android:layout_height="120dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/servicesTitle"
+                android:layout_marginTop="8dp"
+                tools:listitem="@layout/client_item_popular_services"/>
+
+            <!-- Service & Experience Section -->
+            <TextView
+                android:id="@+id/experienceTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Service and Experience"
+                android:textColor="@color/black"
+                android:textSize="18sp"
+                android:fontFamily="@font/semibold_poppins"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/servicesRecyclerView"
+                android:layout_marginTop="12dp"/>
+
+            <TextView
+                android:id="@+id/experienceDescription"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. "
+                android:textColor="@color/gray"
+                android:textSize="14sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/experienceTitle"
+                android:layout_marginTop="8dp"/>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</ScrollView>

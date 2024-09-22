@@ -5,6 +5,8 @@
     <color name="green">#59A52C</color>
     <color name="red">#F00D0D</color>
     <color name="blue">#0593D8</color>
+    <color name="yellow">#FFBF00</color>
+    <color name="elegant_gray">#FFBDBDBD</color>
     <color name="highlighted_button">#00FF00</color> <!-- Green color -->
     <color name="default_button">#FFFFFF</color> <!-- White color -->
     <color name="gray">#E5E5E5</color>

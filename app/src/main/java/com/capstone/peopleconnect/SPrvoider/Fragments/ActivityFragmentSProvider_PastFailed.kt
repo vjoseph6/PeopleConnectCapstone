@@ -55,8 +55,8 @@ class ActivityFragmentSProvider_PastFailed : Fragment() {
                 .addToBackStack(null)
                 .commit()
 
-            // Optionally hide the bottom navigation bar
-            bottomNavigationView?.visibility = View.GONE
+//            // Optionally hide the bottom navigation bar
+//            bottomNavigationView?.visibility = View.GONE
         }
 
         // TextView for Present tab
@@ -67,9 +67,9 @@ class ActivityFragmentSProvider_PastFailed : Fragment() {
                 .replace(R.id.frame_layout, presentSuccessfulFragment)
                 .addToBackStack(null)
                 .commit()
-
-            // Optionally hide the bottom navigation bar
-            bottomNavigationView?.visibility = View.GONE
+//
+//            // Optionally hide the bottom navigation bar
+//            bottomNavigationView?.visibility = View.GONE
         }
     }
 
