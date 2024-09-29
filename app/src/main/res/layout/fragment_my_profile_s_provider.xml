@@ -206,6 +206,7 @@
                 android:fontFamily="@font/medium_poppins"
                 android:text="Save"
                 android:textAllCaps="false"
+                style="@style/BlueButtonStyle"
                 android:textColor="@android:color/white"
                 android:textSize="14sp"
                 app:layout_constraintEnd_toEndOf="parent"

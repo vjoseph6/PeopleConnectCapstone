@@ -10,8 +10,7 @@
         android:icon="@drawable/sprovider_activity"/>
     <item
         android:id="@+id/mic"
-        android:title=""
-        android:icon="@drawable/sprovider_mic"/>
+        android:title=""/>
     <item
         android:id="@+id/skills"
         android:title="Skills"

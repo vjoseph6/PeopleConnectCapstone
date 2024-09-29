@@ -52,6 +52,7 @@
         android:fontFamily="@font/regular_poppins"
         android:background="@drawable/btn_rounded_corner_sprovider"
         android:textColor="@color/white"
+        style="@style/BlueButtonStyle"
         android:textAllCaps="false"
         android:text="Next"
         android:layout_marginBottom="50dp"

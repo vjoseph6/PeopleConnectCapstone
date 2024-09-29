@@ -99,11 +99,18 @@ class AddSkillsProviderRate : AppCompatActivity() {
         val skillRate = findViewById<EditText>(R.id.rateEditText).text.toString().toIntOrNull() ?: 0
         val skillDescription = findViewById<EditText>(R.id.expEditText).text.toString()
 
+        if (skillRate == null || skillDescription.isBlank()) {
+            Toast.makeText(this, "Please enter a valid rate and description", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Create SkillItem with rating set to default (0)
         val skillItem = SkillItem(
             name = skillName,
             visible = true,
             description = skillDescription,
-            skillRate = skillRate
+            skillRate = skillRate,
+            rating = 0  // By default, new skills have a rating of 0
         )
 
         val skillsReference = FirebaseDatabase.getInstance().getReference("skills")
@@ -121,12 +128,16 @@ class AddSkillsProviderRate : AppCompatActivity() {
                             }
                         }
 
+                        // Find and update or add the skill
                         val existingSkill = existingSkills.find { it.name == skillItem.name }
                         if (existingSkill != null) {
+                            // Update the existing skill's fields, including rating
                             existingSkill.description = skillItem.description
                             existingSkill.skillRate = skillItem.skillRate
                             existingSkill.visible = true
+                            existingSkill.rating = skillItem.rating  // Ensure rating is included
                         } else {
+                            // Add the new skill with default rating
                             existingSkills.add(skillItem)
                         }
 
@@ -138,10 +149,9 @@ class AddSkillsProviderRate : AppCompatActivity() {
                                     putExtra("PROFILE_IMAGE_URL", profileImage)
                                 }
                                 startActivity(intent)
-                                finish() // Optionally finish this activity
+                                finish()
 
                                 Toast.makeText(this@AddSkillsProviderRate, "Skill saved successfully!", Toast.LENGTH_SHORT).show()
-
                             } else {
                                 Log.e("AddSkillProviderRate", "Error updating skills: ${task.exception?.message}")
                             }
@@ -154,16 +164,14 @@ class AddSkillsProviderRate : AppCompatActivity() {
                     )
                     skillsReference.push().setValue(newUserSkills).addOnCompleteListener { task ->
                         if (task.isSuccessful) {
-                            // Send an intent to SProviderMainActivity to load SkillsFragmentSProvider
                             val intent = Intent(this@AddSkillsProviderRate, SProviderMainActivity::class.java).apply {
                                 putExtra("FRAGMENT_TO_LOAD", "SkillsFragmentSProvider")
                                 putExtra("EMAIL", email)
                             }
                             startActivity(intent)
-                            finish() // Optionally finish this activity
+                            finish()
 
                             Toast.makeText(this@AddSkillsProviderRate, "New skill added successfully!", Toast.LENGTH_SHORT).show()
-
                         } else {
                             Log.e("AddSkillProviderRate", "Error adding new user: ${task.exception?.message}")
                         }

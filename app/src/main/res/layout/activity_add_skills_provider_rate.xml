@@ -143,6 +143,7 @@
                 android:layout_marginTop="30dp"
                 android:text="Save"
                 android:textColor="@color/white"
+                style="@style/BlueButtonStyle"
                 android:textAllCaps="false"
                 android:fontFamily="@font/regular_poppins"
                 android:background="@drawable/btn_rounded_corner_sprovider"

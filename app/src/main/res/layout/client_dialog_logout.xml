@@ -28,6 +28,7 @@
         android:textAllCaps="false"
         android:layout_below="@id/tvLogoutTitle"
         android:layout_marginBottom="10dp"
+        style="@style/GreenButtonStyle"
         android:fontFamily="@font/regular_poppins" />
 
     <TextView

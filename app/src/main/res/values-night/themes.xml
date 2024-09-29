@@ -1,11 +1,25 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Theme.PeopleConnect" parent="Theme.AppCompat.Light.NoActionBar">
-
+    <style name="Theme.PeopleConnect" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">@color/green</item>
+        <item name="colorAccent">@color/blue</item>
+        <item name="colorPrimaryDark">@color/gray</item>
     </style>
+
+    <!-- Style for the first button with green color -->
+    <style name="GreenButtonStyle" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">@color/green</item>  <!-- Green color -->
+    </style>
+
+    <!-- Style for the second button with blue color -->
+    <style name="BlueButtonStyle" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">@color/blue</item>  <!-- Blue color -->
+        <item name="android:textSize">12sp</item>
+    </style>
+
     <!-- Base application theme. -->
     <style name="Base.Theme.PeopleConnect" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <!-- Customize your light theme here. -->
     </style>
+
 </resources>

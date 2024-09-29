@@ -139,6 +139,7 @@
             android:textColor="@color/white"
             android:textAllCaps="false"
             android:fontFamily="@font/regular_poppins"
+            style="@style/BlueButtonStyle"
             android:background="@drawable/btn_rounded_corner_sprovider"
             app:layout_constraintTop_toBottomOf="@id/forgotPassword"
             app:layout_constraintStart_toStartOf="parent"

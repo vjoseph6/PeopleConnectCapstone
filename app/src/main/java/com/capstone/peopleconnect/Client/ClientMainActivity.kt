@@ -38,6 +38,7 @@ class ClientMainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_client_main)
 
+
         email = intent.getStringExtra("EMAIL") ?: ""
         firstName = intent.getStringExtra("FIRST_NAME") ?: ""
         userName = intent.getStringExtra("USER_NAME") ?: ""
@@ -48,7 +49,7 @@ class ClientMainActivity : AppCompatActivity() {
 
 
         // Reference to BottomNavigationView
-        bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+        bottomNavigationView = findViewById(R.id.bottom_navigation)
 
         // Load the HomeFragmentClient as the default fragment
         if (savedInstanceState == null) {

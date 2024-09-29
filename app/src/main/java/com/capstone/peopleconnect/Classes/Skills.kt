@@ -10,6 +10,7 @@ data class SkillItem(
     var visible: Boolean = true,
     val image: String = "",
     var description: String = "",
-    var skillRate: Int = 0
+    var skillRate: Int = 0,
+    var rating: Int = 0
 )
 

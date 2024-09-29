@@ -159,6 +159,7 @@
             android:backgroundTint="@color/blue"
             android:fontFamily="@font/medium_poppins"
             android:text="Save"
+            style="@style/BlueButtonStyle"
             android:textAllCaps="false"
             android:textColor="@android:color/white"
             android:textSize="14sp"
