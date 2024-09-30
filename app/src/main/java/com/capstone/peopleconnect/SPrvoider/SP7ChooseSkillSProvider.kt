@@ -4,7 +4,6 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Button
-import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -14,7 +13,6 @@ import com.capstone.peopleconnect.Classes.Category
 import com.capstone.peopleconnect.Classes.Interest
 import com.capstone.peopleconnect.Classes.SkillItem
 import com.capstone.peopleconnect.Classes.Skills
-import com.capstone.peopleconnect.Client.ClientMainActivity
 import com.capstone.peopleconnect.R
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -161,7 +159,7 @@ class SP7ChooseSkillSProvider : AppCompatActivity() {
 
                             // Create a list of SkillItem objects with visible set to true for each interest
                             val skillItems = selectedInterests.map { interestName ->
-                                SkillItem(name = interestName, visible = true)
+                                SkillItem(name = interestName, visible = true, rating = 0.0f)
                             }
 
                             // Create a Skills object with the list of skill items and the user's email
@@ -192,7 +190,7 @@ class SP7ChooseSkillSProvider : AppCompatActivity() {
 
                         // Create a list of SkillItem objects with visible set to true for each interest
                         val skillItems = selectedInterests.map { interestName ->
-                            SkillItem(name = interestName, visible = true)
+                            SkillItem(name = interestName, visible = true, rating = 0.0f)
                         }
 
                         // Create a Skills object with the list of skill items and the user's email
