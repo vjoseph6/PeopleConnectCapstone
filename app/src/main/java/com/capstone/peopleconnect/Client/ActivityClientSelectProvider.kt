@@ -64,7 +64,7 @@ class ActivityClientSelectProvider : AppCompatActivity() {
                                     Log.d("SkillMatch", "Skill: $skillName, Rate: $skillRate, Description: $description, Rating: $rating, User: $user")
 
                                     // Pass the data, including the rating, to retrieve the userName from the "users" node
-                                    retrieveUserName(user!!, skillName, skillRate, description, rating)
+                                    retrieveUserName(user!!, skillName, skillRate, description, rating, email) // Pass the email
                                 }
                             }
                         } else {
@@ -83,7 +83,7 @@ class ActivityClientSelectProvider : AppCompatActivity() {
     }
 
     // Function to retrieve userName from the "users" node based on userEmail
-    private fun retrieveUserName(userEmail: String, skillName: String?, skillRate: Int?, description: String?, rating: Float?) {
+    private fun retrieveUserName(userEmail: String, skillName: String?, skillRate: Int?, description: String?, rating: Float?, intentEmail: String?) {
         val userRef = FirebaseDatabase.getInstance().getReference("users")
 
         userRef.orderByChild("email").equalTo(userEmail)
@@ -94,20 +94,25 @@ class ActivityClientSelectProvider : AppCompatActivity() {
                             val userName = userSnapshot.child("name").getValue(String::class.java)
                             val imageUrl = userSnapshot.child("profileImageUrl").getValue(String::class.java)
 
-                            // Log the retrieved data for debugging
-                            Log.d("UserData", "UserName: $userName, ImageURL: $imageUrl, Skill: $skillName, Rate: $skillRate, Description: $description, Rating: $rating")
+                            // Check if the userEmail matches the email retrieved from the intent
+                            if (userEmail != intentEmail) {
+                                // Log the retrieved data for debugging
+                                Log.d("UserData", "UserName: $userName, ImageURL: $imageUrl, Skill: $skillName, Rate: $skillRate, Description: $description, Rating: $rating")
 
-                            // Pass the skillName as the provider category name
-                            providerList.add(
-                                ProviderData(
-                                    name = skillName, // This represents the provider category
-                                    skillRate = skillRate,
-                                    description = description,
-                                    userName = userName,
-                                    imageUrl = imageUrl,
-                                    rating = rating
+                                // Pass the skillName as the provider category name
+                                providerList.add(
+                                    ProviderData(
+                                        name = skillName, // This represents the provider category
+                                        skillRate = skillRate,
+                                        description = description,
+                                        userName = userName,
+                                        imageUrl = imageUrl,
+                                        rating = rating
+                                    )
                                 )
-                            )
+                            } else {
+                                Log.d("UserData", "Skipping user with email: $userEmail, as it matches the intent email: $intentEmail")
+                            }
                         }
                         providerAdapter.notifyDataSetChanged()
                     } else {
@@ -120,6 +125,5 @@ class ActivityClientSelectProvider : AppCompatActivity() {
                 }
             })
     }
-
 
 }
