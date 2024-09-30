@@ -54,7 +54,7 @@
             android:stepSize="0.5"
             android:isIndicator="true"
             android:layout_marginTop="2dp"
-            android:progressTint="#FFCE1B"
+            android:progressTint="#FFFF00"
             android:layout_alignBaseline="@id/providerName" /> <!-- Aligns the stars with the baseline of providerName -->
 
 
