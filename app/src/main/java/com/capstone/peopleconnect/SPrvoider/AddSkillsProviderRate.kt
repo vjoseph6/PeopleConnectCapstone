@@ -10,13 +10,11 @@ import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
-import android.widget.RelativeLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.capstone.peopleconnect.Classes.SkillItem
 import com.capstone.peopleconnect.R
-import com.capstone.peopleconnect.SPrvoider.Fragments.SkillsFragmentSProvider
 
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -110,7 +108,7 @@ class AddSkillsProviderRate : AppCompatActivity() {
             visible = true,
             description = skillDescription,
             skillRate = skillRate,
-            rating = 0  // By default, new skills have a rating of 0
+            rating = 0.0f
         )
 
         val skillsReference = FirebaseDatabase.getInstance().getReference("skills")
@@ -135,7 +133,7 @@ class AddSkillsProviderRate : AppCompatActivity() {
                             existingSkill.description = skillItem.description
                             existingSkill.skillRate = skillItem.skillRate
                             existingSkill.visible = true
-                            existingSkill.rating = skillItem.rating  // Ensure rating is included
+                            existingSkill.rating = skillItem.rating
                         } else {
                             // Add the new skill with default rating
                             existingSkills.add(skillItem)

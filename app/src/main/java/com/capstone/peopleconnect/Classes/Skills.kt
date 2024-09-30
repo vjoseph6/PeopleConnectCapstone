@@ -11,6 +11,6 @@ data class SkillItem(
     val image: String = "",
     var description: String = "",
     var skillRate: Int = 0,
-    var rating: Int = 0
+    var rating: Float = 0.0f
 )
 

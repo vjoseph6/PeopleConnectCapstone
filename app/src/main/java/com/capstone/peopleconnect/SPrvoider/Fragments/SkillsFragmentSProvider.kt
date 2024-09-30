@@ -124,7 +124,7 @@ class SkillsFragmentSProvider : Fragment() {
                         val isVisible = skillItem.child("visible").getValue(Boolean::class.java) ?: true
 
                         findImageForSkill(skillName) { imageUrl ->
-                            val skillItemObj = SkillItem(name = skillName, visible = isVisible, image = imageUrl)
+                            val skillItemObj = SkillItem(name = skillName, visible = isVisible, image = imageUrl, rating = 0.0f)
                             skillsList.add(skillItemObj)
 
                             // Once a skill is added, increase the fetched count

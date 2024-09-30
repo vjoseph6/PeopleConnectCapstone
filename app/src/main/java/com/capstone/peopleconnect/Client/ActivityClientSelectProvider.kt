@@ -3,6 +3,7 @@ package com.capstone.peopleconnect.Client
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.widget.ImageButton
 import com.capstone.peopleconnect.R
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -36,17 +37,17 @@ class ActivityClientSelectProvider : AppCompatActivity() {
         // Retrieve providers
         retrieveProviders()
 
+        val backBtn = findViewById<ImageButton>(R.id.btnBackClient)
+        backBtn.setOnClickListener { onBackPressed() }
+
     }
 
     private fun retrieveProviders() {
-        // Reference to the "skills" node
         val skillsRef = FirebaseDatabase.getInstance().getReference("skills")
 
-        // Fetching the data from the "skills" node
         skillsRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (snapshot.exists()) {
-                    // Iterate over each child of "skills" to access dynamic keys like "-O6zJjtezJ_svfQ02VP7"
                     for (skillSetSnapshot in snapshot.children) {
                         val user = skillSetSnapshot.child("user").getValue(String::class.java)
                         val skillItemsSnapshot = skillSetSnapshot.child("skillItems")
@@ -56,13 +57,14 @@ class ActivityClientSelectProvider : AppCompatActivity() {
                                 val skillName = skillSnapshot.child("name").getValue(String::class.java)
                                 val skillRate = skillSnapshot.child("skillRate").getValue(Int::class.java)
                                 val description = skillSnapshot.child("description").getValue(String::class.java)
+                                val rating = skillSnapshot.child("rating").getValue(Float::class.java) // Fetch rating from Firebase
 
                                 // Check if the skill name matches the selected subCategoryName
                                 if (skillName != null && skillName == subCategoryName) {
-                                    Log.d("SkillMatch", "Skill: $skillName, Rate: $skillRate, Description: $description, User: $user")
+                                    Log.d("SkillMatch", "Skill: $skillName, Rate: $skillRate, Description: $description, Rating: $rating, User: $user")
 
-                                    // Pass the data to retrieve the userName from the "users" node
-                                    retrieveUserName(user!!, skillName, skillRate, description)
+                                    // Pass the data, including the rating, to retrieve the userName from the "users" node
+                                    retrieveUserName(user!!, skillName, skillRate, description, rating)
                                 }
                             }
                         } else {
@@ -80,9 +82,8 @@ class ActivityClientSelectProvider : AppCompatActivity() {
         })
     }
 
-
     // Function to retrieve userName from the "users" node based on userEmail
-    private fun retrieveUserName(userEmail: String, skillName: String?, skillRate: Int?, description: String?) {
+    private fun retrieveUserName(userEmail: String, skillName: String?, skillRate: Int?, description: String?, rating: Float?) {
         val userRef = FirebaseDatabase.getInstance().getReference("users")
 
         userRef.orderByChild("email").equalTo(userEmail)
@@ -94,20 +95,20 @@ class ActivityClientSelectProvider : AppCompatActivity() {
                             val imageUrl = userSnapshot.child("profileImageUrl").getValue(String::class.java)
 
                             // Log the retrieved data for debugging
-                            Log.d("UserData", "UserName: $userName, ImageURL: $imageUrl, Skill: $skillName, Rate: $skillRate, Description: $description")
+                            Log.d("UserData", "UserName: $userName, ImageURL: $imageUrl, Skill: $skillName, Rate: $skillRate, Description: $description, Rating: $rating")
 
-                            // Add the retrieved data to the provider list and notify the adapter
+                            // Pass the skillName as the provider category name
                             providerList.add(
                                 ProviderData(
-                                    name = skillName,
+                                    name = skillName, // This represents the provider category
                                     skillRate = skillRate,
                                     description = description,
                                     userName = userName,
-                                    imageUrl = imageUrl // Adding imageUrl to ProviderData
+                                    imageUrl = imageUrl,
+                                    rating = rating
                                 )
                             )
                         }
-                        // Notify adapter after all items are added
                         providerAdapter.notifyDataSetChanged()
                     } else {
                         Log.d("UserData", "No user found with email: $userEmail")
@@ -115,9 +116,10 @@ class ActivityClientSelectProvider : AppCompatActivity() {
                 }
 
                 override fun onCancelled(error: DatabaseError) {
-                    // Handle errors if necessary
                     Log.e("UserData", "Database error: ${error.message}")
                 }
             })
     }
+
+
 }

@@ -5,5 +5,6 @@ data class ProviderData(
     val skillRate: Int?,
     val description: String?,
     val userName: String?,
-    val imageUrl: String?
+    val imageUrl: String?,
+    val rating: Float?
 )
