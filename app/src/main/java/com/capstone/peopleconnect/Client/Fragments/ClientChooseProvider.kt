@@ -22,7 +22,7 @@ class ClientChooseProvider : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Removed unnecessary setContentView
+        // Retrieve arguments passed to the fragment
         arguments?.let {
             subCategoryName = it.getString("SUBCATEGORY_NAME")
             email = it.getString("EMAIL")
@@ -41,7 +41,6 @@ class ClientChooseProvider : Fragment() {
 
         val backBtn = view.findViewById<ImageButton>(R.id.btnBackClient)
         backBtn.setOnClickListener {
-
             val categoryFragment = CategoryFragmentClient().apply {
                 arguments = Bundle().apply {
                     putString("EMAIL", email)
@@ -51,8 +50,8 @@ class ClientChooseProvider : Fragment() {
 
             // Perform the fragment transaction with the tag and email
             requireActivity().supportFragmentManager.beginTransaction()
-                .replace(R.id.frame_layout, categoryFragment, "CategoryFragmentClient") // Use the correct container ID
-                .addToBackStack(null) // Add to back stack so the user can navigate back further
+                .replace(R.id.frame_layout, categoryFragment, "CategoryFragmentClient")
+                .addToBackStack(null)
                 .commit()
         }
 
@@ -75,7 +74,7 @@ class ClientChooseProvider : Fragment() {
                     for (skillSetSnapshot in snapshot.children) {
                         val user = skillSetSnapshot.child("user").getValue(String::class.java)
 
-                        // First validation: Skip if the user matches the current user's email
+                        // Skip if the user matches the current user's email
                         if (user == email) {
                             continue
                         }
@@ -90,7 +89,7 @@ class ClientChooseProvider : Fragment() {
                                 val rating = skillSnapshot.child("rating").getValue(Float::class.java)
                                 val isVisible = skillSnapshot.child("visible").getValue(Boolean::class.java) ?: false
 
-                                // Second validation: Check if the skill name matches and the skill is visible
+                                // Check if the skill name matches and the skill is visible
                                 if (skillName == subCategoryName && isVisible) {
                                     Log.d("SkillMatch", "Skill: $skillName, Rate: $skillRate, Description: $description, Rating: $rating, User: $user")
                                     user?.let { retrieveUserName(it, skillName, skillRate, description, rating) }
@@ -114,6 +113,7 @@ class ClientChooseProvider : Fragment() {
     }
 
     private fun retrieveUserName(userEmail: String, skillName: String?, skillRate: Int?, description: String?, rating: Float?) {
+        // Function to retrieve userName from the "users" node based on userEmail
         val userRef = FirebaseDatabase.getInstance().getReference("users")
 
         userRef.orderByChild("email").equalTo(userEmail)
@@ -123,19 +123,23 @@ class ClientChooseProvider : Fragment() {
                         for (userSnapshot in snapshot.children) {
                             val userName = userSnapshot.child("name").getValue(String::class.java)
                             val imageUrl = userSnapshot.child("profileImageUrl").getValue(String::class.java)
-
                             Log.d("UserData", "UserName: $userName, ImageURL: $imageUrl, Skill: $skillName, Rate: $skillRate, Description: $description, Rating: $rating")
 
-                            providerList.add(
-                                ProviderData(
-                                    name = skillName,
-                                    skillRate = skillRate,
-                                    description = description,
-                                    userName = userName,
-                                    imageUrl = imageUrl,
-                                    rating = rating
+                            // Check if the userEmail matches the email retrieved from the intent
+                            if (userEmail != email) { // use email from the fragment arguments
+                                providerList.add(
+                                    ProviderData(
+                                        name = skillName,
+                                        skillRate = skillRate,
+                                        description = description,
+                                        userName = userName,
+                                        imageUrl = imageUrl,
+                                        rating = rating
+                                    )
                                 )
-                            )
+                            } else {
+                                Log.d("UserData", "Skipping user with email: $userEmail, as it matches the intent email: $email")
+                            }
                         }
                         providerAdapter.notifyDataSetChanged()
                     } else {
