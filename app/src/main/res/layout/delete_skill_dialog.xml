@@ -37,6 +37,7 @@
             android:background="@drawable/btn_rounded_corner_sprovider"
             android:fontFamily="@font/regular_poppins"
             android:text="Delete"
+            style="@style/BlueButtonStyle"
             android:textAllCaps="false"
             android:textColor="@color/white" />
 

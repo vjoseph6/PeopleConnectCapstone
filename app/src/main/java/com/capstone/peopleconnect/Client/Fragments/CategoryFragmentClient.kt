@@ -2,7 +2,6 @@ package com.capstone.peopleconnect.Client.Fragments
 
 
 
-import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
@@ -10,19 +9,13 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageButton
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.capstone.peopleconnect.Adapters.AddSkillsCategoryAdapter
 import com.capstone.peopleconnect.Adapters.CategoryAdapter
-import com.capstone.peopleconnect.Adapters.ProviderAdapter
 import com.capstone.peopleconnect.Classes.Category
-import com.capstone.peopleconnect.Client.ActivityClientSelectProvider
 import com.capstone.peopleconnect.R
-import com.capstone.peopleconnect.SPrvoider.AddSkillsProviderRate
 import com.google.firebase.database.*
 
 class CategoryFragmentClient : Fragment() {
@@ -71,7 +64,7 @@ class CategoryFragmentClient : Fragment() {
                 requireActivity().finishAffinity()  // Exit the app
             } else {
                 backPressedOnce = true
-                Toast.makeText(context, "Press again to exit", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Press again to exit the application", Toast.LENGTH_SHORT).show()
                 backPressHandler.postDelayed({ backPressedOnce = false }, 2000)  // Reset after 2 seconds
             }
         }
@@ -130,19 +123,27 @@ class CategoryFragmentClient : Fragment() {
                     isInSubcategoriesView = true  // Set the flag when subcategories are displayed
 
                     categoryAdapter = CategoryAdapter(subcategoryList) { subcategory ->
-                        val intent = Intent(requireContext(), ActivityClientSelectProvider::class.java)
-                        intent.putExtra("SUBCATEGORY_NAME", subcategory.name)
-                        intent.putExtra("EMAIL", email)
+                        // Create a new instance of ClientChooseProvider using the companion object
+                        val clientChooseProviderFragment = ClientChooseProvider.newInstance(
+                            subCategoryName = subcategory.name,
+                            email = email.toString()
+                        )
+
+                        // Navigate to the ClientChooseProvider fragment
+                        requireActivity().supportFragmentManager.beginTransaction()
+                            .replace(R.id.frame_layout, clientChooseProviderFragment) // Adjust the container ID as necessary
+                            .addToBackStack(null)
+                            .commit()
+
                         Log.d("SUB CATEGORY", subcategory.name)
                         Log.d("EMAIL", email.toString())
-                        startActivity(intent)
                     }
-
-                    recyclerView.adapter = categoryAdapter
+                recyclerView.adapter = categoryAdapter
                 } else {
                     // Handle empty subcategory list case if needed
                     recyclerView.adapter = null  // Clear adapter if no subcategories found
                 }
+
             }
 
             override fun onCancelled(error: DatabaseError) {

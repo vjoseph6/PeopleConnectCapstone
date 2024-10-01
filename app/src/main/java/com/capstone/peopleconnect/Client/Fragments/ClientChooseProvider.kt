@@ -1,18 +1,20 @@
-package com.capstone.peopleconnect.Client
+package com.capstone.peopleconnect.Client.Fragments
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageButton
-import com.capstone.peopleconnect.R
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.capstone.peopleconnect.Adapters.ProviderAdapter
 import com.capstone.peopleconnect.Classes.ProviderData
+import com.capstone.peopleconnect.R
 import com.google.firebase.database.*
 
-class ActivityClientSelectProvider : AppCompatActivity() {
-
+class ClientChooseProvider : Fragment() {
     private lateinit var providerAdapter: ProviderAdapter
     private val providerList = mutableListOf<ProviderData>()
     private var subCategoryName: String? = null
@@ -20,26 +22,48 @@ class ActivityClientSelectProvider : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_client_select_provider)
+        // Removed unnecessary setContentView
+        arguments?.let {
+            subCategoryName = it.getString("SUBCATEGORY_NAME")
+            email = it.getString("EMAIL")
+        }
+    }
 
-        // Get the passed extras
-        subCategoryName = intent.getStringExtra("SUBCATEGORY_NAME")
-        email = intent.getStringExtra("EMAIL")
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        // Inflate the layout for this fragment
+        val view = inflater.inflate(R.layout.fragment_client_choose_provider, container, false)
 
-        Log.d("Data Retrieved", "The sub is $subCategoryName and email is $email")
-
-        // Setup RecyclerView
-        val recyclerView = findViewById<RecyclerView>(R.id.categoryRecyclerView)
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        providerAdapter = ProviderAdapter(providerList)
-        recyclerView.adapter = providerAdapter
-
-        // Retrieve providers
+        setupRecyclerView(view)
         retrieveProviders()
 
-        val backBtn = findViewById<ImageButton>(R.id.btnBackClient)
-        backBtn.setOnClickListener { onBackPressed() }
+        val backBtn = view.findViewById<ImageButton>(R.id.btnBackClient)
+        backBtn.setOnClickListener {
 
+            val categoryFragment = CategoryFragmentClient().apply {
+                arguments = Bundle().apply {
+                    putString("EMAIL", email)
+                    putString("FRAGMENT_TO_LOAD", "CategoryFragmentClient")
+                }
+            }
+
+            // Perform the fragment transaction with the tag and email
+            requireActivity().supportFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, categoryFragment, "CategoryFragmentClient") // Use the correct container ID
+                .addToBackStack(null) // Add to back stack so the user can navigate back further
+                .commit()
+        }
+
+        return view
+    }
+
+    private fun setupRecyclerView(view: View) {
+        val recyclerView = view.findViewById<RecyclerView>(R.id.categoryRecyclerView)
+        recyclerView.layoutManager = LinearLayoutManager(requireContext())
+        providerAdapter = ProviderAdapter(providerList)
+        recyclerView.adapter = providerAdapter
     }
 
     private fun retrieveProviders() {
@@ -50,6 +74,12 @@ class ActivityClientSelectProvider : AppCompatActivity() {
                 if (snapshot.exists()) {
                     for (skillSetSnapshot in snapshot.children) {
                         val user = skillSetSnapshot.child("user").getValue(String::class.java)
+
+                        // First validation: Skip if the user matches the current user's email
+                        if (user == email) {
+                            continue
+                        }
+
                         val skillItemsSnapshot = skillSetSnapshot.child("skillItems")
 
                         if (skillItemsSnapshot.exists()) {
@@ -57,14 +87,15 @@ class ActivityClientSelectProvider : AppCompatActivity() {
                                 val skillName = skillSnapshot.child("name").getValue(String::class.java)
                                 val skillRate = skillSnapshot.child("skillRate").getValue(Int::class.java)
                                 val description = skillSnapshot.child("description").getValue(String::class.java)
-                                val rating = skillSnapshot.child("rating").getValue(Float::class.java) // Fetch rating from Firebase
+                                val rating = skillSnapshot.child("rating").getValue(Float::class.java)
+                                val isVisible = skillSnapshot.child("visible").getValue(Boolean::class.java) ?: false
 
-                                // Check if the skill name matches the selected subCategoryName
-                                if (skillName != null && skillName == subCategoryName) {
+                                // Second validation: Check if the skill name matches and the skill is visible
+                                if (skillName == subCategoryName && isVisible) {
                                     Log.d("SkillMatch", "Skill: $skillName, Rate: $skillRate, Description: $description, Rating: $rating, User: $user")
-
-                                    // Pass the data, including the rating, to retrieve the userName from the "users" node
-                                    retrieveUserName(user!!, skillName, skillRate, description, rating)
+                                    user?.let { retrieveUserName(it, skillName, skillRate, description, rating) }
+                                } else if (!isVisible) {
+                                    Log.d("SkillVisibility", "Skipping skill: $skillName as it is not visible.")
                                 }
                             }
                         } else {
@@ -82,7 +113,6 @@ class ActivityClientSelectProvider : AppCompatActivity() {
         })
     }
 
-    // Function to retrieve userName from the "users" node based on userEmail
     private fun retrieveUserName(userEmail: String, skillName: String?, skillRate: Int?, description: String?, rating: Float?) {
         val userRef = FirebaseDatabase.getInstance().getReference("users")
 
@@ -94,13 +124,11 @@ class ActivityClientSelectProvider : AppCompatActivity() {
                             val userName = userSnapshot.child("name").getValue(String::class.java)
                             val imageUrl = userSnapshot.child("profileImageUrl").getValue(String::class.java)
 
-                            // Log the retrieved data for debugging
                             Log.d("UserData", "UserName: $userName, ImageURL: $imageUrl, Skill: $skillName, Rate: $skillRate, Description: $description, Rating: $rating")
 
-                            // Pass the skillName as the provider category name
                             providerList.add(
                                 ProviderData(
-                                    name = skillName, // This represents the provider category
+                                    name = skillName,
                                     skillRate = skillRate,
                                     description = description,
                                     userName = userName,
@@ -121,5 +149,13 @@ class ActivityClientSelectProvider : AppCompatActivity() {
             })
     }
 
-
+    companion object {
+        fun newInstance(subCategoryName: String, email: String) =
+            ClientChooseProvider().apply {
+                arguments = Bundle().apply {
+                    putString("SUBCATEGORY_NAME", subCategoryName)
+                    putString("EMAIL", email)
+                }
+            }
+    }
 }

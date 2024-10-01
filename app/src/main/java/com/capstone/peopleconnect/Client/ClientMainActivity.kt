@@ -14,10 +14,13 @@ import com.capstone.peopleconnect.Client.Fragments.CategoryFragmentClient
 import com.capstone.peopleconnect.Client.Fragments.HomeFragmentClient
 import com.capstone.peopleconnect.Client.Fragments.MicFragmentClient
 import com.capstone.peopleconnect.Client.Fragments.ProfileFragmentClient
+import com.capstone.peopleconnect.Helper.SpeechRecognitionHelper
 import com.capstone.peopleconnect.R
 import com.capstone.peopleconnect.SPrvoider.Fragments.HomeFragmentSProvider
+import com.capstone.peopleconnect.SPrvoider.Fragments.SkillsFragmentSProvider
 import com.google.android.material.bottomnavigation.BottomNavigationMenuView
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 
 class ClientMainActivity : AppCompatActivity() {
@@ -29,15 +32,38 @@ class ClientMainActivity : AppCompatActivity() {
     private lateinit var lastName: String
     private lateinit var address: String
     private lateinit var profileImage: String
-
     private lateinit var bottomNavigationView: BottomNavigationView
-
+    private lateinit var speechRecognitionHelper: SpeechRecognitionHelper
+    private var isListening = false
     private var backPressedOnce = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_client_main)
 
+        val btnToggleListening: FloatingActionButton = findViewById(R.id.btnToggleListening)
+
+        // Initialize the speech recognition helper
+        speechRecognitionHelper = SpeechRecognitionHelper(this)
+
+        // Request microphone permission if not already granted
+        speechRecognitionHelper.requestMicrophonePermission(this)
+
+        // Set the button click listener for starting/stopping speech recognition
+        btnToggleListening.setOnClickListener {
+            if (isListening) {
+                speechRecognitionHelper.stopSpeechToText()
+                isListening = false
+            } else {
+                // Check if the recognizer is initialized
+                if (::speechRecognitionHelper.isInitialized) {
+                    speechRecognitionHelper.startSpeechToText()
+                    isListening = true
+                } else {
+                    Log.d("ClientMainActivity", "SpeechRecognizer not initialized yet.")
+                }
+            }
+        }
 
         email = intent.getStringExtra("EMAIL") ?: ""
         firstName = intent.getStringExtra("FIRST_NAME") ?: ""
@@ -47,13 +73,24 @@ class ClientMainActivity : AppCompatActivity() {
         address = intent.getStringExtra("USER_ADDRESS") ?: ""
         profileImage = intent.getStringExtra("PROFILE_IMAGE_URL") ?: ""
 
-
         // Reference to BottomNavigationView
         bottomNavigationView = findViewById(R.id.bottom_navigation)
 
-        // Load the HomeFragmentClient as the default fragment
-        if (savedInstanceState == null) {
-            loadFragment(HomeFragmentClient(),  "home", firstName, middleName, lastName, userName, address, email, profileImage)
+        // Check if an intent extra is provided to load a specific fragment
+        val fragmentToLoad = intent.getStringExtra("FRAGMENT_TO_LOAD")
+        if (fragmentToLoad != null) {
+            when (fragmentToLoad) {
+                "CategoryFragmentClient" -> {
+                    val email = intent.getStringExtra("EMAIL")
+                    loadFragment(CategoryFragmentClient(), "categories", firstName, middleName, lastName, userName, address, email, profileImage)
+                    bottomNavigationView.selectedItemId = R.id.categories
+                }
+                // Handle other fragments if needed
+            }
+        } else if (savedInstanceState == null) {
+            // Default fragment
+            loadFragment(HomeFragmentClient(), "home", firstName, middleName, lastName, userName, address, email, profileImage)
+            bottomNavigationView.selectedItemId = R.id.home
         }
 
         // Set the item selected listener
@@ -82,18 +119,25 @@ class ClientMainActivity : AppCompatActivity() {
                 else -> false
             }
         }
-
     }
 
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        // Pass the permission result to the helper
+        speechRecognitionHelper.handlePermissionsResult(requestCode, permissions, grantResults)
+    }
+
+
     override fun onBackPressed() {
-        // Get the current fragment
         val currentFragment = supportFragmentManager.findFragmentById(R.id.frame_layout)
 
-        // If the current fragment is CategoryFragmentClient, let the fragment handle the back press
         if (currentFragment is CategoryFragmentClient) {
             (currentFragment as CategoryFragmentClient).handleFragmentBackPress()
         } else {
-            // Handle back press normally
             if (backPressedOnce) {
                 finishAffinity()  // Exit the app
                 super.onBackPressed()
@@ -105,10 +149,7 @@ class ClientMainActivity : AppCompatActivity() {
         }
     }
 
-
-
     private fun loadFragment(fragment: Fragment, tag: String, firstName: String?, middleName: String?, lastName: String?, userName: String?, userAddress: String?, email: String?, profileImageUrl: String?) {
-        // Create a new Bundle and add the data
         val bundle = Bundle().apply {
             putString("USER_NAME", userName)
             putString("FIRST_NAME", firstName)
@@ -119,17 +160,16 @@ class ClientMainActivity : AppCompatActivity() {
             putString("PROFILE_IMAGE_URL", profileImageUrl)
         }
 
-        // Set the arguments on the fragment
         fragment.arguments = bundle
 
-        // Get the FragmentTransaction
-        val transaction = supportFragmentManager.beginTransaction()
-        transaction.replace(R.id.frame_layout, fragment, tag)
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.frame_layout, fragment, tag)
+            .commit()
+    }
 
-        // Add the transaction to the back stack
-        transaction.addToBackStack(tag)
-
-        // Commit the transaction
-        transaction.commit()
+    override fun onDestroy() {
+        super.onDestroy()
+        speechRecognitionHelper.destroy() // Clean up resources
     }
 }
+

@@ -41,7 +41,7 @@
         </com.google.android.material.bottomappbar.BottomAppBar>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_mic"
+        android:id="@+id/btnToggleListening"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:src="@drawable/client_mic"

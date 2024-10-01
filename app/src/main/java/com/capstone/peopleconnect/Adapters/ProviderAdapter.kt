@@ -18,6 +18,7 @@ class ProviderAdapter(private val providerList: MutableList<ProviderData>) : Rec
         val providerCategory: TextView = view.findViewById(R.id.providerCategory) // Reference to provider category
         val providerDescription: TextView = view.findViewById(R.id.providerDescription)
         val providerImage: ImageView = view.findViewById(R.id.providerImage)
+        val skillRate: TextView = view.findViewById(R.id.providerPrice)
         val providerRating: RatingBar = view.findViewById(R.id.providerRating) // Reference to RatingBar
     }
 
@@ -32,6 +33,8 @@ class ProviderAdapter(private val providerList: MutableList<ProviderData>) : Rec
         holder.providerName.text = provider.userName
         holder.providerCategory.text = provider.name // Displaying the provider category
         holder.providerDescription.text = provider.description
+        holder.skillRate.text = "₱ ${provider.skillRate} /hr"
+
         holder.providerRating.rating = provider.rating ?: 0f // Safe call to handle null rating
 
         // Load provider image using Picasso
