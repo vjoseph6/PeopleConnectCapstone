@@ -26,153 +26,55 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"/>
 
-        <!-- Title Text (Image) -->
+        <!-- Logo Image -->
         <ImageView
-            android:id="@+id/titleText"
-            android:layout_width="0dp"
-            android:layout_height="60dp"
+            android:id="@+id/logoImage"
+            android:layout_width="260dp"
+            android:layout_height="46dp"
+            android:layout_marginTop="57dp"
             android:src="@drawable/final_logo__client__short"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/backButton"
-            app:layout_constraintWidth_percent="0.7"/>
+            app:layout_constraintEnd_toEndOf="parent" />
 
-
-        <!-- Create Account Text -->
+        <!-- Subtitle Text -->
         <TextView
-            android:id="@+id/createAccount"
+            android:id="@+id/subtitleText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
             android:fontFamily="@font/medium_poppins"
-            android:text="Create your account"
-            android:textColor="@color/black"
-            android:textSize="16sp"
-            app:layout_constraintTop_toBottomOf="@id/titleText"
+            android:text="Client Service App"
+            android:textColor="#7A7A7A"
+            android:textSize="18sp"
+            app:layout_constraintTop_toBottomOf="@id/logoImage"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Login Prompt -->
+        <TextView
+            android:id="@+id/loginPrompt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="77dp"
+            android:fontFamily="@font/medium_poppins"
+            android:text="Login to your account"
+            android:textColor="@color/black"
+            android:textSize="14sp"
+            app:layout_constraintTop_toBottomOf="@id/subtitleText"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
         <!-- Form Layout -->
         <LinearLayout
             android:id="@+id/formLayout"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
             android:orientation="vertical"
-            app:layout_constraintTop_toBottomOf="@id/createAccount"
+            app:layout_constraintTop_toBottomOf="@id/loginPrompt"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
-
-            <!-- Profile Field -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="3"
-                android:orientation="horizontal">
-
-                <!-- Spacer View -->
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"/>
-
-                <!-- Image View -->
-                <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/profile"
-                    android:layout_width="60dp"
-                    android:layout_height="60dp"
-                    android:src="@drawable/profile"
-                    android:scaleType="centerCrop"
-                    app:layout_constraintTop_toBottomOf="@id/createAccount"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:shapeAppearanceOverlay="@style/CircularImageViewStyle" />
-
-
-                <!-- Spacer View -->
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"/>
-
-            </LinearLayout>
-
-            <!-- First Name Field -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="15dp"
-                android:layout_marginBottom="8dp"
-                android:orientation="horizontal">
-
-                <ImageView
-                    android:layout_width="wrap_content"
-                    android:layout_height="50dp"
-                    android:contentDescription="User Icon"
-                    android:src="@drawable/profile_client_" />
-
-                <EditText
-                    android:id="@+id/fName"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
-                    android:layout_weight="1"
-                    android:textSize="12sp"
-                    android:background="@drawable/green_border"
-                    android:fontFamily="@font/regular_poppins"
-                    android:hint="First Name"
-                    android:singleLine="true"
-                    android:paddingStart="16dp" />
-            </LinearLayout>
-
-            <!-- Middle Name Field -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:orientation="horizontal">
-
-                <ImageView
-                    android:layout_width="wrap_content"
-                    android:layout_height="50dp"
-                    android:contentDescription="User Icon"
-                    android:src="@drawable/profile_client_" />
-
-                <EditText
-                    android:id="@+id/mName"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
-                    android:layout_weight="1"
-                    android:textSize="12sp"
-                    android:background="@drawable/green_border"
-                    android:fontFamily="@font/regular_poppins"
-                    android:hint="Middle Name"
-                    android:singleLine="true"
-                    android:paddingStart="16dp" />
-            </LinearLayout>
-
-            <!-- Last Name Field -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:orientation="horizontal">
-
-                <ImageView
-                    android:layout_width="wrap_content"
-                    android:layout_height="50dp"
-                    android:contentDescription="User Icon"
-                    android:src="@drawable/profile_client_" />
-
-                <EditText
-                    android:id="@+id/lName"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
-                    android:layout_weight="1"
-                    android:textSize="12sp"
-                    android:background="@drawable/green_border"
-                    android:fontFamily="@font/regular_poppins"
-                    android:hint="Last Name"
-                    android:singleLine="true"
-                    android:paddingStart="16dp" />
-            </LinearLayout>
 
             <!-- Email Field -->
             <LinearLayout
@@ -200,42 +102,9 @@
                     android:paddingStart="16dp" />
             </LinearLayout>
 
-            <!-- Email Field -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:orientation="horizontal">
-
-                <ImageView
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
-                    android:contentDescription="Email Icon"
-                    android:src="@drawable/message_client_" />
-
-                <EditText
-                    android:id="@+id/address"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/green_border"
-                    android:textSize="12sp"
-                    android:hint="Address"
-                    android:singleLine="true"
-                    android:fontFamily="@font/regular_poppins"
-                    android:paddingStart="16dp" />
-
-                <ImageView
-                    android:id="@+id/locationBtn"
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
-                    android:layout_marginStart="5dp"
-                    android:contentDescription="Password Icon"
-                    android:src="@drawable/location" />
-            </LinearLayout>
-
             <!-- Password Field -->
             <LinearLayout
+                android:id="@+id/passwordLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
@@ -255,43 +124,48 @@
                     android:background="@drawable/green_border"
                     android:textSize="12sp"
                     android:hint="Password"
+                    android:singleLine="true"
                     android:inputType="textPassword"
                     android:fontFamily="@font/regular_poppins"
                     android:paddingStart="16dp" />
-
             </LinearLayout>
 
-            <!-- Confirm Password Field -->
+            <!-- Password Field -->
             <LinearLayout
+                android:id="@+id/confirmPassLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
+                android:layout_marginBottom="8dp"
                 android:orientation="horizontal">
 
                 <ImageView
                     android:layout_width="50dp"
                     android:layout_height="50dp"
-                    android:contentDescription="Confirm Password Icon"
+                    android:contentDescription="Password Icon"
                     android:src="@drawable/lock_client_" />
 
                 <EditText
-                    android:id="@+id/confirmpass"
+                    android:id="@+id/confirmPass"
                     android:layout_width="0dp"
                     android:layout_height="50dp"
                     android:layout_weight="1"
-                    android:textSize="12sp"
                     android:background="@drawable/green_border"
+                    android:textSize="12sp"
                     android:hint="Confirm Password"
+                    android:singleLine="true"
                     android:inputType="textPassword"
                     android:fontFamily="@font/regular_poppins"
                     android:paddingStart="16dp" />
             </LinearLayout>
+
         </LinearLayout>
+
 
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/formLayout"
+            android:layout_marginTop="95dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
 
@@ -324,6 +198,7 @@
                 android:fontFamily="@font/regular_poppins"
                 android:text="Already have an account? Sign In"
                 android:textColor="#65A82A"
+                android:layout_alignParentBottom="true"
                 android:textSize="14sp"
                 android:layout_below="@id/registerButton" />
 

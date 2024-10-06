@@ -99,6 +99,7 @@
                 android:background="@drawable/sprovider_edit_text_rounded_corner"
                 android:fontFamily="@font/regular_poppins"
                 android:hint="First Name"
+                android:singleLine="true"
                 android:padding="12dp"
                 android:textSize="12sp"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -129,6 +130,7 @@
                 android:fontFamily="@font/regular_poppins"
                 android:hint="Middle Name"
                 android:padding="12dp"
+                android:singleLine="true"
                 android:textSize="12sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -158,40 +160,68 @@
                 android:fontFamily="@font/regular_poppins"
                 android:hint="Last Name"
                 android:padding="12dp"
+                android:singleLine="true"
                 android:textSize="12sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/tvLastName" />
 
-            <!-- Email Input -->
+            <!-- Address Input -->
+
+            <!-- Last Name Input -->
             <TextView
-                android:id="@+id/tvEmail"
+                android:id="@+id/tvAddress"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
                 android:layout_marginTop="15dp"
                 android:fontFamily="@font/medium_poppins"
-                android:text="Email"
+                android:text="Address"
                 android:textColor="@color/blue"
                 android:textSize="14sp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/etLastName" />
+                app:layout_constraintStart_toStartOf="@+id/tvLastName"
+                app:layout_constraintTop_toBottomOf="@+id/etLastName"
+                tools:ignore="MissingConstraints" />
 
-            <EditText
-                android:id="@+id/etEmail"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:id="@+id/addressLayout"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:layout_marginEnd="12dp"
-                android:background="@drawable/sprovider_edit_text_rounded_corner"
-                android:fontFamily="@font/regular_poppins"
-                android:hint="Gmail"
-                android:padding="12dp"
-                android:textSize="12sp"
-                android:enabled="false"
+                android:layout_marginHorizontal="12dp"
+                android:orientation="horizontal"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tvAddress">
+
+                <EditText
+                    android:id="@+id/address"
+                    android:layout_width="0dp"
+                    android:layout_height="50dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/sprovider_edit_text_rounded_corner"
+                    android:fontFamily="@font/regular_poppins"
+                    android:hint="Address"
+                    android:paddingStart="16dp"
+                    android:singleLine="true"
+                    android:textSize="12sp" />
+
+                <ImageView
+                    android:id="@+id/locationBtn"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:singleLine="true"
+                    android:layout_marginStart="5dp"
+                    android:contentDescription="Location Button"
+                    android:src="@drawable/location1" />
+            </LinearLayout>
+
+            <ProgressBar
+                android:id="@+id/progressbar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tvEmail" />
+                android:layout_marginTop="20dp"
+                android:visibility="gone"
+                app:layout_constraintTop_toBottomOf="@+id/addressLayout" />
 
             <!-- Save Button -->
             <Button
@@ -209,9 +239,10 @@
                 style="@style/BlueButtonStyle"
                 android:textColor="@android:color/white"
                 android:textSize="14sp"
+                android:layout_marginBottom="60dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/etEmail" />
+                app:layout_constraintTop_toBottomOf="@id/progressbar" />
 
 
         </androidx.constraintlayout.widget.ConstraintLayout>

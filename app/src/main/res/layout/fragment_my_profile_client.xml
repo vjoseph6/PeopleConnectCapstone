@@ -42,12 +42,14 @@
             android:layout_width="match_parent"
             android:layout_height="600dp"
             android:layout_marginTop="50dp"
+            android:background="@drawable/client_card_background_top_corners"
+            android:padding="16dp"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/filter_by_title"
-            app:layout_constraintBottom_toBottomOf="parent"
-            android:background="@drawable/client_card_background_top_corners"
-            android:padding="16dp">
+            app:layout_constraintVertical_bias="0.0">
 
             <!-- Profile Picture with Edit Icon -->
             <com.google.android.material.imageview.ShapeableImageView
@@ -84,6 +86,7 @@
                 android:text="First Name"
                 android:textColor="@color/green"
                 android:textSize="14sp"
+                android:singleLine="true"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/profilePicture" />
 
@@ -113,6 +116,7 @@
                 android:text="Middle Name"
                 android:textColor="@color/green"
                 android:textSize="14sp"
+                android:singleLine="true"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/etFirstName" />
 
@@ -151,6 +155,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
                 android:layout_marginEnd="12dp"
+                android:singleLine="true"
                 android:background="@drawable/client_edit_text_rounded_corner"
                 android:fontFamily="@font/regular_poppins"
                 android:hint="Last Name"
@@ -160,44 +165,71 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/tvLastName" />
 
-            <!-- Email Input -->
+            <!-- Last Name Input -->
             <TextView
-                android:id="@+id/tvEmail"
+                android:id="@+id/tvAddress"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
                 android:layout_marginTop="15dp"
                 android:fontFamily="@font/medium_poppins"
-                android:text="Email"
+                android:text="Address"
                 android:textColor="@color/green"
                 android:textSize="14sp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/etLastName" />
+                app:layout_constraintStart_toStartOf="@+id/tvLastName"
+                app:layout_constraintTop_toBottomOf="@+id/etLastName"
+                tools:ignore="MissingConstraints" />
 
-            <EditText
-                android:id="@+id/etEmail"
-                android:layout_width="0dp"
+            <!-- Address Input -->
+            <LinearLayout
+                android:id="@+id/addressLayout"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:layout_marginEnd="12dp"
-                android:background="@drawable/client_edit_text_rounded_corner"
-                android:fontFamily="@font/regular_poppins"
-                android:hint="Gmail"
-                android:padding="12dp"
-                android:enabled="false"
-                android:textSize="12sp"
-                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginHorizontal="12dp"
+                android:orientation="horizontal"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tvEmail" />
+                app:layout_constraintTop_toBottomOf="@+id/tvAddress">
+
+                <EditText
+                    android:id="@+id/address"
+                    android:layout_width="0dp"
+                    android:layout_height="50dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/client_edit_text_rounded_corner"
+                    android:fontFamily="@font/regular_poppins"
+                    android:hint="Address"
+                    android:paddingStart="16dp"
+                    android:singleLine="true"
+                    android:textSize="12sp" />
+
+                <ImageView
+                    android:id="@+id/locationBtn"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_marginStart="5dp"
+                    android:contentDescription="Location Button"
+                    android:src="@drawable/location" />
+            </LinearLayout>
 
             <!-- Save Button -->
+
+            <ProgressBar
+                android:id="@+id/progressbar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="20dp"
+                android:visibility="gone"
+                app:layout_constraintTop_toBottomOf="@+id/addressLayout" />
+
             <Button
                 android:id="@+id/btnSave"
+                style="@style/GreenButtonStyle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
-                android:layout_marginTop="25dp"
                 android:layout_marginEnd="12dp"
+                android:layout_marginTop="20dp"
                 android:background="@drawable/btn_rounded_corner_client"
                 android:backgroundTint="@color/green"
                 android:fontFamily="@font/medium_poppins"
@@ -205,18 +237,14 @@
                 android:textAllCaps="false"
                 android:textColor="@android:color/white"
                 android:textSize="14sp"
-                style="@style/GreenButtonStyle"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/etEmail" />
-
+                app:layout_constraintTop_toBottomOf="@+id/progressbar" />
 
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
-
 
 </ScrollView>

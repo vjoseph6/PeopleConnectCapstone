@@ -72,10 +72,6 @@ class SProviderMainActivity : AppCompatActivity() {
                     loadFragment(ActivityFragmentSProvider(),"activities", firstName, middleName, lastName, userName, address, email, profileImage)
                     true
                 }
-                R.id.mic -> {
-                    loadFragment(MicFragmentSProvider(), "mic", firstName, middleName, lastName, userName, address, email, profileImage)
-                    true
-                }
                 R.id.skills -> {
                     loadFragment(SkillsFragmentSProvider(), "skills", firstName, middleName, lastName, userName, address, email, profileImage)
                     true

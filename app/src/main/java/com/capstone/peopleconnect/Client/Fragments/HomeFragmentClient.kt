@@ -89,38 +89,28 @@ class HomeFragmentClient : Fragment() {
     private fun fetchServiceProvidersBySkills(clientInterests: List<String>, clientEmail: String) {
         val skillsReference = FirebaseDatabase.getInstance().getReference("skills")
 
-        // Fetch all skill entries in the 'skills' collection
-        skillsReference.addListenerForSingleValueEvent(object : ValueEventListener {
+        // Use addValueEventListener for real-time updates
+        skillsReference.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(skillSnapshot: DataSnapshot) {
                 val serviceProviderList = mutableListOf<User>()
 
                 for (skillUserSnapshot in skillSnapshot.children) {
                     val userEmail = skillUserSnapshot.child("user").getValue(String::class.java) ?: continue
-
-                    // Now fetch the corresponding user from 'users' collection using the email
                     fetchUserByEmail(userEmail) { user ->
-                        // Check if the user is a "Service Provider"
                         if (user?.roles?.contains("Service Provider") == true) {
                             val skillItemsSnapshot = skillUserSnapshot.child("skillItems")
-
-                            // Collect skills where `visible` is true and match with client interests
                             val visibleSkills = skillItemsSnapshot.children.filter { skillItem ->
                                 val skill = skillItem.getValue(SkillItem::class.java)
                                 skill != null && skill.visible && clientInterests.contains(skill.name)
                             }
 
-                            // If the service provider has matching skills and isn't the logged-in user, add to the list
                             if (visibleSkills.isNotEmpty() && user.email != clientEmail) {
                                 serviceProviderList.add(user)
                             }
 
-                            // After processing all service providers, update the RecyclerView
-                            if (serviceProviderList.isNotEmpty()) {
-                                val serviceProviderAdapter = ServiceProviderAdapter(serviceProviderList)
-                                val gridLayoutManager = GridLayoutManager(requireContext(), 2)
-                                recyclerView.layoutManager = gridLayoutManager
-                                recyclerView.adapter = serviceProviderAdapter
-                            }
+                            recyclerView.layoutManager = GridLayoutManager(requireContext(), 2)
+                            val serviceProviderAdapter = ServiceProviderAdapter(serviceProviderList)
+                            recyclerView.adapter = serviceProviderAdapter
                         }
                     }
                 }

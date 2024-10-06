@@ -104,10 +104,6 @@ class ClientMainActivity : AppCompatActivity() {
                     loadFragment(ActivityFragmentClient(), "activities", firstName, middleName, lastName, userName, address, email, profileImage)
                     true
                 }
-                R.id.mic -> {
-                    loadFragment(MicFragmentClient(), "mic", firstName, middleName, lastName, userName, address, email, profileImage)
-                    true
-                }
                 R.id.categories -> {
                     loadFragment(CategoryFragmentClient(), "categories", firstName, middleName, lastName, userName, address, email, profileImage)
                     true
