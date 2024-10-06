@@ -31,19 +31,13 @@ class ProfileFragmentClient : Fragment() {
     private var userAddress: String? = null
     private var email: String? = null
     private var profileImageUrl: String? = null
-
     private lateinit var userQuery: Query
     private lateinit var valueEventListener: ValueEventListener
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
-            firstName = it.getString("FIRST_NAME")
-            middleName = it.getString("MIDDLE_NAME")
-            lastName = it.getString("LAST_NAME")
-            userAddress = it.getString("USER_ADDRESS")
             email = it.getString("EMAIL")
-            profileImageUrl = it.getString("PROFILE_IMAGE_URL")
         }
 
         email?.let {
@@ -53,7 +47,6 @@ class ProfileFragmentClient : Fragment() {
             // Handle case when email is null
             // Consider showing an error or using a default value
         }
-
     }
 
     override fun onCreateView(
@@ -79,6 +72,8 @@ class ProfileFragmentClient : Fragment() {
                     user?.let {
                         updateUI(user)
                     }
+                } else {
+                    updateUIWithPlaceholders()
                 }
             }
 
@@ -102,9 +97,9 @@ class ProfileFragmentClient : Fragment() {
         val ivProfileImage: ShapeableImageView = view.findViewById(R.id.ivProfileImage)
 
         // Set default values or placeholders if needed
-        tvName.text = ""
-        address.text = ""
-        tvEmail.text = ""
+        tvName.text = "Loading..."
+        address.text = "Loading..."
+        tvEmail.text = "Loading..."
         ivProfileImage.setImageResource(R.drawable.profile) // Placeholder
 
         // Profile icons
@@ -113,9 +108,10 @@ class ProfileFragmentClient : Fragment() {
             val profileFragment = MyProfileFragmentClient.newInstance(
                 firstName = firstName,
                 middleName = middleName,
-                lastName = lastName ,
+                lastName = lastName,
                 email = email,
-                profileImageUrl = profileImageUrl
+                profileImageUrl = profileImageUrl,
+                address = userAddress
             )
             parentFragmentManager.beginTransaction()
                 .replace(R.id.frame_layout, profileFragment)
@@ -123,15 +119,6 @@ class ProfileFragmentClient : Fragment() {
                 .commit()
         }
 
-        // Location icons
-        val locationIcons: LinearLayout = view.findViewById(R.id.locationMenuLayout)
-        locationIcons.setOnClickListener {
-            val locationFragment = LocationFragmentClient()
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.frame_layout, locationFragment)
-                .addToBackStack(null)
-                .commit()
-        }
 
         // Security icons
         val securityIcons: LinearLayout = view.findViewById(R.id.securityMenuLayout_client)
@@ -172,29 +159,57 @@ class ProfileFragmentClient : Fragment() {
             dialog.dismiss()
         }
     }
+
     private fun updateUI(user: User) {
+        firstName = user.firstName
+        middleName = user.middleName
+        lastName = user.lastName
+        userAddress = user.address
+        profileImageUrl = user.profileImageUrl
+
         view?.let { view ->
             val tvName: TextView = view.findViewById(R.id.tvName)
             val tvEmail: TextView = view.findViewById(R.id.tvEmail)
             val address: TextView = view.findViewById(R.id.tvLocation)
             val ivProfileImage: ShapeableImageView = view.findViewById(R.id.ivProfileImage)
 
-            val fullName = "${user.firstName} ${user.middleName} ${user.lastName}".trim()
+            val fullName = "${user.firstName ?: ""} ${user.middleName ?: ""} ${user.lastName ?: ""}".trim().ifEmpty { "No Name" }
             tvName.text = fullName
-            address.text = user.address
             tvEmail.text = user.email
+            address.text = user.address.trim().ifEmpty { "No Address" }
 
-            Picasso.get()
-                .load(user.profileImageUrl)
-                .placeholder(R.drawable.profile)
-                .error(R.drawable.profile)
-                .into(ivProfileImage)
+            // Check if profileImageUrl is not null or empty
+            if (!profileImageUrl.isNullOrEmpty()) {
+                // If the URL is valid, load the image
+                Picasso.get()
+                    .load(profileImageUrl)
+                    .placeholder(R.drawable.profile)  // Placeholder image
+                    .error(R.drawable.profile)        // Error image
+                    .into(ivProfileImage)
+            } else {
+                // If profileImageUrl is empty or null, set a placeholder image
+                ivProfileImage.setImageResource(R.drawable.profile)  // Placeholder image
+            }
+        }
+    }
+
+    private fun updateUIWithPlaceholders() {
+        view?.let { view ->
+            val tvName: TextView = view.findViewById(R.id.tvName)
+            val tvEmail: TextView = view.findViewById(R.id.tvEmail)
+            val address: TextView = view.findViewById(R.id.tvLocation)
+            val ivProfileImage: ShapeableImageView = view.findViewById(R.id.ivProfileImage)
+
+            tvName.text = "No Name"
+            address.text = "No Address"
+            tvEmail.text = "No Email Provided"
+            ivProfileImage.setImageResource(R.drawable.profile) // Placeholder image
         }
     }
 
     companion object {
         @JvmStatic
-        fun newInstance(firstName: String?, middleName: String?, lastName: String?, email: String?, profileImageUrl: String?) =
+        fun newInstance(firstName: String?, middleName: String?, lastName: String?, email: String?, profileImageUrl: String?, address:String?) =
             ProfileFragmentClient().apply {
                 arguments = Bundle().apply {
                     putString("FIRST_NAME", firstName)
@@ -202,6 +217,7 @@ class ProfileFragmentClient : Fragment() {
                     putString("LAST_NAME", lastName)
                     putString("EMAIL", email)
                     putString("PROFILE_IMAGE_URL", profileImageUrl)
+                    putString("ADDRESS", address)
                 }
             }
     }

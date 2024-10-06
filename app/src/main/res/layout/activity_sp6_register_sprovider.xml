@@ -52,130 +52,30 @@
             app:layout_constraintEnd_toEndOf="parent"/>
 
 
+        <!-- Login Prompt -->
+        <TextView
+            android:id="@+id/loginPrompt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="77dp"
+            android:fontFamily="@font/medium_poppins"
+            android:text="Login to your account"
+            android:textColor="@color/black"
+            android:textSize="14sp"
+            app:layout_constraintTop_toBottomOf="@id/createAccount"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
         <!-- Form Layout -->
         <LinearLayout
             android:id="@+id/formLayout"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
             android:orientation="vertical"
-            app:layout_constraintTop_toBottomOf="@id/createAccount"
+            app:layout_constraintTop_toBottomOf="@id/loginPrompt"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
-
-            <!-- Profile Field -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="15dp"
-                android:layout_weight="3"
-                android:orientation="horizontal">
-
-                <!-- Spacer View -->
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"/>
-
-                <!-- Image View -->
-
-
-                <!-- Spacer View -->
-                <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/profile"
-                    android:layout_width="60dp"
-                    android:layout_height="60dp"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/profile1"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/createAccount"
-                    app:shapeAppearanceOverlay="@style/CircularImageViewStyle" />
-
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"/>
-
-            </LinearLayout>
-
-            <!-- First Name Field -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="15dp"
-                android:layout_marginBottom="8dp"
-                android:orientation="horizontal">
-
-                <ImageView
-                    android:layout_width="wrap_content"
-                    android:layout_height="50dp"
-                    android:contentDescription="User Icon"
-                    android:src="@drawable/profile_sprovider_" />
-
-                <EditText
-                    android:id="@+id/fName"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/blue_border"
-                    android:fontFamily="@font/regular_poppins"
-                    android:hint="First Name"
-                    android:paddingStart="16dp"
-                    android:singleLine="true"
-                    android:textSize="12sp" />
-            </LinearLayout>
-
-            <!-- Middle Name Field -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:orientation="horizontal">
-
-                <ImageView
-                    android:layout_width="wrap_content"
-                    android:layout_height="50dp"
-                    android:contentDescription="User Icon"
-                    android:src="@drawable/profile_sprovider_" />
-
-                <EditText
-                    android:id="@+id/mName"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
-                    android:layout_weight="1"
-                    android:textSize="12sp"
-                    android:singleLine="true"
-                    android:background="@drawable/blue_border"
-                    android:fontFamily="@font/regular_poppins"
-                    android:hint="Middle Name"
-                    android:paddingStart="16dp" />
-            </LinearLayout>
-
-            <!-- Last Name Field -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:orientation="horizontal">
-
-                <ImageView
-                    android:layout_width="wrap_content"
-                    android:layout_height="50dp"
-                    android:contentDescription="User Icon"
-                    android:src="@drawable/profile_sprovider_" />
-
-                <EditText
-                    android:id="@+id/lName"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
-                    android:layout_weight="1"
-                    android:textSize="12sp"
-                    android:singleLine="true"
-                    android:background="@drawable/blue_border"
-                    android:fontFamily="@font/regular_poppins"
-                    android:hint="Last Name"
-                    android:paddingStart="16dp" />
-            </LinearLayout>
 
             <!-- Email Field -->
             <LinearLayout
@@ -203,42 +103,9 @@
                     android:paddingStart="16dp" />
             </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:orientation="horizontal">
-
-                <ImageView
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
-                    android:contentDescription="Email Icon"
-                    android:src="@drawable/message_sprovider_" />
-
-                <EditText
-                    android:id="@+id/address"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/blue_border"
-                    android:textSize="12sp"
-                    android:hint="Address"
-                    android:singleLine="true"
-                    android:fontFamily="@font/regular_poppins"
-                    android:paddingStart="16dp" />
-
-                <ImageView
-                    android:id="@+id/locationBtn"
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
-                    android:layout_marginStart="5dp"
-                    android:contentDescription="Password Icon"
-                    android:src="@drawable/location1" />
-
-            </LinearLayout>
-
             <!-- Password Field -->
             <LinearLayout
+                android:id="@+id/passwordLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
@@ -251,90 +118,93 @@
                     android:src="@drawable/lock_sprovider_" />
 
                 <EditText
-                    android:id="@+id/password"
+                    android:id="@+id/pass"
                     android:layout_width="0dp"
                     android:layout_height="50dp"
                     android:layout_weight="1"
                     android:background="@drawable/blue_border"
                     android:textSize="12sp"
                     android:hint="Password"
-                    android:inputType="textPassword"
                     android:singleLine="true"
+                    android:inputType="textPassword"
                     android:fontFamily="@font/regular_poppins"
                     android:paddingStart="16dp" />
             </LinearLayout>
 
-            <!-- Confirm Password Field -->
+            <!-- Password Field -->
             <LinearLayout
+                android:id="@+id/confirmPassLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
+                android:layout_marginBottom="8dp"
                 android:orientation="horizontal">
 
                 <ImageView
                     android:layout_width="50dp"
                     android:layout_height="50dp"
-                    android:contentDescription="Confirm Password Icon"
+                    android:contentDescription="Password Icon"
                     android:src="@drawable/lock_sprovider_" />
 
                 <EditText
-                    android:id="@+id/confirmpassword"
+                    android:id="@+id/confirmPass"
                     android:layout_width="0dp"
                     android:layout_height="50dp"
                     android:layout_weight="1"
-                    android:textSize="12sp"
                     android:background="@drawable/blue_border"
+                    android:textSize="12sp"
                     android:hint="Confirm Password"
-                    android:inputType="textPassword"
                     android:singleLine="true"
+                    android:inputType="textPassword"
                     android:fontFamily="@font/regular_poppins"
                     android:paddingStart="16dp" />
             </LinearLayout>
+
         </LinearLayout>
 
-        <!-- Register Button -->
 
-        <ProgressBar
-            android:id="@+id/progressbar"
-            android:layout_width="wrap_content"
+        <RelativeLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:layout_centerHorizontal="true"
             app:layout_constraintTop_toBottomOf="@id/formLayout"
+            android:layout_marginTop="95dp"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            />
+            app:layout_constraintEnd_toEndOf="parent">
 
-        <Button
-            android:id="@+id/registerButton"
-            android:layout_width="0dp"
-            android:layout_height="50dp"
-            android:text="Register"
-            android:textColor="@color/white"
-            android:textAllCaps="false"
-            style="@style/BlueButtonStyle"
-            android:fontFamily="@font/regular_poppins"
-            android:background="@drawable/btn_rounded_corner_sprovider"
-            app:layout_constraintTop_toBottomOf="@id/progressbar"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            />
+            <ProgressBar
+                android:id="@+id/progressbar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:layout_centerHorizontal="true"/>
 
-        <TextView
-            android:id="@+id/signupLink"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
-            android:layout_marginBottom="30dp"
-            android:layout_centerHorizontal="true"
-            android:fontFamily="@font/regular_poppins"
-            android:text="Already have an account? Sign In"
-            android:textColor="#0593D8"
-            android:textSize="14sp"
-            android:layout_below="@id/registerButton"
-            app:layout_constraintTop_toBottomOf="@id/registerButton"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
+            <!-- Register Button -->
+            <Button
+                android:id="@+id/registerButton"
+                android:layout_width="match_parent"
+                android:layout_below="@id/progressbar"
+                android:layout_height="50dp"
+                android:text="Register"
+                android:textColor="@color/white"
+                android:textAllCaps="false"
+                android:fontFamily="@font/regular_poppins"
+                style="@style/BlueButtonStyle"
+                android:background="@drawable/btn_rounded_corner_sprovider"/>
+
+            <TextView
+                android:id="@+id/signinLink"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="30dp"
+                android:layout_centerHorizontal="true"
+                android:fontFamily="@font/regular_poppins"
+                android:text="Already have an account? Sign In"
+                android:textColor="@color/blue"
+                android:layout_alignParentBottom="true"
+                android:textSize="14sp"
+                android:layout_below="@id/registerButton" />
+
+        </RelativeLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

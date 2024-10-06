@@ -109,7 +109,7 @@ class CategoryFragmentClient : Fragment() {
     private fun fetchSubcategories(categoryName: String) {
         val subcategoryReference = database.child(categoryName).child("Sub Categories")
 
-        subcategoryReference.addListenerForSingleValueEvent(object : ValueEventListener {
+        subcategoryReference.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val subcategoryList = mutableListOf<Category>()
                 for (subcategorySnapshot in snapshot.children) {

@@ -106,33 +106,6 @@
 
         </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_horizontal"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="8dp">
-
-            <ImageView
-                android:id="@+id/ivBookingIcon"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:layout_marginStart="16dp"
-                android:layout_marginEnd="4dp"
-                app:tint="@color/green"
-                android:src="@drawable/client_booking_bag"/>
-
-            <TextView
-                android:id="@+id/tvBookingCount"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="2653 Request Booking Completed"
-                android:textColor="@color/black"
-                android:textSize="10sp"
-                android:fontFamily="@font/regular_poppins"/>
-
-        </LinearLayout>
 
     </LinearLayout>
 
@@ -171,37 +144,6 @@
                 android:fontFamily="@font/regular_poppins"/>
 
         </LinearLayout>
-
-        <!-- Location Menu Item -->
-        <LinearLayout
-            android:id="@+id/locationMenuLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:layout_marginTop="10dp"
-            android:layout_marginStart="12dp"
-            android:padding="12dp">
-
-            <ImageView
-                android:id="@+id/ivLocationIcon_profile_client"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_marginEnd="16dp"
-                android:src="@drawable/client_location"
-                app:tint="@color/green" />
-
-            <TextView
-                android:id="@+id/tvLocation_profile_client"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/regular_poppins"
-                android:text="Location"
-                android:textColor="@color/black"
-                android:textSize="12sp" />
-        </LinearLayout>
-
-        <!-- Settings Menu Item -->
 
         <!-- Logout Menu Item -->
         <LinearLayout

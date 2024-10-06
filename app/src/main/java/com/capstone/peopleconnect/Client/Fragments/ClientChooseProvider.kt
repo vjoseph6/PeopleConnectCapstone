@@ -68,7 +68,7 @@ class ClientChooseProvider : Fragment() {
     private fun retrieveProviders() {
         val skillsRef = FirebaseDatabase.getInstance().getReference("skills")
 
-        skillsRef.addListenerForSingleValueEvent(object : ValueEventListener {
+        skillsRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (snapshot.exists()) {
                     for (skillSetSnapshot in snapshot.children) {
@@ -117,7 +117,7 @@ class ClientChooseProvider : Fragment() {
         val userRef = FirebaseDatabase.getInstance().getReference("users")
 
         userRef.orderByChild("email").equalTo(userEmail)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
+            .addValueEventListener (object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (snapshot.exists()) {
                         for (userSnapshot in snapshot.children) {
