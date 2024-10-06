@@ -226,29 +226,40 @@ class MyProfileFragmentClient : Fragment() {
 
 
     private fun handleImageUpload(fileReference: StorageReference, updatedUser: User) {
-        deleteOldProfileImage(profileImageUrl) {
-            selectedImageUri?.let { uri ->
-                fileReference.putFile(uri)
-                    .addOnSuccessListener {
-                        fileReference.downloadUrl.addOnSuccessListener { downloadUrl ->
-                            updatedUser.profileImageUrl = downloadUrl.toString()
-                            updateUser(updatedUser)
-                        }.addOnFailureListener { e ->
-                            handleImageUploadFailure(e)
-                            progressBar.visibility = View.GONE // Hide progress bar on failure
-                        }
-                    }.addOnFailureListener { e ->
-                        handleImageUploadFailure(e)
-                        progressBar.visibility = View.GONE // Hide progress bar on failure
-                    }
+        // Check if the current profile image URL is empty
+        if (profileImageUrl.isNullOrEmpty()) {
+            // If there's no old image, directly upload the new image
+            uploadNewImage(fileReference, updatedUser)
+        } else {
+            // If there's an old image, delete it first
+            deleteOldProfileImage(profileImageUrl) {
+                uploadNewImage(fileReference, updatedUser)
             }
         }
     }
 
+    // Method to upload the new image
+    private fun uploadNewImage(fileReference: StorageReference, updatedUser: User) {
+        selectedImageUri?.let { uri ->
+            fileReference.putFile(uri)
+                .addOnSuccessListener {
+                    fileReference.downloadUrl.addOnSuccessListener { downloadUrl ->
+                        updatedUser.profileImageUrl = downloadUrl.toString()
+                        updateUser(updatedUser)
+                    }.addOnFailureListener { e ->
+                        handleImageUploadFailure(e)
+                        progressBar.visibility = View.GONE // Hide progress bar on failure
+                    }
+                }.addOnFailureListener { e ->
+                    handleImageUploadFailure(e)
+                    progressBar.visibility = View.GONE // Hide progress bar on failure
+                }
+        }
+    }
 
     private fun deleteOldProfileImage(oldPath: String?, onComplete: () -> Unit) {
-        oldPath?.let {
-            FirebaseStorage.getInstance().getReferenceFromUrl(it).delete()
+        if (!oldPath.isNullOrEmpty()) { // Check if the oldPath is not null or empty
+            FirebaseStorage.getInstance().getReferenceFromUrl(oldPath).delete()
                 .addOnSuccessListener {
                     Log.d("ProfileUpdate", "Old profile image deleted successfully")
                     onComplete()
@@ -257,8 +268,12 @@ class MyProfileFragmentClient : Fragment() {
                     Log.e("ProfileUpdate", "Failed to delete old profile image", e)
                     onComplete() // Proceed even if deletion fails
                 }
-        } ?: onComplete() // No old image to delete, proceed
+        } else {
+            Log.d("ProfileUpdate", "No old profile image to delete")
+            onComplete() // No old image to delete, proceed
+        }
     }
+
 
     private fun updateUser(user: User) {
         userKey?.let { key ->
