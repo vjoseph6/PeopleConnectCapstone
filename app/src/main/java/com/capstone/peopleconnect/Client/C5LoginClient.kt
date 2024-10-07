@@ -2,6 +2,7 @@ package com.capstone.peopleconnect.Client
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.drawable.ColorDrawable
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.InputFilter
@@ -89,32 +90,44 @@ class C5LoginClient : AppCompatActivity() {
     }
 
     private fun showForgotPasswordDialog() {
-        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_forgot_password_client, null)
-        val emailEditText = dialogView.findViewById<EditText>(R.id.emailEditText)
+        // Inflate the custom layout for forgot password dialog
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_forgot_password, null)
 
-        val dialog = AlertDialog.Builder(this)
-            .setView(dialogView)
-            .create()
+        // Create an AlertDialog and apply customizations
+        val builder = AlertDialog.Builder(this).apply {
+            setView(dialogView)
+            setCancelable(false)  // Prevent dialog from closing if the background is touched
+        }
 
-        val submitButton = dialogView.findViewById<Button>(R.id.btnSubmit)
-        val cancelText = dialogView.findViewById<TextView>(R.id.tvCancel)
+        val dialog = builder.create()
 
-        submitButton.setOnClickListener {
-            val email = emailEditText.text.toString().trim()
+        // Make the background transparent
+        dialog.window?.setBackgroundDrawable(ColorDrawable(0))
+
+        // Apply window animations (ensure you have the animation style defined in your styles.xml)
+        dialog.window?.attributes?.windowAnimations = R.style.DialogAnimation
+
+        // Show the dialog
+        dialog.show()
+
+        // Set up the 'Submit' button action
+        dialogView.findViewById<Button>(R.id.btnSubmit).setOnClickListener {
+            val email = dialogView.findViewById<EditText>(R.id.emailEditText).text.toString().trim()
             if (email.isEmpty()) {
                 Toast.makeText(this, "Please enter your email", Toast.LENGTH_SHORT).show()
             } else {
+                // Call the method to check if the email exists and send the password reset email
                 checkEmailExistsAndSendReset(email)
-                dialog.dismiss()  // Dismiss the dialog after submitting
+                dialog.dismiss()  // Close the dialog after submitting
             }
         }
 
-        cancelText.setOnClickListener {
-            dialog.dismiss()  // Dismiss the dialog when Cancel is clicked
+        // Set up the 'Cancel' text action
+        dialogView.findViewById<TextView>(R.id.tvCancel).setOnClickListener {
+            dialog.dismiss()  // Close the dialog when cancel is clicked
         }
-
-        dialog.show()
     }
+
 
 
     private fun checkEmailExistsAndSendReset(email: String) {
