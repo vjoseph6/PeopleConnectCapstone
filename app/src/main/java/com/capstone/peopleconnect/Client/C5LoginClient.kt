@@ -89,24 +89,33 @@ class C5LoginClient : AppCompatActivity() {
     }
 
     private fun showForgotPasswordDialog() {
-        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_forgot_password, null)
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_forgot_password_client, null)
         val emailEditText = dialogView.findViewById<EditText>(R.id.emailEditText)
 
-        AlertDialog.Builder(this)
-            .setTitle("Reset Password")
+        val dialog = AlertDialog.Builder(this)
             .setView(dialogView)
-            .setPositiveButton("Submit") { _, _ ->
-                val email = emailEditText.text.toString().trim()
-                if (email.isEmpty()) {
-                    Toast.makeText(this, "Please enter your email", Toast.LENGTH_SHORT).show()
-                } else {
-                    checkEmailExistsAndSendReset(email)
-                }
-            }
-            .setNegativeButton("Cancel", null)
             .create()
-            .show()
+
+        val submitButton = dialogView.findViewById<Button>(R.id.btnSubmit)
+        val cancelText = dialogView.findViewById<TextView>(R.id.tvCancel)
+
+        submitButton.setOnClickListener {
+            val email = emailEditText.text.toString().trim()
+            if (email.isEmpty()) {
+                Toast.makeText(this, "Please enter your email", Toast.LENGTH_SHORT).show()
+            } else {
+                checkEmailExistsAndSendReset(email)
+                dialog.dismiss()  // Dismiss the dialog after submitting
+            }
+        }
+
+        cancelText.setOnClickListener {
+            dialog.dismiss()  // Dismiss the dialog when Cancel is clicked
+        }
+
+        dialog.show()
     }
+
 
     private fun checkEmailExistsAndSendReset(email: String) {
         databaseReference.orderByChild("email").equalTo(email)
