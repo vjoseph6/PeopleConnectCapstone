@@ -8,9 +8,10 @@ data class Skills(
 data class SkillItem(
     val name: String = "",
     var visible: Boolean = true,
-    val image: String = "",
+    var image: String = "",
     var description: String = "",
     var skillRate: Int = 0,
-    var rating: Float = 0.0f
+    var rating: Float = 0.0f,
+    var noOfBookings: Int = 0
 )
 

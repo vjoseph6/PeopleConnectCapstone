@@ -1,5 +1,6 @@
 package com.capstone.peopleconnect.Client.Fragments
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -22,7 +23,6 @@ class ClientChooseProvider : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Retrieve arguments passed to the fragment
         arguments?.let {
             subCategoryName = it.getString("SUBCATEGORY_NAME")
             email = it.getString("EMAIL")
@@ -34,10 +34,14 @@ class ClientChooseProvider : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
-        val view = inflater.inflate(R.layout.fragment_client_choose_provider, container, false)
+        return inflater.inflate(R.layout.fragment_client_choose_provider, container, false)
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
         setupRecyclerView(view)
-        retrieveProviders()
+        retrieveProviders() // Call to fetch providers should happen here
 
         val backBtn = view.findViewById<ImageButton>(R.id.btnBackClient)
         backBtn.setOnClickListener {
@@ -54,18 +58,36 @@ class ClientChooseProvider : Fragment() {
                 .addToBackStack(null)
                 .commit()
         }
-
-        return view
     }
 
     private fun setupRecyclerView(view: View) {
         val recyclerView = view.findViewById<RecyclerView>(R.id.categoryRecyclerView)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
-        providerAdapter = ProviderAdapter(providerList)
+        providerAdapter = ProviderAdapter(providerList) { provider ->
+            // Handle provider item clicks
+            val fragment = ActivityFragmentClient_ProviderProfile().apply {
+                arguments = Bundle().apply {
+                    putString("NAME", provider.userName)
+                    putString("PROFILE_IMAGE_URL", provider.imageUrl)
+                    putFloat("RATING", provider.rating ?: 0f)
+                    putInt("NO_OF_BOOKINGS", provider.noOfBookings ?: 0)
+                    putString("DESCRIPTION", provider.description)
+                }
+            }
+
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, fragment)
+                .addToBackStack(null)
+                .commit()
+        }
         recyclerView.adapter = providerAdapter
     }
 
     private fun retrieveProviders() {
+        // Clear the provider list to avoid duplication
+        providerList.clear() // Clear existing data
+        providerAdapter.notifyDataSetChanged() // Notify the adapter about the cleared list
+
         val skillsRef = FirebaseDatabase.getInstance().getReference("skills")
 
         skillsRef.addValueEventListener(object : ValueEventListener {
@@ -89,20 +111,12 @@ class ClientChooseProvider : Fragment() {
                                 val rating = skillSnapshot.child("rating").getValue(Float::class.java)
                                 val isVisible = skillSnapshot.child("visible").getValue(Boolean::class.java) ?: false
 
-                                // Check if the skill name matches and the skill is visible
                                 if (skillName == subCategoryName && isVisible) {
-                                    Log.d("SkillMatch", "Skill: $skillName, Rate: $skillRate, Description: $description, Rating: $rating, User: $user")
                                     user?.let { retrieveUserName(it, skillName, skillRate, description, rating) }
-                                } else if (!isVisible) {
-                                    Log.d("SkillVisibility", "Skipping skill: $skillName as it is not visible.")
                                 }
                             }
-                        } else {
-                            Log.d("SkillData", "No skill items found under skill set: ${skillSetSnapshot.key}")
                         }
                     }
-                } else {
-                    Log.d("SkillData", "No skill sets found in the 'skills' node.")
                 }
             }
 
@@ -113,20 +127,20 @@ class ClientChooseProvider : Fragment() {
     }
 
     private fun retrieveUserName(userEmail: String, skillName: String?, skillRate: Int?, description: String?, rating: Float?) {
-        // Function to retrieve userName from the "users" node based on userEmail
         val userRef = FirebaseDatabase.getInstance().getReference("users")
 
         userRef.orderByChild("email").equalTo(userEmail)
-            .addValueEventListener (object : ValueEventListener {
+            .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (snapshot.exists()) {
                         for (userSnapshot in snapshot.children) {
                             val userName = userSnapshot.child("name").getValue(String::class.java)
                             val imageUrl = userSnapshot.child("profileImageUrl").getValue(String::class.java)
-                            Log.d("UserData", "UserName: $userName, ImageURL: $imageUrl, Skill: $skillName, Rate: $skillRate, Description: $description, Rating: $rating")
+                            val noOfBookings = userSnapshot.child("noOfBookings").getValue(Int::class.java) ?: 0
 
-                            // Check if the userEmail matches the email retrieved from the intent
-                            if (userEmail != email) { // use email from the fragment arguments
+                            Log.d("UserData", "UserName: $userName, ImageURL: $imageUrl, Skill: $skillName, Rate: $skillRate, Description: $description, Rating: $rating, NoOfBookings: $noOfBookings")
+
+                            if (userEmail != email) {
                                 providerList.add(
                                     ProviderData(
                                         name = skillName,
@@ -134,16 +148,13 @@ class ClientChooseProvider : Fragment() {
                                         description = description,
                                         userName = userName,
                                         imageUrl = imageUrl,
-                                        rating = rating
+                                        rating = rating,
+                                        noOfBookings = noOfBookings // Include noOfBookings
                                     )
                                 )
-                            } else {
-                                Log.d("UserData", "Skipping user with email: $userEmail, as it matches the intent email: $email")
                             }
                         }
                         providerAdapter.notifyDataSetChanged()
-                    } else {
-                        Log.d("UserData", "No user found with email: $userEmail")
                     }
                 }
 
@@ -152,6 +163,7 @@ class ClientChooseProvider : Fragment() {
                 }
             })
     }
+
 
     companion object {
         fun newInstance(subCategoryName: String, email: String) =

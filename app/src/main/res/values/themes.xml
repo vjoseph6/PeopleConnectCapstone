@@ -11,6 +11,10 @@
         <item name="backgroundTint">@color/green</item>  <!-- Green color -->
     </style>
 
+    <style name="WhiteButtonStyle" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">@color/white</item>  <!-- Green color -->
+    </style>
+
     <!-- Style for the second button with blue color -->
     <style name="BlueButtonStyle" parent="Widget.MaterialComponents.Button">
         <item name="backgroundTint">@color/blue</item>  <!-- Blue color -->
