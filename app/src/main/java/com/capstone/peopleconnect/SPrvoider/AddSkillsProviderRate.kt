@@ -106,9 +106,11 @@ class AddSkillsProviderRate : AppCompatActivity() {
         val skillItem = SkillItem(
             name = skillName,
             visible = true,
+            image = "",
             description = skillDescription,
             skillRate = skillRate,
-            rating = 0.0f
+            rating = 0.0f,
+            noOfBookings = 0
         )
 
         val skillsReference = FirebaseDatabase.getInstance().getReference("skills")
@@ -129,11 +131,13 @@ class AddSkillsProviderRate : AppCompatActivity() {
                         // Find and update or add the skill
                         val existingSkill = existingSkills.find { it.name == skillItem.name }
                         if (existingSkill != null) {
-                            // Update the existing skill's fields, including rating
+
                             existingSkill.description = skillItem.description
+                            existingSkill.image = skillItem.image
                             existingSkill.skillRate = skillItem.skillRate
                             existingSkill.visible = true
                             existingSkill.rating = skillItem.rating
+                            existingSkill.noOfBookings = skillItem.noOfBookings
                         } else {
                             // Add the new skill with default rating
                             existingSkills.add(skillItem)

@@ -157,7 +157,7 @@ class SkillsFragmentSProvider : Fragment() {
 
 
     private fun findImageForSkill(skillName: String, callback: (String) -> Unit) {
-        database.child("category").addListenerForSingleValueEvent(object : ValueEventListener {
+        database.child("category").addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 for (category in snapshot.children) {
                     val subCategoriesSnapshot = category.child("Sub Categories")
