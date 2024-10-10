@@ -33,7 +33,7 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
     private lateinit var providerRatingTextView: TextView
     private lateinit var profileImageView: ImageView
     private lateinit var providerDescription: TextView
-
+    private lateinit var email: String
     private lateinit var categoryAdapter: CategoryAdapter
     private lateinit var recyclerView: RecyclerView
 
@@ -66,7 +66,27 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
         val rating = arguments?.getFloat("RATING") ?: 0f
         val noOfBookings = arguments?.getString("NO_OF_BOOKINGS") ?: "0"
         val description = arguments?.getString("DESCRIPTION") ?: ""
-        Log.d("Rating retrieved", "$rating")
+        val skillRate = arguments?.getString("RATE") ?: ""
+        val serviceOffered = arguments?.getString("SERVICE_OFFERED") ?: ""
+        Log.d("Rating retrieved", "$skillRate")
+        Log.d("SERVICE RETRIEVED", "$serviceOffered")
+
+        val bookNowButton: ImageButton = view.findViewById(R.id.bookNowButton)
+        bookNowButton.setOnClickListener {
+            val bookingFragment = ActivityFragmentClient_BookDetails().apply {
+                arguments = Bundle().apply {
+                    putString("EMAIL", email)
+                    putString("SKILL_RATE", skillRate)
+                    putString("SERVICE_OFFERED", serviceOffered)
+                }
+            }
+
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, bookingFragment)
+                .addToBackStack(null)
+                .commit()
+        }
+
 
         recyclerView = view.findViewById(R.id.servicesRecyclerView)
         categoryAdapter = CategoryAdapter(mutableListOf()) { category ->
@@ -102,7 +122,7 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
                     if (snapshot.exists()) {
                         Log.d(TAG, "User data exists for: $providerName")
                         for (userSnapshot in snapshot.children) {
-                            val email = userSnapshot.child("email").getValue(String::class.java)
+                             email = userSnapshot.child("email").getValue(String::class.java).toString()
                             Log.d(TAG, "Retrieved email: $email")
                             if (email != null) {
                                 fetchSkills(email)  // Call fetchSkills with the user's email

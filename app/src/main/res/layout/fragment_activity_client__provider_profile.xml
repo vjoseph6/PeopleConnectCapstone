@@ -184,7 +184,7 @@
         android:scaleType="fitCenter"
         android:fontFamily="@font/regular_poppins"
         android:text="Book Now"
-        android:background="@drawable/rounded_corners_universal"
+        android:background="@drawable/client_edit_text_rounded_corner"
         android:padding="10dp"
         android:src="@drawable/book_icon"
         android:textAllCaps="false"
