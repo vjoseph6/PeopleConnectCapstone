@@ -16,6 +16,7 @@ import com.capstone.peopleconnect.R
 import com.google.firebase.database.*
 
 class ClientChooseProvider : Fragment() {
+    private lateinit var skillName: String
     private lateinit var providerAdapter: ProviderAdapter
     private val providerList = mutableListOf<ProviderData>()
     private var subCategoryName: String? = null
@@ -64,6 +65,7 @@ class ClientChooseProvider : Fragment() {
         val recyclerView = view.findViewById<RecyclerView>(R.id.categoryRecyclerView)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         providerAdapter = ProviderAdapter(providerList) { provider ->
+
             // Handle provider item clicks
             val fragment = ActivityFragmentClient_ProviderProfile().apply {
                 arguments = Bundle().apply {
@@ -72,8 +74,12 @@ class ClientChooseProvider : Fragment() {
                     putFloat("RATING", provider.rating ?: 0f)
                     putInt("NO_OF_BOOKINGS", provider.noOfBookings ?: 0)
                     putString("DESCRIPTION", provider.description)
+                    putString("RATE", (provider.skillRate ?: 0).toString())
+                    putString("SERVICE_OFFERED", subCategoryName)
+                    Log.d("SKILL NAME" , subCategoryName.toString())
                 }
             }
+
 
             parentFragmentManager.beginTransaction()
                 .replace(R.id.frame_layout, fragment)
@@ -81,6 +87,7 @@ class ClientChooseProvider : Fragment() {
                 .commit()
         }
         recyclerView.adapter = providerAdapter
+
     }
 
     private fun retrieveProviders() {
@@ -105,7 +112,7 @@ class ClientChooseProvider : Fragment() {
 
                         if (skillItemsSnapshot.exists()) {
                             for (skillSnapshot in skillItemsSnapshot.children) {
-                                val skillName = skillSnapshot.child("name").getValue(String::class.java)
+                                skillName = skillSnapshot.child("name").getValue(String::class.java).toString()
                                 val skillRate = skillSnapshot.child("skillRate").getValue(Int::class.java)
                                 val description = skillSnapshot.child("description").getValue(String::class.java)
                                 val rating = skillSnapshot.child("rating").getValue(Float::class.java)

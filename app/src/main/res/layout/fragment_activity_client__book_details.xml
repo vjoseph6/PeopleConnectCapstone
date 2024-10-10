@@ -1,17 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/green"
     tools:context=".Client.Fragments.ActivityFragmentClient_BookDetails">
-
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/green">
-
 
         <ImageButton
             android:id="@+id/btnBackClient"
@@ -37,15 +32,23 @@
             app:layout_constraintBottom_toBottomOf="@id/btnBackClient"
             app:layout_constraintTop_toTopOf="@id/btnBackClient" />
 
+    <ScrollView
+        android:id="@+id/scrollView2"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="50dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginBottom="60dp"
+        app:layout_constraintTop_toBottomOf="@id/filter_by_title">
+
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="50dp"
+            android:id="@+id/constraintLayout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:background="@drawable/client_card_background_top_corners"
-            android:padding="16dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/filter_by_title">
+            android:padding="16dp">
 
             <LinearLayout
                 android:id="@+id/layoutHorizontal"
@@ -71,6 +74,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Date"
+                        android:layout_marginStart="15dp"
                         android:fontFamily="@font/medium_poppins"
                         android:textColor="@color/green"
                         android:textSize="14sp"
@@ -98,9 +102,9 @@
                             android:background="@drawable/client_edit_text_rounded_corner"
                             android:fontFamily="@font/regular_poppins"
                             android:hint="Set Date"
+                            android:singleLine="true"
                             android:padding="12dp"
-                            android:textSize="10sp"
-                             />
+                            android:textSize="9sp" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -118,6 +122,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Start Time"
+                        android:layout_marginStart="15dp"
                         android:textColor="@color/green"
                         android:fontFamily="@font/medium_poppins"
                         android:textSize="14sp"
@@ -145,9 +150,9 @@
                             android:background="@drawable/client_edit_text_rounded_corner"
                             android:fontFamily="@font/regular_poppins"
                             android:hint="Start Time"
+                            android:singleLine="true"
                             android:padding="12dp"
-                            android:textSize="10sp"
-                            />
+                            android:textSize="10sp" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -168,6 +173,7 @@
                         android:textColor="@color/green"
                         android:fontFamily="@font/medium_poppins"
                         android:textSize="14sp"
+                        android:layout_marginStart="15dp"
                         android:gravity="center" />
 
                     <!-- End Time Picker -->
@@ -188,16 +194,15 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
+                            android:singleLine="true"
                             android:textColor="@color/black"
                             android:background="@drawable/client_edit_text_rounded_corner"
                             android:fontFamily="@font/regular_poppins"
                             android:hint="End Time"
                             android:padding="12dp"
-                            android:textSize="10sp"
-                             />
+                            android:textSize="10sp" />
                     </LinearLayout>
                 </LinearLayout>
-
             </LinearLayout>
 
             <TextView
@@ -208,9 +213,10 @@
                 android:layout_marginStart="16dp"
                 android:layout_marginEnd="16dp"
                 android:fontFamily="@font/semibold_poppins"
-                android:text="Select Location"
+                android:text="Location"
                 android:textColor="@color/green"
                 android:textSize="14sp"
+                android:visibility="gone"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/layoutHorizontal" />
@@ -224,6 +230,8 @@
                 android:background="@drawable/client_edit_text_rounded_corner"
                 android:fontFamily="@font/regular_poppins"
                 android:hint="Location"
+                android:visibility="gone"
+                android:enabled="false"
                 android:padding="12dp"
                 android:textSize="12sp"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -243,7 +251,7 @@
                 android:textSize="14sp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/etSelectLocation" />
+                app:layout_constraintTop_toBottomOf="@id/layoutHorizontal" />
 
             <EditText
                 android:id="@+id/etRate"
@@ -254,6 +262,7 @@
                 android:background="@drawable/client_edit_text_rounded_corner"
                 android:fontFamily="@font/regular_poppins"
                 android:hint="Rate"
+                android:enabled="false"
                 android:padding="12dp"
                 android:textSize="12sp"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -261,19 +270,52 @@
                 app:layout_constraintTop_toBottomOf="@id/tvRate" />
 
             <TextView
+                android:id="@+id/hourRate"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:visibility="gone"
+                android:fontFamily="@font/semibold_poppins"
+                android:text="No. of Hours"
+                android:textColor="@color/green"
+                android:textSize="14sp"
+                app:layout_constraintBottom_toBottomOf="@+id/tvDescription"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="@+id/etRate"
+                app:layout_constraintTop_toTopOf="@+id/tvRate" />
+
+            <EditText
+                android:id="@+id/etHourRate"
+                android:layout_width="0dp"
+                android:visibility="gone"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                android:background="@drawable/client_edit_text_rounded_corner"
+                android:fontFamily="@font/regular_poppins"
+                android:hint="Rate"
+                android:singleLine="true"
+                android:inputType="number"
+                android:padding="12dp"
+                android:textSize="12sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/hourRate" />
+
+            <TextView
                 android:id="@+id/tvDescription"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
                 android:layout_marginStart="16dp"
                 android:layout_marginEnd="16dp"
                 android:fontFamily="@font/semibold_poppins"
                 android:text="Description"
                 android:textColor="@color/green"
+                android:layout_marginTop="16dp"
                 android:textSize="14sp"
-                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/etRate" />
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/etRate" />
 
             <EditText
                 android:id="@+id/etDescription"
@@ -283,15 +325,111 @@
                 android:layout_marginEnd="12dp"
                 android:background="@drawable/client_edit_text_rounded_corner"
                 android:fontFamily="@font/regular_poppins"
+                android:gravity="top"
+                android:singleLine="true"
                 android:hint="Type some message...."
                 android:padding="12dp"
                 android:textSize="12sp"
-                android:gravity="top"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tvDescription" />
+                app:layout_constraintTop_toBottomOf="@+id/tvDescription" />
+
+            <TextView
+                android:id="@+id/tvAdditional"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:fontFamily="@font/semibold_poppins"
+                android:text="Upload Image (Additional Description)"
+                android:layout_marginTop="16dp"
+                android:textColor="@color/green"
+                android:textSize="14sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/etDescription"/>
+
+            <LinearLayout
+                android:id="@+id/imagePickers"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="12dp"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="10dp"
+                android:background="@drawable/client_edit_text_rounded_corner"
+                app:layout_constraintEnd_toEndOf="@+id/etDescription"
+                app:layout_constraintStart_toStartOf="@+id/etDescription"
+                app:layout_constraintTop_toBottomOf="@+id/tvAdditional">
+
+                <ImageView
+                    android:id="@+id/addImage"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_margin="5dp"
+                    android:layout_weight="1"
+                    android:padding="8dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/upload"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="@+id/btnBookNow" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="5dp"
+                    android:text="Upload Image"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/displayImages"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="12dp"
+                android:background="@drawable/client_edit_text_rounded_corner"
+                android:gravity="center"
+                android:layout_marginTop="10dp"
+                android:visibility="gone"
+                android:orientation="horizontal"
+                android:padding="15dp"
+                android:weightSum="3"
+                app:layout_constraintEnd_toEndOf="@+id/etDescription"
+                app:layout_constraintStart_toStartOf="@+id/etDescription"
+                app:layout_constraintTop_toBottomOf="@+id/imagePickers">
 
 
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/firstImage"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:scaleType="fitXY"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    app:shapeAppearanceOverlay="@style/SemiCircularImageViewStyle"
+                    />
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/secondImage"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:scaleType="fitXY"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    app:shapeAppearanceOverlay="@style/SemiCircularImageViewStyle"
+                    />
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/thirdImage"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:scaleType="fitXY"
+                    android:layout_weight="1"
+                    app:shapeAppearanceOverlay="@style/SemiCircularImageViewStyle"
+                    />
+
+            </LinearLayout>
             <!-- Save Button -->
             <Button
                 android:id="@+id/btnBookNow"
@@ -309,11 +447,9 @@
                 android:textSize="14sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/etDescription" />
+                app:layout_constraintTop_toBottomOf="@id/displayImages" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
-
+    </ScrollView>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
-</ScrollView>

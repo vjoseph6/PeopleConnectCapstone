@@ -60,7 +60,6 @@ class HomeFragmentClient : Fragment() {
         }
     }
 
-    // Function to fetch the logged-in client's interests using email
     private fun fetchClientInterestsByEmail(email: String, onInterestsFetched: (List<String>) -> Unit) {
         val clientReference = FirebaseDatabase.getInstance()
             .getReference("users")
@@ -73,7 +72,7 @@ class HomeFragmentClient : Fragment() {
                 for (userSnapshot in snapshot.children) {
                     val user = userSnapshot.getValue(User::class.java)
                     user?.interest?.let { interestList ->
-                        interests.addAll(interestList) // Add all interests directly
+                        interests.addAll(interestList)
                     }
                 }
                 onInterestsFetched(interests) // Pass the interests list to the callback
@@ -85,11 +84,9 @@ class HomeFragmentClient : Fragment() {
         })
     }
 
-    // Fetch service providers and filter by client's interests and skill visibility
     private fun fetchServiceProvidersBySkills(clientInterests: List<String>, clientEmail: String) {
         val skillsReference = FirebaseDatabase.getInstance().getReference("skills")
 
-        // Use addValueEventListener for real-time updates
         skillsReference.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(skillSnapshot: DataSnapshot) {
                 val serviceProviderList = mutableListOf<User>()
@@ -108,9 +105,12 @@ class HomeFragmentClient : Fragment() {
                                 serviceProviderList.add(user)
                             }
 
-                            recyclerView.layoutManager = GridLayoutManager(requireContext(), 2)
-                            val serviceProviderAdapter = ServiceProviderAdapter(serviceProviderList)
-                            recyclerView.adapter = serviceProviderAdapter
+                            // Check if fragment is still attached before setting the adapter
+                            context?.let {
+                                recyclerView.layoutManager = GridLayoutManager(it, 2)
+                                serviceProviderAdapter = ServiceProviderAdapter(serviceProviderList)
+                                recyclerView.adapter = serviceProviderAdapter
+                            }
                         }
                     }
                 }
@@ -122,7 +122,6 @@ class HomeFragmentClient : Fragment() {
         })
     }
 
-    // Fetch user by email from 'users' collection
     private fun fetchUserByEmail(email: String, onUserFetched: (User?) -> Unit) {
         val usersReference = FirebaseDatabase.getInstance()
             .getReference("users")
@@ -144,4 +143,5 @@ class HomeFragmentClient : Fragment() {
             }
         })
     }
+
 }
