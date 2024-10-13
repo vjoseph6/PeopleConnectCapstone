@@ -21,12 +21,18 @@ class ClientChooseProvider : Fragment() {
     private val providerList = mutableListOf<ProviderData>()
     private var subCategoryName: String? = null
     private var email: String? = null
+    private var bookDay: String? = null
+    private var startTime: String? = null
+    private var endTime: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
             subCategoryName = it.getString("SUBCATEGORY_NAME")
             email = it.getString("EMAIL")
+            bookDay = it.getString("bookDay")
+            startTime = it.getString("startTime")
+            endTime = it.getString("endTime")
         }
     }
 
@@ -76,6 +82,9 @@ class ClientChooseProvider : Fragment() {
                     putString("DESCRIPTION", provider.description)
                     putString("RATE", (provider.skillRate ?: 0).toString())
                     putString("SERVICE_OFFERED", subCategoryName)
+                    putString("bookDay", bookDay)
+                    putString("startTime", startTime)
+                    putString("endTime", endTime)
                     Log.d("SKILL NAME" , subCategoryName.toString())
                 }
             }
@@ -173,11 +182,14 @@ class ClientChooseProvider : Fragment() {
 
 
     companion object {
-        fun newInstance(subCategoryName: String, email: String) =
+        fun newInstance(subCategoryName: String, email: String, bookDay: String, startTime: String, endTime: String) =
             ClientChooseProvider().apply {
                 arguments = Bundle().apply {
                     putString("SUBCATEGORY_NAME", subCategoryName)
                     putString("EMAIL", email)
+                    putString("bookDay", bookDay)
+                    putString("startTime", startTime)
+                    putString("endTime", endTime)
                 }
             }
     }

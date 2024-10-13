@@ -18,9 +18,11 @@ import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import android.media.audiofx.NoiseSuppressor
+import com.capstone.peopleconnect.Adapters.SpeechRecognitionCallback
 
 class SpeechRecognitionHelper(
-    private val context: Context
+    private val context: Context,
+    private val callback: SpeechRecognitionCallback
 ) {
     private lateinit var speechRecognizer: SpeechRecognizer
     private val handler = Handler()
@@ -47,18 +49,22 @@ class SpeechRecognitionHelper(
                 stopSpeechToText() // Stop the recognizer after speech is done
             }
 
-            override fun onError(error: Int) {
-                Log.e("SpeechRecognizer", "Error occurred: $error")
-                handleSpeechError(error)
-            }
-
             override fun onResults(results: Bundle?) {
                 val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 matches?.let {
                     val recognizedText = it[0] // Get the first recognized text
                     Log.d("SpeechRecognizer", "Recognized text: $recognizedText")
+
+                    // Pass the recognized text to the callback
+                    callback.onSpeechResult(recognizedText)
                 }
-                stopSpeechToText()
+                stopSpeechToText() // Call stop after the result
+            }
+
+            override fun onError(error: Int) {
+                // Handle errors and pass to callback
+                callback.onError("Speech recognition error: $error")
+                handleSpeechError(error)
             }
 
             override fun onPartialResults(partialResults: Bundle?) {}

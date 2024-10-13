@@ -1,5 +1,6 @@
 package com.capstone.peopleconnect.Client.Fragments
 
+import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.app.DatePickerDialog.OnDateSetListener
 import android.app.Dialog
@@ -71,6 +72,11 @@ class ActivityFragmentClient_BookDetails : Fragment() {
     private lateinit var btnAddImages: ImageView
     private val PICK_IMAGE_REQUEST = 1
     private var selectedImagePosition = -1
+    private lateinit var loadingDialog: AlertDialog
+
+    private var bookDay: String? = null
+    private var startTime: String? = null
+    private var endTime: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,6 +89,12 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_activity_client__book_details, container, false)
+
+        arguments.let {
+            bookDay = arguments?.getString("bookDay") ?: ""
+            startTime = arguments?.getString("startTime") ?: ""
+            endTime = arguments?.getString("endTime") ?: ""
+        }
 
         // Initialize views
         dateIcon = view.findViewById(R.id.dateIcon)
@@ -97,6 +109,13 @@ class ActivityFragmentClient_BookDetails : Fragment() {
             .load(R.drawable.upload)  // Replace with your drawable resource or image URL
             .into(btnAddImages)
         locationEditText = view.findViewById(R.id.etSelectLocation)
+
+        dateEditText.setText(bookDay?.ifEmpty { "" } ?: "")
+        // Set the start time and calculate the hour rate
+        startTimeEditText.setText(startTime?.ifEmpty { "" } ?: "").also {  calculateHourRate() }
+
+        endTimeEditText.setText(endTime?.ifEmpty { "" } ?: "").also { calculateHourRate() }
+
 
         //save booking
         bookNow = view.findViewById(R.id.btnBookNow)
@@ -151,35 +170,80 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         }
 
 
-
         return view
     }
+
+    private fun showLoadingDialog() {
+        // Create the dialog builder
+        val dialogBuilder = AlertDialog.Builder(requireContext())
+
+        // Inflate the custom layout
+        val inflater = layoutInflater
+        val dialogView = inflater.inflate(R.layout.pre_loader, null) // Your custom layout for the loader
+
+
+        // Set the custom layout to the dialog
+        dialogBuilder.setView(dialogView)
+
+        // Create and show the dialog
+        loadingDialog = dialogBuilder.create()
+        loadingDialog.setCancelable(false) // Prevent dismissing on back press
+
+
+        loadingDialog.show()
+    }
+
+
+    private fun dismissLoadingDialog() {
+        if (::loadingDialog.isInitialized && loadingDialog.isShowing) {
+            loadingDialog.dismiss()
+        }
+    }
+
 
     // checkForDuplicateBooking now also checks for pending status
     private fun checkForDuplicateBooking(
         userEmail: String,
         providerEmail: String,
-        bookingDay: String,
+        bookingDay: String, // Add bookingDay here
         bookingStartTime: String,
         bookingEndTime: String,
-        serviceOffered: String,  // Add serviceOffered for comparison
+        serviceOffered: String,
         onResult: (Boolean) -> Unit
     ) {
         val bookingReference = FirebaseDatabase.getInstance().getReference("bookings")
 
+        // Convert booking times into minutes since midnight for easier comparison
+        val currentBookingStartMinutes = convertToMinutesSinceMidnight(bookingStartTime)
+        val currentBookingEndMinutes = convertToMinutesSinceMidnight(bookingEndTime)
+
         bookingReference.orderByChild("providerEmail").equalTo(providerEmail)
-            .addValueEventListener(object : ValueEventListener {
+            .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     var duplicateFound = false
+
                     for (bookingSnapshot in dataSnapshot.children) {
                         val existingBooking = bookingSnapshot.getValue(Bookings::class.java)
+
                         if (existingBooking != null &&
-                            existingBooking.bookingDay == bookingDay &&
-                            existingBooking.serviceOffered == serviceOffered &&  // Check if same service
-                            existingBooking.bookingStatus == "Pending" // Block if pending
+                            existingBooking.serviceOffered == serviceOffered &&
+                            existingBooking.bookingStatus == "Pending"
                         ) {
-                            duplicateFound = true
-                            break
+                            // Convert the existing booking times to minutes since midnight for comparison
+                            val existingStartMinutes = convertToMinutesSinceMidnight(existingBooking.bookingStartTime)
+                            val existingEndMinutes = convertToMinutesSinceMidnight(existingBooking.bookingEndTime)
+
+                            // Check for time overlap
+                            if (isTimeOverlap(
+                                    currentBookingStartMinutes,
+                                    currentBookingEndMinutes,
+                                    existingStartMinutes,
+                                    existingEndMinutes
+                                )
+                            ) {
+                                duplicateFound = true
+                                break
+                            }
                         }
                     }
                     onResult(duplicateFound)
@@ -192,8 +256,38 @@ class ActivityFragmentClient_BookDetails : Fragment() {
             })
     }
 
+    private fun isTimeOverlap(
+        currentStart: Int,
+        currentEnd: Int,
+        existingStart: Int,
+        existingEnd: Int
+    ): Boolean {
+        // Handle cross-day bookings (e.g., 11:45 PM to 12:00 AM)
+        val currentEndAdjusted = if (currentStart > currentEnd) currentEnd + 1440 else currentEnd // Add 1440 min (24 hours) if crossing day
+        val existingEndAdjusted = if (existingStart > existingEnd) existingEnd + 1440 else existingEnd
+
+        // Check for overlap
+        return currentStart < existingEndAdjusted && currentEndAdjusted > existingStart
+    }
+
+    private fun convertToMinutesSinceMidnight(time: String): Int {
+        val format = SimpleDateFormat("hh:mm a", Locale.getDefault()) // e.g., 11:45 PM or 12:00 AM
+        val date = format.parse(time)
+
+        val calendar = Calendar.getInstance()
+        calendar.time = date
+
+        val hours = calendar.get(Calendar.HOUR_OF_DAY)
+        val minutes = calendar.get(Calendar.MINUTE)
+
+        return hours * 60 + minutes
+    }
+
+
     // In saveBooking, prevent duplicate pending bookings
     private fun saveBooking() {
+        showLoadingDialog()
+
         val userEmail = auth.currentUser?.email ?: ""
         val providerEmail = arguments?.getString("EMAIL") ?: ""
         val bookingStatus = "Pending"
@@ -293,6 +387,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         bookingReference.child(bookingId).setValue(booking)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
+                    dismissLoadingDialog()
                     Toast.makeText(requireContext(), "Booking saved successfully!", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(requireContext(), "Failed to save booking", Toast.LENGTH_SHORT).show()
@@ -513,12 +608,19 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         val calendar = Calendar.getInstance()
         val datePickerDialog = DatePickerDialog(requireContext(), { _: DatePicker, year: Int, month: Int, dayOfMonth: Int ->
             val selectedDate = Calendar.getInstance().apply { set(year, month, dayOfMonth) }
+
+            // Format the date as "YYYY-MM-DD"
+            val formattedDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(selectedDate.time)
+            // Get the day of the week
             val dayOfWeek = SimpleDateFormat("EEEE", Locale.getDefault()).format(selectedDate.time)
-            dateEditText.setText(dayOfWeek)
+
+            // Set the text in the desired format
+            dateEditText.setText("$formattedDate $dayOfWeek")
         }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH))
 
         datePickerDialog.show()
     }
+
 
 
     // Show Start Time Picker and store the full calendar object
@@ -600,9 +702,12 @@ class ActivityFragmentClient_BookDetails : Fragment() {
 
     companion object {
         @JvmStatic
-        fun newInstance() = ActivityFragmentClient_BookDetails().apply {
+        fun newInstance(bookDay: String, startTime: String, endTime: String) = ActivityFragmentClient_BookDetails().apply {
             arguments = Bundle().apply {
-                // Pass any required arguments here
+
+                putString("bookDay", bookDay)
+                putString("startTime", startTime)
+                putString("endTime", endTime)
             }
         }
     }

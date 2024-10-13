@@ -1,0 +1,26 @@
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/homeFragmentClient">
+
+    <fragment
+        android:id="@+id/homeFragmentClient"
+        android:name="com.capstone.peopleconnect.Client.Fragments.HomeFragmentClient"
+        tools:layout="@layout/fragment_home_client" />
+
+    <fragment
+        android:id="@+id/activityFragmentClient"
+        android:name="com.capstone.peopleconnect.Client.Fragments.ActivityFragmentClient"
+        tools:layout="@layout/fragment_activity_client" />
+
+    <fragment
+        android:id="@+id/categoryFragmentClient"
+        android:name="com.capstone.peopleconnect.Client.Fragments.CategoryFragmentClient"
+        tools:layout="@layout/fragment_category_client" />
+
+    <fragment
+        android:id="@+id/profileFragmentClient"
+        android:name="com.capstone.peopleconnect.Client.Fragments.ProfileFragmentClient"
+        tools:layout="@layout/fragment_profile_client" />
+</navigation>

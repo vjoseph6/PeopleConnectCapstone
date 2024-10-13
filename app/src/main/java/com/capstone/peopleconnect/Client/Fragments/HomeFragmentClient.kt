@@ -1,6 +1,7 @@
 package com.capstone.peopleconnect.Client.Fragments
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -44,6 +45,7 @@ class HomeFragmentClient : Fragment() {
         // Retrieve arguments (such as email) passed to the fragment
         arguments?.let {
             email = it.getString("EMAIL")
+
         }
 
         // Proceed only if email is available
