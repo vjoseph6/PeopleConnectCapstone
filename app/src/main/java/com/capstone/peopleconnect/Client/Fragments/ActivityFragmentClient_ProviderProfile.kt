@@ -36,6 +36,9 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
     private lateinit var email: String
     private lateinit var categoryAdapter: CategoryAdapter
     private lateinit var recyclerView: RecyclerView
+    private var bookDay: String? = null
+    private var startTime: String? = null
+    private var endTime: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,6 +71,9 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
         val description = arguments?.getString("DESCRIPTION") ?: ""
         val skillRate = arguments?.getString("RATE") ?: ""
         val serviceOffered = arguments?.getString("SERVICE_OFFERED") ?: ""
+        bookDay = arguments?.getString("bookDay") ?: ""
+        startTime = arguments?.getString("startTime") ?: ""
+        endTime = arguments?.getString("endTime") ?: ""
         Log.d("Rating retrieved", "$skillRate")
         Log.d("SERVICE RETRIEVED", "$serviceOffered")
 
@@ -78,6 +84,9 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
                     putString("EMAIL", email)
                     putString("SKILL_RATE", skillRate)
                     putString("SERVICE_OFFERED", serviceOffered)
+                    putString("bookDay", bookDay)
+                    putString("startTime", startTime)
+                    putString("endTime", endTime)
                 }
             }
 

@@ -30,22 +30,40 @@ class CategoryFragmentClient : Fragment() {
     // To handle double back press
     private var backPressedOnce = false
     private val backPressHandler = Handler()
+
+    //this is for the variables to be passed on each screens
+    private var bookDay: String? = null
+    private var startTime: String? = null
+    private var endTime: String? = null
+    private var rating: String? = null
+    private var serviceType: String? = null
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_category_client, container, false)
 
+        Log.d("CategoryFragmentClient", "Arguments: ${arguments?.getString("serviceType")}")
+
         arguments?.let {
             email = it.getString("EMAIL")
-        }
+            bookDay = it.getString("bookDay")
+            startTime = it.getString("startTime")
+            endTime = it.getString("endTime")
+            rating = it.getString("rating")
+            serviceType = it.getString("serviceType")
+
+            Log.d("CategoryFragmentClient", "Email: $email, BookDay: $bookDay, StartTime: $startTime, EndTime: $endTime, Rating: $rating, ServiceType: $serviceType")
+        } ?: Log.d("CategoryFragmentClient", "Arguments are null")
+
+
 
         recyclerView = view.findViewById(R.id.rvCategories)
         recyclerView.layoutManager = GridLayoutManager(requireContext(), 3)
 
         database = FirebaseDatabase.getInstance().getReference("category")
 
-        fetchCategories()
+        fetchCategoriesAndCheckSubcategory(serviceType)
 
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -73,40 +91,58 @@ class CategoryFragmentClient : Fragment() {
     // Method to display categories again
     private fun displayCategories() {
         isInSubcategoriesView = false  // Reset the flag
-        fetchCategories()  // Reload categories from Firebase to ensure data is refreshed
+        fetchCategoriesAndCheckSubcategory(serviceType)  // Reload categories from Firebase to ensure data is refreshed
     }
 
     // Method to load categories from Firebase
-    private fun fetchCategories() {
-        // Only load categories if we are not already in the subcategories view
-        if (!isInSubcategoriesView) {
-            database.addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    categoryList.clear()  // Make sure to clear the list
-                    for (categorySnapshot in snapshot.children) {
-                        val categoryName = categorySnapshot.key ?: continue
-                        val categoryImage = categorySnapshot.child("image").getValue(String::class.java) ?: ""
-                        val category = Category(name = categoryName, image = categoryImage)
-                        categoryList.add(category)
+    // Fused Method to fetch categories and check for matching subcategories
+    private fun fetchCategoriesAndCheckSubcategory(serviceType: String?) {
+        database.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                categoryList.clear()  // Clear the list first
+
+                for (categorySnapshot in snapshot.children) {
+                    val categoryName = categorySnapshot.key ?: continue
+                    val categoryImage = categorySnapshot.child("image").getValue(String::class.java) ?: ""
+                    val category = Category(name = categoryName, image = categoryImage)
+                    categoryList.add(category)
+
+                    // Check for subcategories in this category
+                    val subcategoryReference = categorySnapshot.child("Sub Categories")
+                    val subcategoryList = mutableListOf<Category>()
+
+                    for (subcategorySnapshot in subcategoryReference.children) {
+                        val subcategoryName = subcategorySnapshot.child("name").getValue(String::class.java) ?: continue
+                        val subcategoryImage = subcategorySnapshot.child("image").getValue(String::class.java) ?: ""
+                        val subcategory = Category(name = subcategoryName, image = subcategoryImage)
+                        subcategoryList.add(subcategory)
+
+                        // Check if the subcategory matches the serviceType
+                        if (subcategoryName.equals(serviceType, ignoreCase = true)) {
+                            // Match found for serviceType, simulate clicking the category and subcategory
+                            isInSubcategoriesView = true  // Set the flag for subcategories view
+                            navigateToChooseProviderFragment(subcategory)  // Navigate to providers
+                            return  // Exit the loop once we find a match
+                        }
                     }
 
-                    // Re-initialize the adapter with categories only
+                    // If no match found, continue setting up categories normally
                     categoryAdapter = CategoryAdapter(categoryList) { category ->
-                        fetchSubcategories(category.name)
+                        // Fetch subcategories when category is clicked
+                        fetchSubcategories(category.name, serviceType)
                     }
-
-                    recyclerView.adapter = categoryAdapter  // Set the adapter to display categories
+                    recyclerView.adapter = categoryAdapter
                 }
+            }
 
-                override fun onCancelled(error: DatabaseError) {
-                    error.toException().printStackTrace()
-                }
-            })
-        }
+            override fun onCancelled(error: DatabaseError) {
+                error.toException().printStackTrace()
+            }
+        })
     }
 
-    // Method to load subcategories from Firebase
-    private fun fetchSubcategories(categoryName: String) {
+    // Method to load subcategories when a category is clicked
+    private fun fetchSubcategories(categoryName: String, serviceType: String?) {
         val subcategoryReference = database.child(categoryName).child("Sub Categories")
 
         subcategoryReference.addValueEventListener(object : ValueEventListener {
@@ -122,35 +158,41 @@ class CategoryFragmentClient : Fragment() {
                 if (subcategoryList.isNotEmpty()) {
                     isInSubcategoriesView = true  // Set the flag when subcategories are displayed
 
+                    // Set up the adapter for subcategories
                     categoryAdapter = CategoryAdapter(subcategoryList) { subcategory ->
-                        // Create a new instance of ClientChooseProvider using the companion object
-                        val clientChooseProviderFragment = ClientChooseProvider.newInstance(
-                            subCategoryName = subcategory.name,
-                            email = email.toString()
-                        )
-
-                        // Navigate to the ClientChooseProvider fragment
-                        requireActivity().supportFragmentManager.beginTransaction()
-                            .replace(R.id.frame_layout, clientChooseProviderFragment) // Adjust the container ID as necessary
-                            .addToBackStack(null)
-                            .commit()
-
-                        Log.d("SUB CATEGORY", subcategory.name)
-                        Log.d("EMAIL", email.toString())
+                        navigateToChooseProviderFragment(subcategory)  // Navigate on click
                     }
-                recyclerView.adapter = categoryAdapter
+                    recyclerView.adapter = categoryAdapter
                 } else {
-                    // Handle empty subcategory list case if needed
+                    // Handle empty subcategory list if needed
                     recyclerView.adapter = null  // Clear adapter if no subcategories found
                 }
-
             }
 
             override fun onCancelled(error: DatabaseError) {
                 error.toException().printStackTrace()
-                // Optionally show a message to the user
             }
         })
+    }
+
+    // Method to handle navigation to ClientChooseProvider
+    private fun navigateToChooseProviderFragment(subcategory: Category) {
+        val clientChooseProviderFragment = ClientChooseProvider.newInstance(
+            subCategoryName = subcategory.name,
+            email = email.toString(),
+            bookDay = bookDay.toString(),
+            startTime = startTime.toString(),
+            endTime = endTime.toString()
+        )
+
+        // Navigate to the ClientChooseProvider fragment
+        requireActivity().supportFragmentManager.beginTransaction()
+            .replace(R.id.frame_layout, clientChooseProviderFragment)  // Adjust the container ID as necessary
+            .addToBackStack(null)
+            .commit()
+
+        Log.d("SUB CATEGORY", subcategory.name)
+        Log.d("EMAIL", email.toString())
     }
 
 }

@@ -51,4 +51,5 @@
     </string>
     <string name="subText">Share your experience in service. Let them know why you are the best service provider in the city</string>
     <string name="expText"><![CDATA[Service & Experience]]></string>
+    <string name="dateTime">wit$datetime:datetime</string>
 </resources>
