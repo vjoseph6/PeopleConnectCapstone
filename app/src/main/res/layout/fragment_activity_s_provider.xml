@@ -8,22 +8,10 @@
     android:id="@+id/fragment_container_present_booking"
     tools:context=".SPrvoider.Fragments.ActivityFragmentSProvider">
 
-    <TextView
-        android:id="@+id/tvMyActivity"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:fontFamily="@font/bold_poppins"
-        android:text="My Activity"
-        android:textSize="32sp"
-        android:textColor="@color/black"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.2"
-        android:paddingTop="16dp"/>
 
     <!-- Notification Icons -->
     <LinearLayout
+        android:id="@+id/layout1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -50,79 +38,63 @@
             android:contentDescription="Message Icon" />
     </LinearLayout>
 
-    <!-- Tabs for Present and Past -->
-    <LinearLayout
-        android:id="@+id/layoutPresentPast"
+
+    <!-- Popular Projects -->
+    <TextView
+        android:id="@+id/tvPopularProjects"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingTop="16dp"
+        android:fontFamily="@font/bold_poppins"
+        android:text="My Activity"
+        android:textColor="@color/black"
+        android:textSize="30sp"
+        android:layout_marginStart="16dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvMyActivity"
-        app:layout_constraintHorizontal_bias="0.5">
+        app:layout_constraintTop_toBottomOf="@+id/layout1"
+        tools:ignore="MissingConstraints" />
 
-        <TextView
-            android:id="@+id/tvPresent"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Present"
-            android:textSize="28sp"
-            android:textColor="@color/blue"
-            android:fontFamily="@font/bold_poppins"
-            android:layout_marginEnd="25dp"/>
-
-        <TextView
-            android:id="@+id/tvPast_Present"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Past"
-            android:textSize="28sp"
-            android:textColor="@color/black"
-            android:fontFamily="@font/bold_poppins"/>
-    </LinearLayout>
 
     <!-- Sub-tabs for Bookings -->
     <LinearLayout
         android:id="@+id/subBookingsLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:gravity="start"
-        android:layout_marginTop="8dp"
-        app:layout_constraintStart_toStartOf="parent"
+        android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/layoutPresentPast"
-        app:layout_constraintHorizontal_bias="0.5">
+        android:layout_marginTop="20dp"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvPopularProjects">
 
         <TextView
             android:id="@+id/tvBooking_Present"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Booking"
-            android:textSize="16sp"
-            android:textColor="@color/blue"
+            android:layout_marginEnd="24dp"
             android:fontFamily="@font/bold_poppins"
-            android:layout_marginEnd="24dp"/>
+            android:text="Booking"
+            android:textColor="@color/blue"
+            android:textSize="16sp" />
 
         <TextView
             android:id="@+id/tvSuccessful_Present"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Successful"
-            android:textSize="16sp"
-            android:textColor="@color/black"
+            android:layout_marginEnd="24dp"
             android:fontFamily="@font/bold_poppins"
-            android:layout_marginEnd="24dp"/>
+            android:text="Successful"
+            android:textColor="@color/black"
+            android:textSize="16sp" />
 
         <TextView
             android:id="@+id/tvFailed_Present"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:fontFamily="@font/bold_poppins"
             android:text="Failed"
-            android:textSize="16sp"
             android:textColor="@color/black"
-            android:fontFamily="@font/bold_poppins"/>
+            android:textSize="16sp" />
     </LinearLayout>
 
     <!-- RecyclerView for Present/Past Items -->
@@ -135,5 +107,32 @@
         app:layout_constraintTop_toBottomOf="@id/subBookingsLayout"
         app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginTop="16dp"/>
+
+    <RelativeLayout
+        android:id="@+id/emptyView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/image"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            android:layout_centerInParent="true"
+            android:src="@drawable/nothing" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/image"
+            android:layout_centerInParent="true"
+            android:fontFamily="@font/regular_poppins"
+            android:text="Nothing to Show"
+            android:layout_marginTop="-3dp"
+            android:textColor="#A9A9A9"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+    </RelativeLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

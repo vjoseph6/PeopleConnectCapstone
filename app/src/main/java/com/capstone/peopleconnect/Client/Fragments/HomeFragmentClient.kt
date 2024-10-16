@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -28,6 +29,7 @@ class HomeFragmentClient : Fragment() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var clientInterests: List<String>
     private var email: String? = null
+    private var firstName: TextView? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -41,6 +43,7 @@ class HomeFragmentClient : Fragment() {
 
         recyclerView = view.findViewById(R.id.rvInterests)
         recyclerView.layoutManager = LinearLayoutManager(context)
+        firstName = view.findViewById(R.id.tvName)
 
         // Retrieve arguments (such as email) passed to the fragment
         arguments?.let {
@@ -76,6 +79,8 @@ class HomeFragmentClient : Fragment() {
                     user?.interest?.let { interestList ->
                         interests.addAll(interestList)
                     }
+                    firstName!!.text = user?.firstName.toString()
+
                 }
                 onInterestsFetched(interests) // Pass the interests list to the callback
             }

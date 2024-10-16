@@ -12,5 +12,7 @@ data class Bookings(
     val bookingLocation: String = "",
     val bookingAmount: Double = 0.0,
     val bookingPaymentMethod: String = "",
+    val bookingCancelClient: String = "",
+    val bookingCancelProvider: String = "",
     val bookingUploadImages: List<String> = emptyList() // Store URLs of uploaded images
 )

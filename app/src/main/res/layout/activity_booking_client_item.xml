@@ -5,13 +5,13 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="10dp"
+    android:layout_margin="5dp"
     app:cardElevation="4dp"
     app:cardCornerRadius="12dp">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="130dp"
+        android:layout_height="110dp"
         android:orientation="horizontal"
         android:padding="10dp">
 
@@ -21,8 +21,8 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_gravity="center"
-            android:src="@drawable/profile1"
             android:scaleType="fitCenter"
+            android:src="@drawable/profile"
             app:shapeAppearanceOverlay="@style/CircularImageViewStyle"
             android:layout_marginEnd="16dp"/>
 
@@ -39,54 +39,37 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Name"
-                android:textSize="18sp"
+                android:textSize="16sp"
                 android:textColor="@color/black"
                 android:fontFamily="@font/bold_poppins"/>
 
-            <!-- Name -->
+            <!-- Accept and Cancel Buttons -->
             <TextView
-                android:id="@+id/tvService"
+                android:id="@+id/serviceOffered"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Service Offered"
-                android:textSize="12sp"
-                android:textColor="@color/blue"
-                android:fontFamily="@font/medium_poppins"/>
+                android:fontFamily="@font/medium_poppins"
+                android:text="Baking and Pastry"
+                android:textColor="@color/green"
+                android:textSize="12sp" />
 
-            <!-- Accept and Cancel Buttons -->
             <RelativeLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                >
+                android:orientation="horizontal">
+
                 <!-- Accept Button -->
-
-                <Button
-                    android:id="@+id/btnStatus"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:backgroundTint="@color/green"
-                    android:text="Accept"
-                    android:textSize="12sp"
-                    android:textAllCaps="false"
-                    style="@style/GreenButtonStyle"
-                    android:visibility="gone"
-                    android:fontFamily="@font/regular_poppins"
-                    android:textColor="@color/white"
-                    android:layout_marginEnd="10dp"/>
-
-
                 <Button
                     android:id="@+id/btnAccept_Present"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:backgroundTint="@color/blue"
-                    android:text="Accept"
+                    android:backgroundTint="@color/orange"
+                    android:text="Pending"
                     android:textSize="12sp"
                     android:textAllCaps="false"
-                    style="@style/BlueButtonStyle"
                     android:fontFamily="@font/regular_poppins"
                     android:textColor="@color/white"
-                    android:layout_marginEnd="10dp"/>
+                    android:layout_marginEnd="8dp"/>
 
                 <!-- Cancel Button -->
                 <Button
@@ -99,6 +82,7 @@
                     android:layout_toRightOf="@id/btnAccept_Present"
                     android:textSize="12sp"
                     android:textColor="@color/white"/>
+
             </RelativeLayout>
         </LinearLayout>
     </LinearLayout>
