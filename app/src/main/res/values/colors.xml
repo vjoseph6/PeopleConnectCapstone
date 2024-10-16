@@ -11,4 +11,5 @@
     <color name="default_button">#FFFFFF</color> <!-- White color -->
     <color name="gray">#E5E5E5</color>
     <color name="light_gray">#C3C3C3</color>
+    <color name="orange">#FF6B00</color>
 </resources>

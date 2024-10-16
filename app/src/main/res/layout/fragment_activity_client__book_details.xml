@@ -328,6 +328,7 @@
                 android:fontFamily="@font/regular_poppins"
                 android:gravity="top"
                 android:singleLine="true"
+                android:inputType="text"
                 android:hint="Type some message...."
                 android:padding="12dp"
                 android:textSize="12sp"

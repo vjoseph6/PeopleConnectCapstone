@@ -2,10 +2,9 @@ package com.capstone.peopleconnect.Client.Fragments
 
 import android.app.AlertDialog
 import android.app.DatePickerDialog
-import android.app.DatePickerDialog.OnDateSetListener
 import android.app.Dialog
 import android.app.TimePickerDialog
-import android.app.TimePickerDialog.OnTimeSetListener
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -18,6 +17,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.Window
 import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.DatePicker
 import android.widget.EditText
@@ -27,7 +27,6 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.TimePicker
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
@@ -46,11 +45,12 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import java.util.UUID
-import kotlin.time.times
 
 
 class ActivityFragmentClient_BookDetails : Fragment() {
 
+    private var serviceOffered: String? = null
+    private var userEmail: String? = null
     private lateinit var dateEditText: EditText
     private lateinit var auth: FirebaseAuth
     private lateinit var dateIcon: ImageView
@@ -102,6 +102,16 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         endIcon = view.findViewById(R.id.timeIcon2)
         dateEditText = view.findViewById(R.id.dateEditText)
         descEditText = view.findViewById(R.id.etDescription)
+        descEditText.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                descEditText.clearFocus() // Remove focus from the EditText
+                val imm = context?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.hideSoftInputFromWindow(descEditText.windowToken, 0) // Hide the keyboard
+                true // Consume the action
+            } else {
+                false // Do not consume the action
+            }
+        }
         startTimeEditText = view.findViewById(R.id.startTime)
         endTimeEditText = view.findViewById(R.id.endTime)
         btnAddImages = view.findViewById(R.id.addImage)
@@ -288,10 +298,10 @@ class ActivityFragmentClient_BookDetails : Fragment() {
     private fun saveBooking() {
         showLoadingDialog()
 
-        val userEmail = auth.currentUser?.email ?: ""
+        userEmail = auth.currentUser?.email ?: ""
         val providerEmail = arguments?.getString("EMAIL") ?: ""
         val bookingStatus = "Pending"
-        val serviceOffered = arguments?.getString("SERVICE_OFFERED") ?: ""
+        serviceOffered = arguments?.getString("SERVICE_OFFERED") ?: ""
         val bookingStartTime = startTimeEditText.text.toString()
         val bookingEndTime = endTimeEditText.text.toString()
         val bookingDescription = descEditText.text.toString()
@@ -309,7 +319,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
 
         // Validation: Ensure no required fields are empty
         if (providerEmail.isEmpty() ||
-            serviceOffered.isEmpty() ||
+            serviceOffered.toString().isEmpty() ||
             bookingStartTime.isEmpty() ||
             bookingEndTime.isEmpty() ||
             bookingDescription.isEmpty() ||
@@ -320,19 +330,20 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         }
 
         // Check for duplicate booking before proceeding
-        checkForDuplicateBooking(userEmail, providerEmail, bookingDay, bookingStartTime, bookingEndTime, serviceOffered) { duplicateFound ->
+        checkForDuplicateBooking(userEmail.toString(), providerEmail, bookingDay, bookingStartTime, bookingEndTime, serviceOffered.toString()) { duplicateFound ->
             if (duplicateFound) {
                 getContext()?.let {
+                    dismissLoadingDialog()
                     Toast.makeText(it, "You already have a pending booking with this provider for this service.", Toast.LENGTH_SHORT).show()
                 }
             } else {
                 // Upload images and create booking once images are uploaded
-                uploadImagesToFirebase(userEmail, validImageUris, bookingId) { imageUrls ->
+                uploadImagesToFirebase(userEmail.toString(), validImageUris, bookingId) { imageUrls ->
                     val booking = Bookings(
-                        bookByEmail = userEmail,
+                        bookByEmail = userEmail.toString(),
                         providerEmail = providerEmail,
                         bookingStatus = bookingStatus,
-                        serviceOffered = serviceOffered,
+                        serviceOffered = serviceOffered.toString(),
                         bookingStartTime = bookingStartTime,
                         bookingEndTime = bookingEndTime,
                         bookingDescription = bookingDescription,
@@ -340,6 +351,8 @@ class ActivityFragmentClient_BookDetails : Fragment() {
                         bookingLocation = bookingLocation,
                         bookingAmount = bookingAmount,
                         bookingPaymentMethod = bookingPaymentMethod,
+                        bookingCancelClient = "",
+                        bookingCancelProvider = "",
                         bookingUploadImages = imageUrls
                     )
 
@@ -389,6 +402,12 @@ class ActivityFragmentClient_BookDetails : Fragment() {
                 if (task.isSuccessful) {
                     dismissLoadingDialog()
                     Toast.makeText(requireContext(), "Booking saved successfully!", Toast.LENGTH_SHORT).show()
+
+                    // Navigate to ActivityFragmentClient after successful booking
+                    val fragmentTransaction = requireActivity().supportFragmentManager.beginTransaction()
+                    fragmentTransaction.replace(R.id.frame_layout, ActivityFragmentClient.newInstance(email = userEmail.toString()))
+                    fragmentTransaction.addToBackStack(null)
+                    fragmentTransaction.commit()
                 } else {
                     Toast.makeText(requireContext(), "Failed to save booking", Toast.LENGTH_SHORT).show()
                 }
@@ -397,9 +416,15 @@ class ActivityFragmentClient_BookDetails : Fragment() {
 
 
 
+
     // Image picker intent
     private fun setupImagePicker() {
         btnAddImages.setOnClickListener {
+            descEditText.clearFocus() // Remove focus from the EditText
+            val imm = context?.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(descEditText.windowToken, 0) // Hide the keyboard
+            true // Consume the action
+
             if (imageUris.size >= 3) {
                 Toast.makeText(requireContext(), "Only 3 images can be uploaded", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
