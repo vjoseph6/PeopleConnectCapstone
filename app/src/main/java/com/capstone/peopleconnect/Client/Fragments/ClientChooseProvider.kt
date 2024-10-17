@@ -127,8 +127,18 @@ class ClientChooseProvider : Fragment() {
                                 val rating = skillSnapshot.child("rating").getValue(Float::class.java)
                                 val isVisible = skillSnapshot.child("visible").getValue(Boolean::class.java) ?: false
 
-                                if (skillName == subCategoryName && isVisible) {
-                                    user?.let { retrieveUserName(it, skillName, skillRate, description, rating) }
+                                if (skillName == subCategoryName) {
+                                    // If visible, add the provider to the list
+                                    if (isVisible) {
+                                        user?.let {
+                                            retrieveUserName(it, skillName, skillRate, description, rating, isVisible)
+                                        }
+                                    } else {
+                                        // If not visible, remove the provider from the list
+                                        user?.let {
+                                            removeProviderByEmailAndSkill(it, skillName)
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -142,11 +152,13 @@ class ClientChooseProvider : Fragment() {
         })
     }
 
-    private fun retrieveUserName(userEmail: String, skillName: String?, skillRate: Int?, description: String?, rating: Float?) {
+
+    private fun retrieveUserName(userEmail: String, skillName: String?, skillRate: Int?, description: String?, rating: Float?, isVisible: Boolean
+    ) {
         val userRef = FirebaseDatabase.getInstance().getReference("users")
 
         userRef.orderByChild("email").equalTo(userEmail)
-            .addValueEventListener(object : ValueEventListener {
+            .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (snapshot.exists()) {
                         for (userSnapshot in snapshot.children) {
@@ -154,23 +166,29 @@ class ClientChooseProvider : Fragment() {
                             val imageUrl = userSnapshot.child("profileImageUrl").getValue(String::class.java)
                             val noOfBookings = userSnapshot.child("noOfBookings").getValue(Int::class.java) ?: 0
 
-                            Log.d("UserData", "UserName: $userName, ImageURL: $imageUrl, Skill: $skillName, Rate: $skillRate, Description: $description, Rating: $rating, NoOfBookings: $noOfBookings")
+                            if (isVisible) {
+                                // Check if provider already exists in the list
+                                val exists = providerList.any {
+                                    it.userName == userName && it.name == skillName
+                                }
 
-                            if (userEmail != email) {
-                                providerList.add(
-                                    ProviderData(
-                                        name = skillName,
-                                        skillRate = skillRate,
-                                        description = description,
-                                        userName = userName,
-                                        imageUrl = imageUrl,
-                                        rating = rating,
-                                        noOfBookings = noOfBookings // Include noOfBookings
+                                if (!exists) {
+                                    // Add only if not already in the list
+                                    providerList.add(
+                                        ProviderData(
+                                            name = skillName,
+                                            skillRate = skillRate,
+                                            description = description,
+                                            userName = userName,
+                                            imageUrl = imageUrl,
+                                            rating = rating,
+                                            noOfBookings = noOfBookings
+                                        )
                                     )
-                                )
+                                    providerAdapter.notifyDataSetChanged()
+                                }
                             }
                         }
-                        providerAdapter.notifyDataSetChanged()
                     }
                 }
 
@@ -179,6 +197,19 @@ class ClientChooseProvider : Fragment() {
                 }
             })
     }
+
+
+    private fun removeProviderByEmailAndSkill(userEmail: String, skillName: String) {
+        providerList.clear()
+        providerAdapter.notifyDataSetChanged()
+        val indexToRemove = providerList.indexOfFirst { it.userName == userEmail && it.name == skillName }
+        if (indexToRemove != -1) {
+            providerList.removeAt(indexToRemove)
+            providerAdapter.notifyDataSetChanged()
+        }
+    }
+
+
 
 
     companion object {
