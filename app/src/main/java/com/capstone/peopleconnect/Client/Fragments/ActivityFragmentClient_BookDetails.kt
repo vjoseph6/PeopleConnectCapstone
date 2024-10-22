@@ -31,6 +31,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
 import com.capstone.peopleconnect.Classes.Bookings
+import com.capstone.peopleconnect.Helper.StripeHelper
 import com.capstone.peopleconnect.R
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.firebase.auth.FirebaseAuth
@@ -62,7 +63,8 @@ class ActivityFragmentClient_BookDetails : Fragment() {
     private lateinit var locationEditText: EditText
     private lateinit var databaseReference: DatabaseReference
     private lateinit var rate: String
-    private var startTimeUnparsed: Calendar? = null // To store the unparsed start time
+    private var startTimeCalendar: Calendar? = null
+    private var endTimeCalendar: Calendar? = null
     private lateinit var descEditText: EditText
     private val imageUris = mutableListOf<Uri?>() // Store selected image URIs
     private lateinit var displayImagesLayout: LinearLayout
@@ -73,7 +75,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
     private val PICK_IMAGE_REQUEST = 1
     private var selectedImagePosition = -1
     private lateinit var loadingDialog: AlertDialog
-
+    private lateinit var stripeHelper: StripeHelper
     private var bookDay: String? = null
     private var startTime: String? = null
     private var endTime: String? = null
@@ -95,6 +97,9 @@ class ActivityFragmentClient_BookDetails : Fragment() {
             startTime = arguments?.getString("startTime") ?: ""
             endTime = arguments?.getString("endTime") ?: ""
         }
+
+        stripeHelper = StripeHelper(requireContext(), this) // 'this' refers to the fragment's lifecycle owner
+
 
         // Initialize views
         dateIcon = view.findViewById(R.id.dateIcon)
@@ -129,7 +134,10 @@ class ActivityFragmentClient_BookDetails : Fragment() {
 
         //save booking
         bookNow = view.findViewById(R.id.btnBookNow)
-        bookNow.setOnClickListener { saveBooking() }
+        /*bookNow.setOnClickListener { saveBooking() }*/
+        bookNow.setOnClickListener { initiatePayment() }
+
+
 
         //for the upload image
         displayImagesLayout = view.findViewById(R.id.displayImages)
@@ -164,26 +172,63 @@ class ActivityFragmentClient_BookDetails : Fragment() {
 
 
         // Date and time pickers
-        dateIcon.setOnClickListener { showDatePicker() }
+        dateIcon.setOnClickListener {
+            showDatePicker { year, month, dayOfMonth ->
+                val selectedDate = "$year-${month + 1}-$dayOfMonth"
+                dateEditText.setText(selectedDate)
+            }
+        }
+
+
         startIcon.setOnClickListener {
-            showStartTimePicker { startTime ->
-                startTimeEditText.setText(startTime)
-                calculateHourRate()
+            showStartDateTimePicker { startTime ->
+                startTimeEditText.setText(SimpleDateFormat("hh:mm a", Locale.getDefault()).format(startTime.time))
+                startTimeCalendar = startTime // Store the full Calendar object
+                calculateHourRate() // Pass both start and end Calendar objects
             }
         }
 
         endIcon.setOnClickListener {
-            showEndTimePicker { endTime ->
-                endTimeEditText.setText(endTime)
-                calculateHourRate()
+            showEndDateTimePicker { endTime ->
+                endTimeEditText.setText(SimpleDateFormat("hh:mm a", Locale.getDefault()).format(endTime.time))
+                endTimeCalendar = endTime // Store the full Calendar object
+                calculateHourRate() // Pass both start and end Calendar objects
             }
         }
-
 
         return view
     }
 
-    private fun showLoadingDialog() {
+    private fun initiatePayment() { //this communicates to stripe helper that will make it generate a payment sheet
+        showLoadingDialog()
+        val userEmail = auth.currentUser?.email ?: ""
+        val providerEmail = arguments?.getString("EMAIL") ?: ""
+        val serviceOffered = arguments?.getString("SERVICE_OFFERED") ?: ""
+        val bookingAmountString = view?.findViewById<EditText>(R.id.etRate)?.text?.toString()
+        val bookingAmount = bookingAmountString?.toDoubleOrNull() ?: 0.0
+        val currency = "php"
+
+
+        // Validate input fields
+        if (providerEmail.isEmpty() ||
+            serviceOffered.isEmpty() ||
+            startTimeEditText.text.isEmpty() ||
+            endTimeEditText.text.isEmpty() ||
+            descEditText.text.isEmpty() ||
+            dateEditText.text.isEmpty()
+        ) {
+            Toast.makeText(requireContext(), "Please fill in all the required fields.", Toast.LENGTH_SHORT).show()
+            dismissLoadingDialog()
+            return
+        }
+
+        // Initiate payment
+        stripeHelper.fetchPayment(bookingAmount, currency, userEmail, providerEmail, serviceOffered)
+    }
+
+
+
+     fun showLoadingDialog() {
         // Create the dialog builder
         val dialogBuilder = AlertDialog.Builder(requireContext())
 
@@ -204,7 +249,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
     }
 
 
-    private fun dismissLoadingDialog() {
+     fun dismissLoadingDialog() {
         if (::loadingDialog.isInitialized && loadingDialog.isShowing) {
             loadingDialog.dismiss()
         }
@@ -294,9 +339,9 @@ class ActivityFragmentClient_BookDetails : Fragment() {
     }
 
 
-    // In saveBooking, prevent duplicate pending bookings
-    private fun saveBooking() {
-        showLoadingDialog()
+    fun saveBooking() {
+        dismissLoadingDialog()
+        showLoadingDialog() // Show loading dialog immediately
 
         userEmail = auth.currentUser?.email ?: ""
         val providerEmail = arguments?.getString("EMAIL") ?: ""
@@ -307,60 +352,58 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         val bookingDescription = descEditText.text.toString()
         val bookingDay = dateEditText.text.toString()
         val bookingLocation = locationEditText.text.toString()
-        val bookingAmount = rate.toDoubleOrNull() ?: 0.0
-        val bookingPaymentMethod = "" // Add validation for this if necessary
+        val bookingAmountString = view?.findViewById<EditText>(R.id.etRate)?.text?.toString()
+        val bookingAmount = bookingAmountString?.toDoubleOrNull() ?: 0.0 // Fallback to 0.0 if the conversion fails
+        Log.d("save booking", "$bookingAmount")
+        val bookingPaymentMethod = ""
 
-        // Create a unique booking ID
         val bookingReference = FirebaseDatabase.getInstance().getReference("bookings")
         val bookingId = bookingReference.push().key ?: return
 
-        // Filter out null values from imageUris
         val validImageUris = imageUris.filterNotNull()
 
-        // Validation: Ensure no required fields are empty
-        if (providerEmail.isEmpty() ||
-            serviceOffered.toString().isEmpty() ||
-            bookingStartTime.isEmpty() ||
-            bookingEndTime.isEmpty() ||
-            bookingDescription.isEmpty() ||
-            bookingDay.isEmpty()
-        ) {
-            Toast.makeText(requireContext(), "Please fill in all the required fields.", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        // Check for duplicate booking before proceeding
+        // Check for duplicate booking first
         checkForDuplicateBooking(userEmail.toString(), providerEmail, bookingDay, bookingStartTime, bookingEndTime, serviceOffered.toString()) { duplicateFound ->
             if (duplicateFound) {
-                getContext()?.let {
+                requireContext().let {
                     dismissLoadingDialog()
                     Toast.makeText(it, "You already have a pending booking with this provider for this service.", Toast.LENGTH_SHORT).show()
                 }
             } else {
-                // Upload images and create booking once images are uploaded
+                // Proceed to upload images
+                Log.d("SaveBooking", "Starting image upload...")
                 uploadImagesToFirebase(userEmail.toString(), validImageUris, bookingId) { imageUrls ->
-                    val booking = Bookings(
-                        bookByEmail = userEmail.toString(),
-                        providerEmail = providerEmail,
-                        bookingStatus = bookingStatus,
-                        serviceOffered = serviceOffered.toString(),
-                        bookingStartTime = bookingStartTime,
-                        bookingEndTime = bookingEndTime,
-                        bookingDescription = bookingDescription,
-                        bookingDay = bookingDay,
-                        bookingLocation = bookingLocation,
-                        bookingAmount = bookingAmount,
-                        bookingPaymentMethod = bookingPaymentMethod,
-                        bookingCancelClient = "",
-                        bookingCancelProvider = "",
-                        bookingUploadImages = imageUrls
-                    )
+                    if (imageUrls.isNotEmpty()) {
+                        val booking = Bookings(
+                            bookByEmail = userEmail.toString(),
+                            providerEmail = providerEmail,
+                            bookingStatus = bookingStatus,
+                            serviceOffered = serviceOffered.toString(),
+                            bookingStartTime = bookingStartTime,
+                            bookingEndTime = bookingEndTime,
+                            bookingDescription = bookingDescription,
+                            bookingDay = bookingDay,
+                            bookingLocation = bookingLocation,
+                            bookingAmount = bookingAmount,
+                            bookingPaymentMethod = bookingPaymentMethod,
+                            bookingCancelClient = "",
+                            bookingCancelProvider = "",
+                            bookingUploadImages = imageUrls
+                        )
 
-                    saveBookingToDatabase(bookingId, booking)
+                        // Save booking to the database
+                        Log.d("SaveBooking", "Saving booking to database...")
+                        saveBookingToDatabase(bookingId, booking)
+                    } else {
+                        Log.e("SaveBooking", "Image upload failed.")
+                        Toast.makeText(requireContext(), "Image upload failed. Please try again.", Toast.LENGTH_SHORT).show()
+                    }
+                    dismissLoadingDialog() // Dismiss loading dialog after all operations are done
                 }
             }
         }
     }
+
 
 
     // Upload images to Firebase Storage
@@ -588,27 +631,27 @@ class ActivityFragmentClient_BookDetails : Fragment() {
 
 
     private fun calculateHourRate() {
-        val startTimeStr = startTimeEditText.text.toString()
-        val endTimeStr = endTimeEditText.text.toString()
-
-        if (startTimeStr.isNotEmpty() && endTimeStr.isNotEmpty()) {
-            val sdf = SimpleDateFormat("hh:mm a", Locale.getDefault())
-            try {
-                val startTime = sdf.parse(startTimeStr)
-                val endTime = sdf.parse(endTimeStr)
-
-                if (startTime != null && endTime != null) {
-                    val differenceInMinutes = ((endTime.time - startTime.time) / (1000 * 60)).toInt()
-                    val hours = if (differenceInMinutes % 60 == 0) {
-                        differenceInMinutes / 60
-                    } else {
-                        differenceInMinutes / 60 + 1
-                    }
-                    view?.findViewById<EditText>(R.id.etHourRate)?.setText(hours.toString())
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
+        // Ensure both start and end times are not null
+        if (startTimeCalendar != null && endTimeCalendar != null) {
+            // If the end time is before the start time, assume it's the next day
+            if (endTimeCalendar!!.before(startTimeCalendar)) {
+                // Add one day to the end time
+                endTimeCalendar!!.add(Calendar.DAY_OF_MONTH, 1)
             }
+
+            // Calculate the difference in milliseconds and convert to minutes
+            val differenceInMillis = endTimeCalendar!!.timeInMillis - startTimeCalendar!!.timeInMillis
+            val differenceInMinutes = (differenceInMillis / (1000 * 60)).toInt()
+
+            // Calculate hours, rounding up if necessary
+            val hours = if (differenceInMinutes % 60 == 0) {
+                differenceInMinutes / 60
+            } else {
+                differenceInMinutes / 60 + 1
+            }
+
+            // Set the calculated hours to the EditText
+            view?.findViewById<EditText>(R.id.etHourRate)?.setText(hours.toString())
         }
     }
 
@@ -629,100 +672,59 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         })
     }
 
-    private fun showDatePicker() {
+
+    private fun showStartDateTimePicker(onDateTimeSet: (Calendar) -> Unit) {
+        showDatePicker { year, month, dayOfMonth ->
+            showTimePicker { hour, minute ->
+                 startTimeCalendar = Calendar.getInstance().apply {
+                    set(year, month, dayOfMonth, hour, minute)
+                }
+                onDateTimeSet(startTimeCalendar!!)
+            }
+        }
+    }
+
+    // Show End Date and Time Picker
+    private fun showEndDateTimePicker(onDateTimeSet: (Calendar) -> Unit) {
+        showDatePicker { year, month, dayOfMonth ->
+            showTimePicker { hour, minute ->
+                val endTimeCalendar = Calendar.getInstance().apply {
+                    set(year, month, dayOfMonth, hour, minute)
+                }
+
+                // Validate against the start time
+                if (startTimeCalendar != null) {
+                    if (endTimeCalendar.before(startTimeCalendar)) {
+                        Toast.makeText(requireContext(), "End time cannot be earlier than start time", Toast.LENGTH_SHORT).show()
+                    } else {
+                        onDateTimeSet(endTimeCalendar)
+                    }
+                } else {
+                    Toast.makeText(requireContext(), "Please select a start time first", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    // Date Picker dialog
+    private fun showDatePicker(onDateSet: (Int, Int, Int) -> Unit) {
         val calendar = Calendar.getInstance()
-        val datePickerDialog = DatePickerDialog(requireContext(), { _: DatePicker, year: Int, month: Int, dayOfMonth: Int ->
-            val selectedDate = Calendar.getInstance().apply { set(year, month, dayOfMonth) }
-
-            // Format the date as "YYYY-MM-DD"
-            val formattedDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(selectedDate.time)
-            // Get the day of the week
-            val dayOfWeek = SimpleDateFormat("EEEE", Locale.getDefault()).format(selectedDate.time)
-
-            // Set the text in the desired format
-            dateEditText.setText("$formattedDate $dayOfWeek")
+        val datePickerDialog = DatePickerDialog(requireContext(), { _, year, month, dayOfMonth ->
+            onDateSet(year, month, dayOfMonth)
         }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH))
 
         datePickerDialog.show()
     }
 
-
-
-    // Show Start Time Picker and store the full calendar object
-    private fun showStartTimePicker(onTimeSet: (String) -> Unit) {
-        showTimePicker { hour, minute ->
-            val startTimeCalendar = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, hour)
-                set(Calendar.MINUTE, minute)
-                // Ensure the full date is used (time + day, month, year, etc.)
-            }
-            val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
-            val startTime = timeFormat.format(startTimeCalendar.time)
-
-            // Log the full unparsed start time (full date and time)
-            Log.d("START TIME UNPARSED", startTimeCalendar.time.toString())
-
-            // Store the full unparsed start time globally for comparison later
-            startTimeUnparsed = startTimeCalendar
-
-            onTimeSet(startTime)
-        }
-    }
-
-    // Show End Time Picker and compare the full date and time
-    private fun showEndTimePicker(onTimeSet: (String) -> Unit) {
-        showTimePicker { hour, minute ->
-            val endTimeCalendar = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, hour)
-                set(Calendar.MINUTE, minute)
-                set(Calendar.SECOND, 0) // Reset seconds for comparison
-                set(Calendar.MILLISECOND, 0) // Reset milliseconds for comparison
-            }
-            val endTime = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(endTimeCalendar.time)
-
-            // Validate the time selection
-            val startTimeText = startTimeEditText.text.toString()
-            Log.d("END TIME UNPARSED", endTimeCalendar.time.toString())
-
-            if (startTimeText.isNotEmpty()) {
-                // Create a Calendar instance for today to set the start time
-                val startTimeCalendar = Calendar.getInstance().apply {
-                    time = SimpleDateFormat("hh:mm a", Locale.getDefault()).parse(startTimeText) ?: return@showTimePicker
-                    set(Calendar.YEAR, endTimeCalendar.get(Calendar.YEAR)) // Set the same year
-                    set(Calendar.MONTH, endTimeCalendar.get(Calendar.MONTH)) // Set the same month
-                    set(Calendar.DAY_OF_MONTH, endTimeCalendar.get(Calendar.DAY_OF_MONTH)) // Set the same day
-                    set(Calendar.SECOND, 0) // Reset seconds for comparison
-                    set(Calendar.MILLISECOND, 0) // Reset milliseconds for comparison
-                }
-
-                // Log parsed times for debugging
-                Log.d("START TIME UNPARSED", startTimeCalendar.time.toString())
-
-                // Compare hours and minutes
-                if (endTimeCalendar.time == startTimeCalendar.time) {
-                    Toast.makeText(requireContext(), "End time cannot be the same as start time", Toast.LENGTH_SHORT).show()
-                } else if (endTimeCalendar.before(startTimeCalendar)) {
-                    Toast.makeText(requireContext(), "End time cannot be earlier than start time", Toast.LENGTH_SHORT).show()
-                } else {
-                    // Only if validation passes, set the end time in the EditText
-                    onTimeSet(endTime)
-                }
-            } else {
-                Toast.makeText(requireContext(), "Please select a start time first", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-
-
     // Time Picker dialog
     private fun showTimePicker(onTimeSet: (Int, Int) -> Unit) {
         val calendar = Calendar.getInstance()
-        val timePickerDialog = TimePickerDialog(requireContext(), { _: TimePicker, hourOfDay: Int, minute: Int ->
+        val timePickerDialog = TimePickerDialog(requireContext(), { _, hourOfDay, minute ->
             onTimeSet(hourOfDay, minute)
         }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), false)
         timePickerDialog.show()
     }
+
 
 
     companion object {
