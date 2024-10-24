@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="8dp"
+    android:padding="8dp">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <!-- Top Image (Spatula and Hand) -->
+        <ImageView
+            android:id="@+id/topImage"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:src="@drawable/cooking"
+            android:contentDescription="Spatula hand image"
+            android:scaleType="centerInside" />
+
+        <!-- Text below image -->
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cooking"
+            android:fontFamily="@font/bold_poppins"
+            android:textSize="16sp"
+            android:textAllCaps="false"
+            android:textColor="@android:color/black"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp"
+            android:gravity="center"/>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="16dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="8dp"
+    android:padding="8dp"
+    android:backgroundTint="@android:color/white"
+    android:layout_gravity="center">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <!-- Image inside CardView -->
+        <ImageView
+            android:id="@+id/cardImage"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:src="@drawable/landscaping"
+            android:scaleType="centerCrop"
+            android:layout_margin="8dp"
+            android:contentDescription="Gardening image"/>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

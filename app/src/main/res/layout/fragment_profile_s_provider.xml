@@ -104,6 +104,7 @@
                 android:fontFamily="@font/regular_poppins"/>
         </LinearLayout>
 
+
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -176,6 +177,35 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/regular_poppins"
                 android:text="Security"
+                android:textColor="@color/black"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- Projects Menu Item -->
+        <LinearLayout
+            android:id="@+id/projects_sprovider"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="10dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="12dp">
+
+            <ImageView
+                android:id="@+id/ivProjectIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="16dp"
+                android:src="@drawable/projects_icon_sprovider"
+                app:tint="@color/blue" />
+
+            <TextView
+                android:id="@+id/tvProjects"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/regular_poppins"
+                android:text="Your Projects"
                 android:textColor="@color/black"
                 android:textSize="12sp" />
         </LinearLayout>

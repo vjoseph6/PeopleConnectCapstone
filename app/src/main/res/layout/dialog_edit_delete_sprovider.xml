@@ -1,0 +1,61 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/sprovider_dialogforgotpassword_background"
+    android:layout_marginHorizontal="20dp"
+    android:padding="20dp"
+    android:layout_gravity="center">
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/tvDialogTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Choose an option?"
+        android:textSize="18sp"
+        android:textColor="@color/blue"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="10dp"
+        android:fontFamily="@font/semibold_poppins" />
+
+    <!-- Subtitle Text -->
+    <TextView
+        android:id="@+id/tvDialogMessage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Are you sure you want to edit or delete this file?"
+        android:textSize="14sp"
+        android:textColor="@color/black"
+        android:layout_below="@id/tvDialogTitle"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="20dp"
+        android:fontFamily="@font/regular_poppins" />
+
+    <!-- Edit Button -->
+    <Button
+        android:id="@+id/btnEdit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Edit"
+        android:textColor="@color/white"
+        android:background="@drawable/btn_rounded_corner_sprovider_edit"
+        android:textAllCaps="false"
+        android:layout_below="@id/tvDialogMessage"
+        android:fontFamily="@font/regular_poppins"
+        android:layout_marginBottom="10dp"
+        style="@style/BlueButtonStyle" />
+
+    <!-- Delete Button -->
+    <Button
+        android:id="@+id/btnDelete"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Delete"
+        android:textColor="@color/white"
+        android:background="@drawable/btn_rounded_corner_sprovider_delete"
+        android:textAllCaps="false"
+        android:layout_below="@id/btnEdit"
+        android:fontFamily="@font/regular_poppins"
+        style="@style/RedButtonStyle" />
+
+</RelativeLayout>
