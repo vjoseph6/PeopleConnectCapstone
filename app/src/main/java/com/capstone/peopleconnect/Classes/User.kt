@@ -9,6 +9,7 @@ data class User(
     val address: String = "",
     var profileImageUrl: String = "",
     val roles: List<String> = listOf(),
-    val skills: List<String> = listOf(),
+    val userClicks: List<String> = listOf(),
+    val userPref: List<String> = listOf(),
     val interest: List<String> = listOf()
 )

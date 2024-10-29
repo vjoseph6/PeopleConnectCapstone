@@ -10,11 +10,17 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import androidx.activity.OnBackPressedCallback
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.capstone.peopleconnect.Adapters.CategoryAdapter
 import com.capstone.peopleconnect.Classes.Category
+import com.capstone.peopleconnect.Classes.User
+import com.capstone.peopleconnect.Helper.ClickData
+import com.capstone.peopleconnect.Helper.RetrofitInstance
 import com.capstone.peopleconnect.R
 import com.google.firebase.database.*
 
@@ -88,6 +94,100 @@ class CategoryFragmentClient : Fragment() {
         }
     }
 
+    // Function to handle category click
+    private fun onCategoryClick(categoryName: String, userId: String) {
+        // Create ClickData object
+        val clickData = ClickData(user_id = userId, clicked_category = categoryName)
+
+        // Make POST request to update clicks
+        RetrofitInstance.api.updateClicks(clickData).enqueue(object : Callback<Map<String, String>> {
+            override fun onResponse(
+                call: Call<Map<String, String>>,
+                response: Response<Map<String, String>>
+            ) {
+                if (response.isSuccessful) {
+                    // If POST was successful, now get recommendations
+                    fetchRecommendations(userId)
+                    Log.d("USER ID IS:", "$userId")
+                } else {
+                    Log.e("API Error", "Failed to update clicks")
+                }
+            }
+
+            override fun onFailure(call: Call<Map<String, String>>, t: Throwable) {
+                Log.e("API Error", "Network error: ${t.message}")
+            }
+        })
+    }
+
+    // Function to fetch recommendations
+    private fun fetchRecommendations(userId: String) {
+        Log.d("USER ID recommend:", "$userId")
+        RetrofitInstance.api.getRecommendations(userId).enqueue(object : Callback<Map<String, Any>> {
+            override fun onResponse(
+                call: Call<Map<String, Any>>,
+                response: Response<Map<String, Any>>
+            ) {
+                if (response.isSuccessful) {
+                    val responseBody = response.body()
+                    if (responseBody != null) {
+                        val recommendationsMap = responseBody["recommendations"] as? Map<String, List<String>>
+                        val recentClicksList = responseBody["recent_clicks"] as? List<String>
+
+                        // Extract only the recommendation details and recent clicks
+                        val userPref = recommendationsMap?.values?.flatMap { it } ?: listOf()  // Flatten all subcategories
+                        val userClicks = recentClicksList ?: listOf()
+
+                        Log.d("UserPreferences", "User Preferences: $userPref")
+                        Log.d("UserClicks", "User Clicks: $userClicks")
+
+                        saveUserDataToFirebase(userId, userPref, userClicks)
+
+
+                    }
+                } else {
+                    Log.e("API Error", "Failed to get recommendations")
+                }
+            }
+
+            override fun onFailure(call: Call<Map<String, Any>>, t: Throwable) {
+                Log.e("API Error", "Network error: ${t.message}")
+            }
+        })
+    }
+
+    // Function to save user data in Firebase Realtime Database
+    private fun saveUserDataToFirebase(userId: String, userPref: List<String>, userClicks: List<String>) {
+        // Query the database for a user where the email matches the userId
+        FirebaseDatabase.getInstance().getReference("users").orderByChild("email").equalTo(userId)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        // If a user with the matching email is found, update userPref and userClicks
+                        for (userSnapshot in snapshot.children) {
+                            // Only update userPref and userClicks fields
+                            userSnapshot.ref.child("userPref").setValue(userPref)
+                            userSnapshot.ref.child("userClicks").setValue(userClicks)
+                                .addOnSuccessListener {
+                                    Log.d("Firebase", "User data updated successfully")
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.e("Firebase", "Failed to update user data: ${e.message}")
+                                }
+                        }
+                    } else {
+                        // If no matching email is found, log or handle the case
+                        Log.e("Firebase", "No user found with the specified email")
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("Firebase", "Database error: ${error.message}")
+                }
+            })
+    }
+
+
     // Method to display categories again
     private fun displayCategories() {
         isInSubcategoriesView = false  // Reset the flag
@@ -97,7 +197,7 @@ class CategoryFragmentClient : Fragment() {
     // Method to load categories from Firebase
     // Fused Method to fetch categories and check for matching subcategories
     private fun fetchCategoriesAndCheckSubcategory(serviceType: String?) {
-        database.addListenerForSingleValueEvent(object : ValueEventListener {
+        database.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 categoryList.clear()  // Clear the list first
 
@@ -120,8 +220,8 @@ class CategoryFragmentClient : Fragment() {
                         // Check if the subcategory matches the serviceType
                         if (subcategoryName.equals(serviceType, ignoreCase = true)) {
                             // Match found for serviceType, simulate clicking the category and subcategory
-                            isInSubcategoriesView = true  // Set the flag for subcategories view
-                            navigateToChooseProviderFragment(subcategory)  // Navigate to providers
+                            isInSubcategoriesView = true
+                            navigateToChooseProviderFragment(subcategory)
                             return  // Exit the loop once we find a match
                         }
                     }
@@ -130,6 +230,7 @@ class CategoryFragmentClient : Fragment() {
                     categoryAdapter = CategoryAdapter(categoryList) { category ->
                         // Fetch subcategories when category is clicked
                         fetchSubcategories(category.name, serviceType)
+                        onCategoryClick(category.name, email.toString())
                     }
                     recyclerView.adapter = categoryAdapter
                 }
