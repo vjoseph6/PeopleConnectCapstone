@@ -5,7 +5,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/blue"
     tools:context=".SPrvoider.Fragments.SkillsPostFragmentSProvider">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -32,7 +31,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="@font/semibold_poppins"
-            android:text="NameOfTheSkills Posts"
+            android:text=" Baking and Pastry"
             android:textColor="@color/white"
             android:textSize="18sp"
             app:layout_constraintBottom_toBottomOf="@id/btnBack"
@@ -40,11 +39,24 @@
             app:layout_constraintStart_toStartOf="parent"
             />
 
+        <ImageButton
+            android:id="@+id/addPostBtn"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
+            android:layout_alignParentEnd="true"
+            android:background="@drawable/add_skill"
+            android:backgroundTint="@color/white"
+            android:layout_marginStart="40dp"
+            app:layout_constraintBottom_toTopOf="@+id/layout"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/tvSkills"
+            app:layout_constraintTop_toTopOf="parent" />
+
         <!-- Scrollable Content -->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/layout"
             android:layout_width="match_parent"
-            android:layout_height="600dp"
+            android:layout_height="match_parent"
             android:layout_marginTop="50dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
