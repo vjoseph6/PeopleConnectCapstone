@@ -14,7 +14,7 @@
         android:padding="30dp">
 
         <ProgressBar
-            android:id="@+id/progressBar"
+            android:id="@+id/progressBar_pre_loader"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
@@ -28,7 +28,7 @@
             android:layout_height="wrap_content"
             android:text="Loading Please wait..."
             android:layout_centerHorizontal="true"
-            android:layout_below="@id/progressBar"/>
+            android:layout_below="@id/progressBar_pre_loader"/>
 
 
     </RelativeLayout>

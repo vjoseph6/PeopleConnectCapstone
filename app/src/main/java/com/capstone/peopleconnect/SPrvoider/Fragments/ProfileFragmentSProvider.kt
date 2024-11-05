@@ -16,6 +16,7 @@ import com.capstone.peopleconnect.Client.Fragments.ProfileFragmentClient
 import com.capstone.peopleconnect.R
 import com.capstone.peopleconnect.SPrvoider.Fragments.LocationFragmentSProvider
 import com.capstone.peopleconnect.SPrvoider.Fragments.SettingsSecurityFragmentSProvider
+import com.capstone.peopleconnect.SPrvoider.Fragments.YourProjectsFragmentSProvider
 import com.capstone.peopleconnect.SelectAccount
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.firebase.database.DataSnapshot
@@ -129,6 +130,16 @@ class ProfileFragmentSProvider : Fragment() {
             val securityFragment = SettingsSecurityFragmentSProvider.newInstance(email = email)
             parentFragmentManager.beginTransaction()
                 .replace(R.id.frame_layout, securityFragment)
+                .addToBackStack(null)
+                .commit()
+        }
+
+        // Security icons
+        val projectIcons: LinearLayout = view.findViewById(R.id.projects_sprovider)
+        projectIcons.setOnClickListener {
+            val projectFragment = YourProjectsFragmentSProvider.newInstance(email = email)
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, projectFragment)
                 .addToBackStack(null)
                 .commit()
         }
