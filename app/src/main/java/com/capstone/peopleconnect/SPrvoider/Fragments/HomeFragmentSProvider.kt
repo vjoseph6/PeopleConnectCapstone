@@ -9,8 +9,6 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
 import androidx.core.content.ContextCompat
-import com.capstone.peopleconnect.Client.Fragments.MessageFragmentClient
-import com.capstone.peopleconnect.Client.Fragments.NotificationFragmentClient
 import com.capstone.peopleconnect.R
 import com.google.android.material.bottomsheet.BottomSheetDialog
 
@@ -53,6 +51,8 @@ class HomeFragmentSProvider : Fragment() {
         ivFilter.setOnClickListener {
             showFilterDialog()
         }
+
+        
 
         // Notification icons
         val notificationIcons: LinearLayout = view.findViewById(R.id.notificationLayout_sprovider)

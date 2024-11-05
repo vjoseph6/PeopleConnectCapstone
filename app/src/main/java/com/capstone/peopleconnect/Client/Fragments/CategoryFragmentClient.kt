@@ -9,6 +9,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.Toast
 import retrofit2.Call
 import retrofit2.Callback
@@ -78,6 +79,35 @@ class CategoryFragmentClient : Fragment() {
         })
 
         return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+
+        // Notification icons
+        val notificationIcons: LinearLayout = view.findViewById(R.id.notificationLayout)
+        notificationIcons.setOnClickListener {
+            val notificationFragment = NotificationFragmentClient()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, notificationFragment)
+                .addToBackStack(null)
+                .commit()
+
+        }
+
+        // Message icons
+        val messageIcons: LinearLayout = view.findViewById(R.id.messageLayout)
+        messageIcons.setOnClickListener {
+            val messageFragment = MessageFragmentClient()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, messageFragment)
+                .addToBackStack(null)
+                .commit()
+
+        }
+
+
     }
 
     fun handleFragmentBackPress() {

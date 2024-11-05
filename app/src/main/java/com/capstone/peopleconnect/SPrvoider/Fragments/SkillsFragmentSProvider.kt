@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -47,6 +48,29 @@ class SkillsFragmentSProvider : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_skills_s_provider, container, false)
+
+
+        // Notification icons
+        val notificationIcons: LinearLayout = view.findViewById(R.id.notificationLayout)
+        notificationIcons.setOnClickListener {
+            val notificationFragment = NotificationFragmentSProvider()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, notificationFragment)
+                .addToBackStack(null)
+                .commit()
+
+        }
+
+        // Message icons
+        val messageIcons: LinearLayout = view.findViewById(R.id.messageLayout)
+        messageIcons.setOnClickListener {
+            val messageFragment = MessageFragmentSProvider()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, messageFragment)
+                .addToBackStack(null)
+                .commit()
+
+        }
 
         // Set up RecyclerView and Adapter
         recyclerView = view.findViewById(R.id.recyclerViewSkills)

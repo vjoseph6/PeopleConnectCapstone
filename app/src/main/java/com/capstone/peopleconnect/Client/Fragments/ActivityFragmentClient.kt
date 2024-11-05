@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.RelativeLayout
@@ -89,6 +90,35 @@ class ActivityFragmentClient : Fragment() {
         }
 
         return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+
+        // Notification icons
+        val notificationIcons: LinearLayout = view.findViewById(R.id.notificationLayout)
+        notificationIcons.setOnClickListener {
+            val notificationFragment = NotificationFragmentClient()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, notificationFragment)
+                .addToBackStack(null)
+                .commit()
+
+        }
+
+        // Message icons
+        val messageIcons: LinearLayout = view.findViewById(R.id.messageLayout)
+        messageIcons.setOnClickListener {
+            val messageFragment = MessageFragmentClient()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, messageFragment)
+                .addToBackStack(null)
+                .commit()
+
+        }
+
+
     }
 
     // Filters bookings based on status

@@ -9,6 +9,7 @@ import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.InputFilter
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -125,6 +126,15 @@ class SP6RegisterSProvider : AppCompatActivity() {
                         if (task.isSuccessful) {
                             sendVerificationEmail()  // Send verification email
                             saveCredentialsLocally(email, pass)  // Temporarily save credentials locally
+
+                            // Get the Firebase UID for the newly registered user
+                            val userId = task.result?.user?.uid
+
+                            // Save the user data including the UID in the database
+                            userId?.let {
+                                saveUserData(email, pass, userId)
+                            }
+
                         } else {
                             progressBar.visibility = View.GONE
                             Toast.makeText(this, "Registration failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
@@ -219,14 +229,29 @@ class SP6RegisterSProvider : AppCompatActivity() {
 
     private fun checkEmailVerification() {
         val user = auth.currentUser
-        user?.reload()?.addOnCompleteListener { task ->
-            if (task.isSuccessful && user.isEmailVerified) {
-                val email = user.email ?: return@addOnCompleteListener
-                val pass = getStoredPassword()
-                saveUserData(email, pass)
-            } else {
-                Toast.makeText(this, "Email not verified yet. Please check your inbox.", Toast.LENGTH_SHORT).show()
+        if (user != null) {
+            // Reload user data
+            user.reload().addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    // Check if the email is verified
+                    if (user.isEmailVerified) {
+                        // Save the user data if the email is verified
+                        val email = user.email ?: return@addOnCompleteListener
+                        val pass = getStoredPassword()
+                        val userId = user.uid // Retrieve the UID
+                        saveUserData(email, pass, userId) // Pass the userId to saveUserData
+                    } else {
+                        // Optionally, handle the case where the email is not verified
+                        // e.g., show a message or prompt the user to verify their email
+                    }
+                } else {
+                    // Handle the reload failure (optional)
+                    Log.e("EmailVerification", "Failed to reload user: ${task.exception?.message}")
+                }
             }
+        } else {
+            // Handle the case where no user is logged in (optional)
+            Log.d("EmailVerification", "No user is currently logged in.")
         }
     }
 
@@ -238,11 +263,12 @@ class SP6RegisterSProvider : AppCompatActivity() {
         editor.apply()
     }
 
-    private fun saveUserData(email: String, pass: String) {
+    private fun saveUserData(email: String, pass: String, userId: String) {
         val userId = auth.currentUser?.uid ?: return
         val user = User(
             email = email,
-            roles = listOf(userRole)
+            roles = listOf(userRole),
+            userId = userId  // Ensure this field is passed correctly
         )
 
         databaseReference.child(userId).setValue(user).addOnCompleteListener { task ->

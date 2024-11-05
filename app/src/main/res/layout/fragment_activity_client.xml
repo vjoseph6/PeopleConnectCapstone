@@ -15,25 +15,15 @@
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="410dp"
-            android:layout_height="wrap_content"
+            android:layout_height="30dp"
             android:layout_centerHorizontal="true"
             android:layout_marginStart="-30dp">
 
             <RelativeLayout
                 android:id="@+id/toolbarContainer"
                 android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize">
+                android:layout_height="30dp">
 
-                <!-- LinearLayout containing MessageIcon -->
-                <TextView
-                    android:id="@+id/tvDate"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentStart="true"
-                    android:layout_centerVertical="true"
-                    android:fontFamily="@font/regular_poppins"
-                    android:text="Thursday, July 18 2024"
-                    android:textSize="12sp" />
 
                 <LinearLayout
                     android:id="@+id/messageLayout"
@@ -83,8 +73,7 @@
             android:textColor="@color/black"
             android:fontFamily="@font/bold_poppins"
             android:text="My Activity"
-            android:textSize="24sp"
-            android:layout_marginTop="16dp"
+            android:textSize="30sp"
             android:layout_marginBottom="10dp"
             android:layout_below="@id/toolbar"
             android:layout_alignParentStart="true" />
