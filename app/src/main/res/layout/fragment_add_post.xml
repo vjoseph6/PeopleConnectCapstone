@@ -97,6 +97,7 @@
                     android:background="@drawable/rounded_corners_universal"
                     android:fontFamily="@font/regular_poppins"
                     android:gravity="top"
+                    android:singleLine="true"
                     android:hint="Description here..."
                     android:inputType="textMultiLine"
                     android:padding="20dp"

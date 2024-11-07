@@ -16,7 +16,8 @@ import com.squareup.picasso.Picasso
 class BookingClientAdapter(
     private var bookings: List<Pair<String, Bookings>>,  // Now a Pair of key and booking
     private val fetchUserData: (String, (User) -> Unit) -> Unit,
-    private val onCancelBooking: (String) -> Unit
+    private val onCancelBooking: (String) -> Unit,
+    private val onItemClickListener: (String) -> Unit
 ) : RecyclerView.Adapter<BookingClientAdapter.ViewHolder>() {
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -25,6 +26,14 @@ class BookingClientAdapter(
         val btnAccept: Button = itemView.findViewById(R.id.btnAccept_Present)
         val btnCancel: Button = itemView.findViewById(R.id.btnCancel_Present)
         val serviceTextView: TextView = itemView.findViewById(R.id.serviceOffered)
+
+        init {
+            itemView.setOnClickListener {
+                val bookingKey = bookings[adapterPosition].first
+                onItemClickListener(bookingKey)
+            }
+        }
+
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {

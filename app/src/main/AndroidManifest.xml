@@ -18,21 +18,24 @@
         android:theme="@style/Theme.PeopleConnect"
         tools:targetApi="31">
         <activity
-            android:name=".SPrvoider.AddSkillsProviderRate"
-            android:screenOrientation="portrait"
+            android:name=".Helper.ImagePreviewActivity"
             android:exported="false" />
+        <activity
+            android:name=".SPrvoider.AddSkillsProviderRate"
+            android:exported="false"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".SPrvoider.AddSkillsSProvider"
-            android:screenOrientation="portrait"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".SPrvoider.EmptyLayout"
-            android:screenOrientation="portrait"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".SPrvoider.SProviderViewPager"
-            android:screenOrientation="portrait"
-            android:exported="false">
+            android:exported="false"
+            android:screenOrientation="portrait">
 
             <!-- <intent-filter> -->
             <!-- <action android:name="android.intent.action.MAIN" /> -->
@@ -44,8 +47,8 @@
         </activity>
         <activity
             android:name=".Client.ClientViewPager"
-            android:screenOrientation="portrait"
-            android:exported="false">
+            android:exported="false"
+            android:screenOrientation="portrait">
 
             <!-- <intent-filter> -->
             <!-- <action android:name="android.intent.action.MAIN" /> -->
@@ -56,13 +59,13 @@
         </activity>
         <activity
             android:name=".SPrvoider.SProviderMainActivity"
-            android:screenOrientation="portrait"
             android:exported="true"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.PeopleConnect" />
         <activity
             android:name=".Client.ClientMainActivity"
-            android:screenOrientation="portrait"
             android:exported="true"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.PeopleConnect">
 
             <!-- <intent-filter> -->
@@ -74,8 +77,8 @@
         </activity>
         <activity
             android:name=".SelectAccount"
-            android:screenOrientation="portrait"
-            android:exported="true">
+            android:exported="true"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -84,8 +87,8 @@
         </activity>
         <activity
             android:name=".Client.C7ChoosingInterestClient"
-            android:screenOrientation="portrait"
-            android:exported="false">
+            android:exported="false"
+            android:screenOrientation="portrait">
 
             <!-- <intent-filter> -->
             <!-- <action android:name="android.intent.action.MAIN" /> -->
@@ -96,8 +99,8 @@
         </activity>
         <activity
             android:name=".SPrvoider.SP8BackgroundAuthorizationSProvider"
-            android:screenOrientation="portrait"
-            android:exported="false">
+            android:exported="false"
+            android:screenOrientation="portrait">
 
             <!-- <intent-filter> -->
             <!-- <action android:name="android.intent.action.MAIN" /> -->
@@ -108,8 +111,8 @@
         </activity>
         <activity
             android:name=".SPrvoider.SP5LoginSProvider"
-            android:screenOrientation="portrait"
-            android:exported="false">
+            android:exported="false"
+            android:screenOrientation="portrait">
 
             <!-- <intent-filter> -->
             <!-- <action android:name="android.intent.action.MAIN" /> -->
@@ -120,8 +123,8 @@
         </activity>
         <activity
             android:name=".SPrvoider.SP6RegisterSProvider"
-            android:screenOrientation="portrait"
-            android:exported="false">
+            android:exported="false"
+            android:screenOrientation="portrait">
 
             <!-- <intent-filter> -->
             <!-- <action android:name="android.intent.action.MAIN" /> -->
@@ -132,8 +135,8 @@
         </activity>
         <activity
             android:name=".SPrvoider.SP7ChooseSkillSProvider"
-            android:screenOrientation="portrait"
-            android:exported="false">
+            android:exported="false"
+            android:screenOrientation="portrait">
 
             <!-- <intent-filter> -->
             <!-- <action android:name="android.intent.action.MAIN" /> -->
@@ -144,8 +147,8 @@
         </activity>
         <activity
             android:name=".Client.C5LoginClient"
-            android:screenOrientation="portrait"
-            android:exported="false">
+            android:exported="false"
+            android:screenOrientation="portrait">
 
             <!-- <intent-filter> -->
             <!-- <action android:name="android.intent.action.MAIN" /> -->
@@ -156,8 +159,8 @@
         </activity>
         <activity
             android:name=".Client.C6RegisterClient"
-            android:screenOrientation="portrait"
-            android:exported="false">
+            android:exported="false"
+            android:screenOrientation="portrait">
 
             <!-- <intent-filter> -->
             <!-- <action android:name="android.intent.action.MAIN" /> -->
@@ -168,20 +171,20 @@
         </activity>
         <activity
             android:name=".SPrvoider.SP4Getstarted3SProvider"
-            android:screenOrientation="portrait"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".SPrvoider.SP3Getstarted2SProvider"
-            android:screenOrientation="portrait"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".SPrvoider.SP2Getstarted1SProvider"
-            android:screenOrientation="portrait"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".Client.C4Getstarted3Client"
-            android:screenOrientation="portrait"
-            android:exported="false">
+            android:exported="false"
+            android:screenOrientation="portrait">
 
             <!--
             <intent-filter>
@@ -193,8 +196,8 @@
         </activity>
         <activity
             android:name=".Client.C3Getstarted2Client"
-            android:screenOrientation="portrait"
-            android:exported="false">
+            android:exported="false"
+            android:screenOrientation="portrait">
 
             <!--
             <intent-filter>
@@ -206,8 +209,8 @@
         </activity>
         <activity
             android:name=".Client.C2Getstarted1Client"
-            android:screenOrientation="portrait"
-            android:exported="false">
+            android:exported="false"
+            android:screenOrientation="portrait">
 
             <!-- <intent-filter> -->
             <!-- <action android:name="android.intent.action.MAIN" /> -->
@@ -218,12 +221,12 @@
         </activity>
         <activity
             android:name=".SPrvoider.SP1WelcomeSProvider"
-            android:screenOrientation="portrait"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".Client.C1WelcomeClient"
-            android:screenOrientation="portrait"
-            android:exported="false">
+            android:exported="false"
+            android:screenOrientation="portrait">
 
             <!-- <intent-filter> -->
             <!-- <action android:name="android.intent.action.MAIN" /> -->

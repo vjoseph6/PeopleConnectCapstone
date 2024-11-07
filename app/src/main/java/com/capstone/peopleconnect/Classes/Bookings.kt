@@ -1,6 +1,7 @@
 package com.capstone.peopleconnect.Classes
 
 data class Bookings(
+    val bookingId: String = "",
     val bookByEmail: String = "",
     val providerEmail: String = "",
     val bookingStatus: String = "",

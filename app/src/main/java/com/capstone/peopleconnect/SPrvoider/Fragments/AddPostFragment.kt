@@ -13,6 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -55,10 +56,12 @@ class AddPostFragment : Fragment() {
         filterByTitle.text = categoryName
 
         val addImageView: ImageView = view.findViewById(R.id.addImage)
-        val expEditText: RelativeLayout = view.findViewById(R.id.expEditText)
         val btnSavePost: Button = view.findViewById(R.id.btnSavePost)
         val postDescEditText: EditText = view.findViewById(R.id.descriptionPostEditText)
         postDesc = postDescEditText.text.toString()
+
+        val btnBack: ImageButton = view.findViewById(R.id.btnBackSProviderSKills)
+        btnBack.setOnClickListener { requireActivity().supportFragmentManager.popBackStack() }
 
         // Load placeholder image with Glide
         Glide.with(this)
@@ -153,7 +156,8 @@ class AddPostFragment : Fragment() {
         postDesc = postDescEditText.text.toString().trim()
 
         if (postDesc.isEmpty()) {
-            Toast.makeText(requireContext(), "Please enter a description", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Please enter a description", Toast.LENGTH_SHORT)
+                .show()
             return // Exit if the description is empty
         }
 
@@ -171,17 +175,24 @@ class AddPostFragment : Fragment() {
         FirebaseDatabase.getInstance().reference.child("posts").child(postId).setValue(post)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    Toast.makeText(requireContext(), "Post saved successfully", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Post saved successfully", Toast.LENGTH_SHORT)
+                        .show()
                     dismissLoadingDialog()
+
+                    // Finish the fragment after success
+                    requireActivity().supportFragmentManager.popBackStack()  // This pops the fragment off the back stack
                 } else {
-                    Toast.makeText(requireContext(), "Failed to save post: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "Failed to save post: ${task.exception?.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
                     dismissLoadingDialog()
                 }
             }
-    }
+        }
 
-
-    private fun openImagePicker() {
+        private fun openImagePicker() {
         val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
             type = "image/*"
             putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true) // Allow multiple selection

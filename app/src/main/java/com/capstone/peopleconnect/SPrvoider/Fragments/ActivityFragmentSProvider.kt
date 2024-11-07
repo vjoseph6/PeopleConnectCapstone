@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.capstone.peopleconnect.Adapters.BookingSProviderAdapter
+import com.capstone.peopleconnect.BookingDetailsFragment
 import com.capstone.peopleconnect.Classes.Bookings
 import com.capstone.peopleconnect.Classes.User
 import com.capstone.peopleconnect.R
@@ -58,7 +59,14 @@ class ActivityFragmentSProvider : Fragment(){
         super.onViewCreated(view, savedInstanceState)
 
         recyclerView = view.findViewById(R.id.recyclerView)
-        adapter = BookingSProviderAdapter(bookings, ::fetchUserData, ::acceptBooking, ::cancelBooking)
+        adapter = BookingSProviderAdapter(bookings, ::fetchUserData, ::acceptBooking, ::cancelBooking) { bookingId ->
+            // Navigate to BookingDetailsFragment with the bookingId only
+            val bookingDetailsFragment = BookingDetailsFragment.newInstance(bookingId)
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, bookingDetailsFragment)
+                .addToBackStack(null)
+                .commit()
+        }
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = adapter
         emptyView = view.findViewById(R.id.emptyView)
@@ -78,19 +86,19 @@ class ActivityFragmentSProvider : Fragment(){
 
         // Set click listeners for each tab
         tvBooking.setOnClickListener {
-            currentFilter = "Booking"  // Update current filter
+            currentFilter = "Booking"
             filterBookings(currentFilter)
             highlightSelectedTab(tvBooking, tvSuccessful, tvFailed)
         }
 
         tvSuccessful.setOnClickListener {
-            currentFilter = "Successful"  // Update current filter
+            currentFilter = "Successful"
             filterBookings(currentFilter)
             highlightSelectedTab(tvSuccessful, tvBooking, tvFailed)
         }
 
         tvFailed.setOnClickListener {
-            currentFilter = "Failed"  // Update current filter
+            currentFilter = "Failed"
             filterBookings(currentFilter)
             highlightSelectedTab(tvFailed, tvBooking, tvSuccessful)
         }
