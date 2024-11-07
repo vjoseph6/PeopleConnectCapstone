@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.capstone.peopleconnect.Adapters.BookingClientAdapter
+import com.capstone.peopleconnect.BookingDetailsFragment
 import com.capstone.peopleconnect.Classes.Bookings
 import com.capstone.peopleconnect.Classes.User
 import com.capstone.peopleconnect.R
@@ -52,7 +53,14 @@ class ActivityFragmentClient : Fragment() {
         val view = inflater.inflate(R.layout.fragment_activity_client, container, false)
 
         recyclerView = view.findViewById(R.id.recyclerView)
-        adapter = BookingClientAdapter(bookings, ::fetchUserData, ::cancelBooking)
+        adapter = BookingClientAdapter(bookings, ::fetchUserData, ::cancelBooking){ bookingId ->
+            // Navigate to BookingDetailsFragment with the bookingId only
+            val bookingDetailsFragment = BookingDetailsFragment.newInstance(bookingId)
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, bookingDetailsFragment)
+                .addToBackStack(null)
+                .commit()
+        }
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = adapter
         emptyView = view.findViewById(R.id.emptyView)

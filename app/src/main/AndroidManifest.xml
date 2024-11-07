@@ -25,12 +25,15 @@
         android:theme="@style/Theme.PeopleConnect"
         tools:targetApi="31">
         <activity
-            android:name=".Message.vcall.VideoCallActivity"
+
+            android:name=".Helper.ImagePreviewActivity"
             android:exported="false" />
+
         <activity
             android:name=".Message.chat.ChatActivity"
             android:exported="false" />
         <activity
+
             android:name=".SPrvoider.AddSkillsProviderRate"
             android:exported="false"
             android:screenOrientation="portrait" />

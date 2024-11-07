@@ -18,7 +18,8 @@ class BookingSProviderAdapter(
     private var bookings: List<Pair<String, Bookings>>,  // Use Pair to hold the Firebase key and Booking
     private val fetchUserData: (String, (User) -> Unit) -> Unit,
     private val onAcceptBooking: (String) -> Unit,
-    private val onCancelBooking: (String) -> Unit
+    private val onCancelBooking: (String) -> Unit,
+    private val onItemClickListener: (String) -> Unit // Add this parameter
 ) : RecyclerView.Adapter<BookingSProviderAdapter.ViewHolder>() {
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -28,6 +29,14 @@ class BookingSProviderAdapter(
         val btnAccept: Button = itemView.findViewById(R.id.btnAccept_Present)
         val btnCancel: Button = itemView.findViewById(R.id.btnCancel_Present)
         val serviceTextView: TextView = itemView.findViewById(R.id.tvService)
+
+        init {
+            itemView.setOnClickListener {
+                val bookingKey = bookings[adapterPosition].first
+                onItemClickListener(bookingKey)
+            }
+        }
+
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -60,7 +69,6 @@ class BookingSProviderAdapter(
         // Handle accept action
         holder.btnAccept.setOnClickListener {
             onAcceptBooking(bookingKey)
-            Log.d("GIATAY", "$bookingKey")
         }
 
         when (booking.bookingStatus) {

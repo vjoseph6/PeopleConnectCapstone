@@ -7,6 +7,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.capstone.peopleconnect.Adapters.CategoryAdapter
@@ -41,6 +42,9 @@ class YourProjectsFragmentSProvider : Fragment() {
                 email = email.toString(),
                 categoryName = category.name
             )
+
+            val btnBack: ImageButton = view.findViewById(R.id.btnBack)
+            btnBack.setOnClickListener { requireActivity().supportFragmentManager.popBackStack() }
 
 
             // Navigate to the ClientChooseProvider fragment
