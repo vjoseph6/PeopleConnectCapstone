@@ -343,7 +343,6 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         dismissLoadingDialog()
         showLoadingDialog() // Show loading dialog immediately
 
-
         userEmail = auth.currentUser?.email ?: ""
         val providerEmail = arguments?.getString("EMAIL") ?: ""
         val bookingStatus = "Pending"
@@ -356,8 +355,9 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         val bookingAmountString = view?.findViewById<EditText>(R.id.etRate)?.text?.toString()
         val bookingAmount = bookingAmountString?.toDoubleOrNull() ?: 0.0 // Fallback to 0.0 if the conversion fails
         val bookingPaymentMethod = ""
+
         val bookingReference = FirebaseDatabase.getInstance().getReference("bookings")
-        val bookingId = bookingReference.push().key ?: return
+        val bookingId = bookingReference.push().key ?: return // Generate booking ID once
 
         val validImageUris = imageUris.filterNotNull()
 
@@ -374,7 +374,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
                 uploadImagesToFirebase(userEmail.toString(), validImageUris, bookingId) { imageUrls ->
                     if (imageUrls.isNotEmpty()) {
                         val booking = Bookings(
-                            bookingId = bookingReference.push().key.toString(),
+                            bookingId = bookingId, // Use the same bookingId generated initially
                             bookByEmail = userEmail.toString(),
                             providerEmail = providerEmail,
                             bookingStatus = bookingStatus,

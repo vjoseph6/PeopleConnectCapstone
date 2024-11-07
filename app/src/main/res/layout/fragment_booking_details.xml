@@ -173,12 +173,12 @@
                 android:text="Uploaded Images:"
                 android:textStyle="bold"/>
 
-            <LinearLayout
+            <androidx.recyclerview.widget.RecyclerView
+                android:layout_marginTop="10dp"
                 android:id="@+id/imageContainer"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="8dp"/>
+                android:layout_width="match_parent"
+                tools:listitem="@layout/skills_posts_list"
+                android:layout_height="wrap_content"/>
 
         </LinearLayout>
     </ScrollView>
