@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
+import android.widget.ImageView
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.capstone.peopleconnect.Adapters.CategoryAdapter
@@ -29,6 +30,7 @@ class YourProjectsFragmentSProvider : Fragment() {
         arguments?.let {
             email = it.getString("EMAIL")
         }
+
     }
 
     override fun onCreateView(
@@ -43,10 +45,6 @@ class YourProjectsFragmentSProvider : Fragment() {
                 categoryName = category.name
             )
 
-            val btnBack: ImageButton = view.findViewById(R.id.btnBack)
-            btnBack.setOnClickListener { requireActivity().supportFragmentManager.popBackStack() }
-
-
             // Navigate to the ClientChooseProvider fragment
             requireActivity().supportFragmentManager.beginTransaction()
                 .replace(R.id.frame_layout, skillPostFragment) // Adjust the container ID as necessary
@@ -55,6 +53,12 @@ class YourProjectsFragmentSProvider : Fragment() {
         }
         recyclerView.adapter = categoryAdapter
         recyclerView.layoutManager = GridLayoutManager(requireContext(), 3)
+
+        val backButton: ImageView = view.findViewById(R.id.btnBack)
+        backButton.setOnClickListener {
+            // Navigate back to the HomeFragmentClient
+            requireActivity().supportFragmentManager.popBackStack()
+        }
 
         return view
     }

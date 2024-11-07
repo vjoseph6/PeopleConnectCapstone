@@ -13,10 +13,12 @@ import android.widget.Button
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.ProgressBar
+import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.capstone.peopleconnect.Helper.ImagePreviewActivity
 import com.capstone.peopleconnect.R
 import com.google.firebase.database.DataSnapshot
@@ -33,6 +35,7 @@ class SkillsPostFragmentSProvider : Fragment() {
     private lateinit var recyclerView: RecyclerView
     private val postImages = mutableListOf<String>()
     private lateinit var adapter: SkillsPostsAdapter
+    private lateinit var emptyView: RelativeLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,6 +62,13 @@ class SkillsPostFragmentSProvider : Fragment() {
             transaction.addToBackStack(null) // This allows the user to navigate back to the current fragment
             transaction.commit()
         }
+        emptyView = view.findViewById(R.id.emptyView)
+
+        // Load image into ImageView using Glide
+        val emptyImage: ImageView = view.findViewById(R.id.image)
+        Glide.with(this)
+            .load(R.drawable.nothing)  // Replace with your drawable resource or image URL
+            .into(emptyImage)
 
         val btnBack: ImageButton = view.findViewById(R.id.btnBack)
         btnBack.setOnClickListener { requireActivity().supportFragmentManager.popBackStack() }
@@ -84,6 +94,7 @@ class SkillsPostFragmentSProvider : Fragment() {
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     postImages.clear()
+
                     for (postSnapshot in snapshot.children) {
                         val postStatus = postSnapshot.child("postStatus").getValue(String::class.java)
                         val postCategory = postSnapshot.child("categoryName").getValue(String::class.java)
@@ -97,7 +108,18 @@ class SkillsPostFragmentSProvider : Fragment() {
                             }
                         }
                     }
-                    adapter.notifyDataSetChanged() // Notify the adapter when data changes
+
+                    // Check if posts are available
+                    if (postImages.isEmpty()) {
+                        emptyView.visibility = View.VISIBLE
+                        recyclerView.visibility = View.GONE
+                    } else {
+                        emptyView.visibility = View.GONE
+                        recyclerView.visibility = View.VISIBLE
+                    }
+
+                    // Notify the adapter when data changes
+                    adapter.notifyDataSetChanged()
                 }
 
                 override fun onCancelled(error: DatabaseError) {

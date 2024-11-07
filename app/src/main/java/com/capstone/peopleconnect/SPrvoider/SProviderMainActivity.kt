@@ -88,7 +88,12 @@ class SProviderMainActivity : AppCompatActivity() {
     override fun onBackPressed() {
         val currentFragment = supportFragmentManager.findFragmentById(R.id.frame_layout)
 
-        if (currentFragment is HomeFragmentSProvider) {
+        if (currentFragment is HomeFragmentSProvider
+            || currentFragment is ActivityFragmentSProvider
+            || currentFragment is SkillsFragmentSProvider
+            || currentFragment is ProfileFragmentSProvider) {
+
+
             if (backPressedOnce) {
                 finishAffinity()
                 return

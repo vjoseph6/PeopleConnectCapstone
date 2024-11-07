@@ -1,5 +1,6 @@
 package com.capstone.peopleconnect
 
+import SkillsPostsAdapter
 import android.app.Dialog
 import android.os.Bundle
 import android.util.Log
@@ -10,6 +11,8 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.capstone.peopleconnect.Classes.Bookings
 import com.capstone.peopleconnect.Classes.User
 import com.google.android.material.imageview.ShapeableImageView
@@ -35,12 +38,11 @@ class BookingDetailsFragment : Fragment() {
     private lateinit var bookingLocationTextView: TextView
     private lateinit var bookingAmountTextView: TextView
     private lateinit var paymentMethodTextView: TextView
-    private lateinit var imageContainer: LinearLayout
-    private lateinit var bookedByLinearLayout: LinearLayout
     private lateinit var providerProfileImage: ShapeableImageView
     private lateinit var providerNameTextView: TextView
     private lateinit var clientProfileImage: ShapeableImageView
     private lateinit var clientNameTextView: TextView
+    private lateinit var imagesRecyclerView: RecyclerView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,11 +67,11 @@ class BookingDetailsFragment : Fragment() {
         bookingLocationTextView = view.findViewById(R.id.tvBookingLocation)
         bookingAmountTextView = view.findViewById(R.id.tvBookingAmount)
         paymentMethodTextView = view.findViewById(R.id.tvPaymentMethod)
-        imageContainer = view.findViewById(R.id.imageContainer)
         providerProfileImage = view.findViewById(R.id.imgProviderProfile)
         providerNameTextView = view.findViewById(R.id.tvProviderName)
         clientProfileImage = view.findViewById(R.id.imgClientProfile)
         clientNameTextView = view.findViewById(R.id.tvClientName)
+        imagesRecyclerView = view.findViewById(R.id.imageContainer)
 
         fetchBookingDetails()
 
@@ -83,7 +85,6 @@ class BookingDetailsFragment : Fragment() {
         databaseReference.get().addOnSuccessListener { snapshot ->
             val booking = snapshot.getValue(Bookings::class.java)
             if (booking != null) {
-
                 bookingStatusTextView.text = booking.bookingStatus
                 serviceOfferedTextView.text = booking.serviceOffered
                 bookingStartTimeTextView.text = booking.bookingStartTime
@@ -94,49 +95,36 @@ class BookingDetailsFragment : Fragment() {
                 bookingAmountTextView.text = booking.bookingAmount.toString()
                 paymentMethodTextView.text = booking.bookingPaymentMethod
 
-                // Load images into the image container
-                for (imageUrl in booking.bookingUploadImages) {
-                    val imageView = ImageView(context)
-
-                    // Set the size of the image
-                    val width = 150.dpToPx()  // 150 dp converted to pixels
-                    val height = 150.dpToPx() // 150 dp converted to pixels
-
-                    // Set layout params with customized width and height
-                    imageView.layoutParams = LinearLayout.LayoutParams(width, height).apply {
-                        marginEnd = 8.dpToPx() // Optional margin
-                    }
-
-                    // Load image using Picasso
-                    Picasso.get().load(imageUrl).into(imageView)
-
-                    // Set click listener to open the image in full-screen mode
-                    imageView.setOnClickListener {
-                        // Create and show the full-screen image view in the dialog
-                        val fullScreenDialog = Dialog(requireContext())
-                        fullScreenDialog.setContentView(R.layout.dialog_fullscreen_image)
-                        val fullScreenImageView =
-                            fullScreenDialog.findViewById<ImageView>(R.id.fullscreen_image)
-
-                        // Load the image into the full-screen view using Picasso
-                        Picasso.get().load(imageUrl).into(fullScreenImageView)
-
-                        // Show the full-screen dialog
-                        fullScreenDialog.show()
-                    }
-
-                    // Add the image view to the container
-                    imageContainer.addView(imageView)
-                }
+                // Set up RecyclerView for displaying images
+                setupImageRecyclerView(booking.bookingUploadImages)
 
                 // Fetch Client and Service Provider details
                 fetchClientDetails(booking.bookByEmail)
                 fetchServiceProviderDetails(booking.providerEmail)
-
             }
         }.addOnFailureListener { exception ->
             Log.e("BookingDetailsFragment", "Error fetching booking details", exception)
         }
+    }
+
+    private fun setupImageRecyclerView(imageUrls: List<String>) {
+        // Set up RecyclerView layout manager with a grid of 3 columns
+        imagesRecyclerView.layoutManager = GridLayoutManager(context, 3)
+
+        // Initialize and set the adapter for images
+        val adapter = SkillsPostsAdapter(imageUrls) { imageUrl ->
+            // Handle image click, show in full screen dialog
+            val fullScreenDialog = Dialog(requireContext())
+            fullScreenDialog.setContentView(R.layout.dialog_fullscreen_image)
+            val fullScreenImageView = fullScreenDialog.findViewById<ImageView>(R.id.fullscreen_image)
+
+            // Load the image into the full-screen view using Picasso
+            Picasso.get().load(imageUrl).into(fullScreenImageView)
+
+            // Show the full-screen dialog
+            fullScreenDialog.show()
+        }
+        imagesRecyclerView.adapter = adapter
     }
 
     private fun fetchClientDetails(clientEmail: String) {
@@ -144,23 +132,17 @@ class BookingDetailsFragment : Fragment() {
             .orderByChild("email")
             .equalTo(clientEmail)
 
-        // Add a listener directly for the value event
         userDatabaseReference.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val user = snapshot.children.firstOrNull()?.getValue(User::class.java)
                 user?.let {
-                    // Set Client's name and profile image
                     clientNameTextView.text = it.name
                     Picasso.get().load(it.profileImageUrl).into(clientProfileImage)
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e(
-                    "BookingDetailsFragment",
-                    "Error fetching client details",
-                    error.toException()
-                )
+                Log.e("BookingDetailsFragment", "Error fetching client details", error.toException())
             }
         })
     }
@@ -174,23 +156,16 @@ class BookingDetailsFragment : Fragment() {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val user = snapshot.children.firstOrNull()?.getValue(User::class.java)
                 user?.let {
-                    // Set Service Provider's name and profile image
                     providerNameTextView.text = it.name
                     Picasso.get().load(it.profileImageUrl).into(providerProfileImage)
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e(
-                    "BookingDetailsFragment",
-                    "Error fetching service provider details",
-                    error.toException()
-                )
+                Log.e("BookingDetailsFragment", "Error fetching service provider details", error.toException())
             }
         })
     }
-
-    private fun Int.dpToPx(): Int = (this * resources.displayMetrics.density).toInt()
 
     companion object {
         fun newInstance(bookingId: String) = BookingDetailsFragment().apply {
