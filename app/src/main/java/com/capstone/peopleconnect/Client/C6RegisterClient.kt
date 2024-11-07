@@ -91,10 +91,8 @@ class C6RegisterClient : AppCompatActivity() {
             if (emailExists) {
                 progressBar.visibility = View.GONE
                 if (existingRoles.contains(userRole)) {
-                    // Email exists with the same role
                     Toast.makeText(this, "Account with this email and role already exists.", Toast.LENGTH_SHORT).show()
                 } else {
-                    // Email exists but with a different role, unify account
                     val builder = android.app.AlertDialog.Builder(this)
                     builder.setTitle("Unify Account")
                     builder.setMessage("An account with this email exists but with a different role. Do you want to unify your account by adding this role?")
@@ -108,12 +106,20 @@ class C6RegisterClient : AppCompatActivity() {
                     builder.show()
                 }
             } else {
-                // No account exists, proceed to create in Firebase Authentication
                 auth.createUserWithEmailAndPassword(email, pass)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {
-                            sendVerificationEmail()  // Send verification email
-                            saveCredentialsLocally(email, pass)  // Temporarily save credentials locally
+                            sendVerificationEmail()
+                            saveCredentialsLocally(email, pass)
+
+                            // Get the Firebase UID for the newly registered user
+                            val userId = task.result?.user?.uid
+
+                            // Save the user data including the UID in the database
+                            userId?.let {
+                                saveUserData(email, pass, userId)
+                            }
+
                         } else {
                             progressBar.visibility = View.GONE
                             Toast.makeText(this, "Registration failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
@@ -129,9 +135,8 @@ class C6RegisterClient : AppCompatActivity() {
                 if (snapshot.exists()) {
                     for (userSnapshot in snapshot.children) {
                         val existingRoles = userSnapshot.child("roles").value as? List<String> ?: listOf()
-                        val updatedRoles = existingRoles.toMutableList().apply { add(userRole) }  // Add the new role
+                        val updatedRoles = existingRoles.toMutableList().apply { add(userRole) }
 
-                        // Update the roles in the database
                         userSnapshot.ref.child("roles").setValue(updatedRoles)
                             .addOnCompleteListener { task ->
                                 progressBar.visibility = View.GONE
@@ -217,7 +222,8 @@ class C6RegisterClient : AppCompatActivity() {
                         // Save the user data if the email is verified
                         val email = user.email ?: return@addOnCompleteListener
                         val pass = getStoredPassword()
-                        saveUserData(email, pass)
+                        val userId = user.uid // Retrieve the UID
+                        saveUserData(email, pass, userId) // Pass the userId to saveUserData
                     } else {
                         // Optionally, handle the case where the email is not verified
                         // e.g., show a message or prompt the user to verify their email
@@ -234,6 +240,7 @@ class C6RegisterClient : AppCompatActivity() {
     }
 
 
+
     private fun saveCredentialsLocally(email: String, pass: String) {
         val sharedPreferences = getSharedPreferences("TempUserData", MODE_PRIVATE)
         val editor = sharedPreferences.edit()
@@ -242,13 +249,16 @@ class C6RegisterClient : AppCompatActivity() {
         editor.apply()
     }
 
-    private fun saveUserData(email: String, pass: String) {
-        val userId = auth.currentUser?.uid ?: return
+
+    private fun saveUserData(email: String, pass: String, userId: String) {
+        // Create a User object and assign the userId (UID)
         val user = User(
             email = email,
-            roles = listOf(userRole)
+            roles = listOf(userRole),
+            userId = userId  // Ensure this field is passed correctly
         )
 
+        // Save the user object under their UID in the database
         databaseReference.child(userId).setValue(user).addOnCompleteListener { task ->
             progressBar.visibility = View.GONE
             if (task.isSuccessful) {
@@ -259,6 +269,7 @@ class C6RegisterClient : AppCompatActivity() {
             }
         }
     }
+
 
     private fun getStoredPassword(): String {
         val sharedPreferences = getSharedPreferences("TempUserData", MODE_PRIVATE)

@@ -6,12 +6,12 @@
     android:layout_margin="10dp"
     android:elevation="2dp">
 
-    <include layout="@layout/profile_pic_view"
-        android:layout_width="52dp"
-        android:layout_height="52dp"
-        android:layout_gravity="center"
-        android:layout_margin="10dp"
-        />
+    <ImageView
+        android:id="@+id/sprovider_profile_pic"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_margin="8dp"
+        android:src="@drawable/profile" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -24,12 +24,12 @@
             android:text="User name"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:id="@+id/user_name_text"/>
+            android:id="@+id/first_name_text"/>
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="+000000000000"
-            android:id="@+id/phone_text"/>
+            android:text="id"
+            android:id="@+id/sprovider_id"/>
 
     </LinearLayout>
 

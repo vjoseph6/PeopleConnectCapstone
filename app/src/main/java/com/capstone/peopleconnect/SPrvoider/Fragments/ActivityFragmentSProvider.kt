@@ -9,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.RelativeLayout
@@ -57,6 +58,28 @@ class ActivityFragmentSProvider : Fragment(){
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Notification icons
+        val notificationIcons: ImageView = view.findViewById(R.id.notificationIcon)
+        notificationIcons.setOnClickListener {
+            val notificationFragment = NotificationFragmentSProvider()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, notificationFragment)
+                .addToBackStack(null)
+                .commit()
+
+        }
+
+        // Message icons
+        val messageIcons: ImageView = view.findViewById(R.id.messageIcon)
+        messageIcons.setOnClickListener {
+            val messageFragment = MessageFragmentSProvider()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, messageFragment)
+                .addToBackStack(null)
+                .commit()
+
+        }
 
         recyclerView = view.findViewById(R.id.recyclerView)
         adapter = BookingSProviderAdapter(bookings, ::fetchUserData, ::acceptBooking, ::cancelBooking) { bookingId ->

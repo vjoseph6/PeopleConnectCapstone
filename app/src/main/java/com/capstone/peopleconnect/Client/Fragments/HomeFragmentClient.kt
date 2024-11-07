@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
@@ -15,6 +16,7 @@ import com.capstone.peopleconnect.Classes.SkillItem
 import com.capstone.peopleconnect.Classes.Skills
 import com.capstone.peopleconnect.Classes.User
 import com.capstone.peopleconnect.R
+import com.capstone.peopleconnect.SPrvoider.Fragments.NotificationFragmentSProvider
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -40,6 +42,29 @@ class HomeFragmentClient : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+
+        // Notification icons
+        val notificationIcons: LinearLayout = view.findViewById(R.id.notificationLayout)
+        notificationIcons.setOnClickListener {
+            val notificationFragment = NotificationFragmentClient()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, notificationFragment)
+                .addToBackStack(null)
+                .commit()
+
+        }
+
+        // Message icons
+        val messageIcons: LinearLayout = view.findViewById(R.id.messageLayout)
+        messageIcons.setOnClickListener {
+            val messageFragment = MessageFragmentClient()
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, messageFragment)
+                .addToBackStack(null)
+                .commit()
+
+        }
 
         recyclerView = view.findViewById(R.id.rvInterests)
         recyclerView.layoutManager = LinearLayoutManager(context)
@@ -86,7 +111,7 @@ class HomeFragmentClient : Fragment() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                // Handle errors
+                Log.e("HomeFragmentClient", "Error fetching client interests: ${error.message}")
             }
         })
     }
