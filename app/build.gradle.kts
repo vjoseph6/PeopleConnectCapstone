@@ -75,6 +75,11 @@ dependencies {
     implementation ("io.getstream:stream-chat-android-compose:6.5.1")
 
 
+    //Circle image
+    implementation ("de.hdodenhof:circleimageview:3.1.0")
+
+
+
     //volley
     implementation ("com.android.volley:volley:1.2.1")
 

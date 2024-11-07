@@ -2,10 +2,14 @@ package com.capstone.peopleconnect.Message.chat
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.View
+import android.widget.ImageButton
 import android.widget.ProgressBar
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import com.android.volley.Request
 import com.android.volley.Response
 import com.android.volley.toolbox.JsonObjectRequest
@@ -16,10 +20,12 @@ import com.google.firebase.auth.FirebaseUser
 import io.getstream.chat.android.client.ChatClient
 import io.getstream.chat.android.models.Channel
 import io.getstream.chat.android.models.ConnectionData
+import io.getstream.chat.android.models.Message
 import io.getstream.chat.android.models.User
 import io.getstream.chat.android.ui.feature.messages.MessageListFragment
 import io.getstream.result.Result
 import org.json.JSONObject
+
 
 class ChatActivity : AppCompatActivity() {
 
@@ -35,6 +41,8 @@ class ChatActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_chat)
+
+        Log.d("ChatActivity", "onCreate called")
 
         chatLoadingSpinner = findViewById(R.id.chat_loading_spinner)
 
@@ -60,7 +68,69 @@ class ChatActivity : AppCompatActivity() {
 
         // Request the token from backend using the current user ID
         requestTokenFromBackend(currentUserId)
+
+        // Example ImageButton to start a video call
+        val startCallButton: ImageButton = findViewById(R.id.start_call_button)
+        startCallButton.setOnClickListener {
+            // Show the loading spinner
+            chatLoadingSpinner.visibility = View.VISIBLE
+
+            // Change button color to gray
+            startCallButton.setColorFilter(ContextCompat.getColor(this, android.R.color.darker_gray))
+
+            // Introduce a delay
+            Handler(Looper.getMainLooper()).postDelayed({
+                // Reset button color
+                startCallButton.clearColorFilter()
+
+                // Start the video call
+                startVideoCall()
+            }, 1000) // 1000 milliseconds = 1 second delay
+        }
     }
+
+    private fun startVideoCall() {
+        // Show the loading spinner
+        chatLoadingSpinner.visibility = View.VISIBLE
+
+        Log.d("VideoCall", "Start video call button clicked")
+        Toast.makeText(this, "Start video call button clicked", Toast.LENGTH_SHORT).show()
+
+        val callId = "$currentUserId$selectedUserId"
+        val callLink = "https://getstream.io/video/demos/join/$callId?id=$callId"
+        Log.d("VideoCall", "Generated call link: $callLink")
+
+        // Ensure the channel ID is consistent with how channels are created
+        val sortedUserIds = listOf(currentUserId, selectedUserId).sorted()
+        val sanitizedUserIds = sortedUserIds.joinToString("_").replace(Regex("[^a-z0-9_-]"), "").lowercase()
+        val channelPrefix = "messaging"
+        val channelId = "$channelPrefix:$sanitizedUserIds"
+
+        Log.d("VideoCall", "Using Channel ID: $channelId")
+
+        // Load the message list fragment immediately
+        loadMessageListFragment(channelId)
+
+        // Send a message with the call link
+        val message = Message(
+            text = "You have an incoming video call. Join This Link: $callLink",
+            user = User(id = currentUserId)
+        )
+
+        val channel = chatClient.channel(channelPrefix, sanitizedUserIds)
+        channel.sendMessage(message).enqueue { result ->
+            // Hide the loading spinner after the message is sent
+            chatLoadingSpinner.visibility = View.GONE
+            Log.d("VideoCall", "Loading spinner set to gone")
+
+            if (result.isSuccess) {
+                Log.d("VideoCall", "Message sent successfully with call link.")
+            } else {
+                Log.e("VideoCall", "Error sending message: ${result.errorOrNull()?.message}")
+            }
+        }
+    }
+
 
     private fun requestTokenFromBackend(userId: String) {
         chatLoadingSpinner.visibility = View.VISIBLE // Show spinner at the start
@@ -134,6 +204,7 @@ class ChatActivity : AppCompatActivity() {
         requestQueue.add(jsonObjectRequest)
     }
 
+
     private fun connectCurrentUserToStreamChat() {
         if (token.isEmpty()) {
             Log.e("ConnectUser", "Token is empty. Cannot connect user.")
@@ -161,6 +232,7 @@ class ChatActivity : AppCompatActivity() {
             }
         }
     }
+
 
     private fun createOrGetChannel() {
         chatLoadingSpinner.visibility = View.VISIBLE // Show spinner at the start
