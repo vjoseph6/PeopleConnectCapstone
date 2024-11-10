@@ -10,6 +10,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
+import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -23,6 +24,10 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 
 import com.google.firebase.database.*
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 class SkillsFragmentSProvider : Fragment() {
     private lateinit var skillsAdapter: SkillsAdapter
@@ -50,6 +55,8 @@ class SkillsFragmentSProvider : Fragment() {
         val view = inflater.inflate(R.layout.fragment_skills_s_provider, container, false)
 
 
+        updateDateText(view)
+
         // Notification icons
         val notificationIcons: LinearLayout = view.findViewById(R.id.notificationLayout)
         notificationIcons.setOnClickListener {
@@ -75,7 +82,7 @@ class SkillsFragmentSProvider : Fragment() {
         // Set up RecyclerView and Adapter
         recyclerView = view.findViewById(R.id.recyclerViewSkills)
         recyclerView.layoutManager = LinearLayoutManager(context)
-        emptyView = view.findViewById(R.id.emptyView) // Add reference to emptyView
+        emptyView = view.findViewById(R.id.emptyView)
 
         // Load image into ImageView using Glide
         val emptyImage: ImageView = view.findViewById(R.id.image)
@@ -124,17 +131,26 @@ class SkillsFragmentSProvider : Fragment() {
         return view
     }
 
+    private fun updateDateText(view: View) {
+        val dateFormat = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault())
+        dateFormat.timeZone = TimeZone.getTimeZone("GMT+8")
+        val currentDate = dateFormat.format(Date())
+
+        // Find the TextView and set the formatted date
+        val tvDate: TextView = view.findViewById(R.id.tvDate)
+        tvDate.text = currentDate // Set the formatted date to the TextView
+    }
+
     private fun retrieveUserSkills(email: String) {
         val skillsReference = database.child("skills").orderByChild("user").equalTo(email)
 
-        skillsReference.addListenerForSingleValueEvent(object : ValueEventListener {
+        skillsReference.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val skillsList = mutableListOf<SkillItem>()
                 val skillItemsToFetch = snapshot.children.sumOf { it.child("skillItems").childrenCount.toInt() }
                 var fetchedSkillCount = 0
 
                 if (skillItemsToFetch.toLong() == 0L) {
-                    // No skills, so show empty view
                     recyclerView.visibility = View.GONE
                     emptyView.visibility = View.VISIBLE
                     return
@@ -151,14 +167,11 @@ class SkillsFragmentSProvider : Fragment() {
                             val skillItemObj = SkillItem(name = skillName, visible = isVisible, image = imageUrl, rating = 0.0f)
                             skillsList.add(skillItemObj)
 
-                            // Once a skill is added, increase the fetched count
                             fetchedSkillCount++
 
-                            // When all skills are fetched, update the adapter and views visibility
                             if (fetchedSkillCount == skillItemsToFetch) {
                                 skillsAdapter.updateSkillsList(skillsList)
 
-                                // Show recyclerView if there are skills, otherwise show emptyView
                                 if (skillsList.isNotEmpty()) {
                                     recyclerView.visibility = View.VISIBLE
                                     emptyView.visibility = View.GONE
@@ -177,6 +190,7 @@ class SkillsFragmentSProvider : Fragment() {
             }
         })
     }
+
 
 
 

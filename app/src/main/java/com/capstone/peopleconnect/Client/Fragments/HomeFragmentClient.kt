@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
@@ -22,6 +23,10 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 
 class HomeFragmentClient : Fragment() {
@@ -37,12 +42,15 @@ class HomeFragmentClient : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        // Inflate the layout and return the view
         return inflater.inflate(R.layout.fragment_home_client, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Update the date TextView
+        updateDateText(view)
 
         // Notification icons
         val notificationIcons: LinearLayout = view.findViewById(R.id.notificationLayout)
@@ -52,7 +60,6 @@ class HomeFragmentClient : Fragment() {
                 .replace(R.id.frame_layout, notificationFragment)
                 .addToBackStack(null)
                 .commit()
-
         }
 
         // Message icons
@@ -63,7 +70,6 @@ class HomeFragmentClient : Fragment() {
                 .replace(R.id.frame_layout, messageFragment)
                 .addToBackStack(null)
                 .commit()
-
         }
 
         recyclerView = view.findViewById(R.id.rvInterests)
@@ -73,7 +79,6 @@ class HomeFragmentClient : Fragment() {
         // Retrieve arguments (such as email) passed to the fragment
         arguments?.let {
             email = it.getString("EMAIL")
-
         }
 
         // Proceed only if email is available
@@ -89,6 +94,17 @@ class HomeFragmentClient : Fragment() {
             }
         }
     }
+
+    private fun updateDateText(view: View) {
+        val dateFormat = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault())
+        dateFormat.timeZone = TimeZone.getTimeZone("GMT+8")
+        val currentDate = dateFormat.format(Date())
+
+        // Find the TextView and set the formatted date
+        val tvDate: TextView = view.findViewById(R.id.tvDate)
+        tvDate.text = currentDate // Set the formatted date to the TextView
+    }
+
 
     private fun fetchClientInterestsByEmail(email: String, onInterestsFetched: (List<String>) -> Unit) {
         val clientReference = FirebaseDatabase.getInstance()

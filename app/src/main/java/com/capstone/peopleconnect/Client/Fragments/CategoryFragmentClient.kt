@@ -10,6 +10,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import retrofit2.Call
 import retrofit2.Callback
@@ -24,6 +25,10 @@ import com.capstone.peopleconnect.Helper.ClickData
 import com.capstone.peopleconnect.Helper.RetrofitInstance
 import com.capstone.peopleconnect.R
 import com.google.firebase.database.*
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 class CategoryFragmentClient : Fragment() {
 
@@ -85,6 +90,8 @@ class CategoryFragmentClient : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
 
+        updateDateText(view)
+
         // Notification icons
         val notificationIcons: LinearLayout = view.findViewById(R.id.notificationLayout)
         notificationIcons.setOnClickListener {
@@ -108,6 +115,16 @@ class CategoryFragmentClient : Fragment() {
         }
 
 
+    }
+
+    private fun updateDateText(view: View) {
+        val dateFormat = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault())
+        dateFormat.timeZone = TimeZone.getTimeZone("GMT+8")
+        val currentDate = dateFormat.format(Date())
+
+        // Find the TextView and set the formatted date
+        val tvDate: TextView = view.findViewById(R.id.tvDate)
+        tvDate.text = currentDate // Set the formatted date to the TextView
     }
 
     fun handleFragmentBackPress() {

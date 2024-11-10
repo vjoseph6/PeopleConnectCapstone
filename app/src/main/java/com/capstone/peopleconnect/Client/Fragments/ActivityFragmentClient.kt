@@ -27,6 +27,10 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 
 class ActivityFragmentClient : Fragment() {
@@ -103,6 +107,7 @@ class ActivityFragmentClient : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        updateDateText(view)
 
         // Notification icons
         val notificationIcons: LinearLayout = view.findViewById(R.id.notificationLayout)
@@ -148,6 +153,16 @@ class ActivityFragmentClient : Fragment() {
             emptyView.visibility = View.GONE
             recyclerView.visibility = View.VISIBLE
         }
+    }
+
+    private fun updateDateText(view: View) {
+        val dateFormat = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault())
+        dateFormat.timeZone = TimeZone.getTimeZone("GMT+8")
+        val currentDate = dateFormat.format(Date())
+
+        // Find the TextView and set the formatted date
+        val tvDate: TextView = view.findViewById(R.id.tvDate)
+        tvDate.text = currentDate // Set the formatted date to the TextView
     }
 
     // Highlights the selected tab

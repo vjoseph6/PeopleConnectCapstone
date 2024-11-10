@@ -28,6 +28,10 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 class ActivityFragmentSProvider : Fragment(){
 
@@ -58,6 +62,8 @@ class ActivityFragmentSProvider : Fragment(){
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        updateDateText(view)
 
         // Notification icons
         val notificationIcons: ImageView = view.findViewById(R.id.notificationIcon)
@@ -127,6 +133,17 @@ class ActivityFragmentSProvider : Fragment(){
         }
     }
 
+    private fun updateDateText(view: View) {
+        val dateFormat = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault())
+        dateFormat.timeZone = TimeZone.getTimeZone("GMT+8")
+        val currentDate = dateFormat.format(Date())
+
+        // Use a nullable type with `findViewById`
+        val tvDate: TextView? = view.findViewById(R.id.tvDate_SPROVIDER)
+        tvDate?.text = currentDate // Set the formatted date to the TextView if it's not null
+    }
+
+
     private fun filterBookings(statusFilter: String) {
         // Filter based on the booking status from the second element of the pair (the Booking object)
         val filteredBookings = when (statusFilter) {
@@ -136,8 +153,7 @@ class ActivityFragmentSProvider : Fragment(){
             else -> allBookings
         }
 
-        // The pairedBookings will remain as List<Pair<String, Bookings>>
-        // filteredBookings already contains pairs, so no need to map them again
+
         adapter.updateBookings(filteredBookings)
 
         // Handle visibility of empty view
@@ -171,7 +187,6 @@ class ActivityFragmentSProvider : Fragment(){
                     for (bookingSnapshot in snapshot.children) {
                         val booking = bookingSnapshot.getValue(Bookings::class.java)
                         val bookingKey = bookingSnapshot.key
-                        Log.d("INATAY KA, ","$bookingKey")
 
                         if (booking != null && bookingKey != null) {
                             bookings.add(Pair(bookingKey, booking))  // Add to the adapter list
@@ -202,33 +217,66 @@ class ActivityFragmentSProvider : Fragment(){
 
                     // Check if the current key matches the bookingKey passed
                     if (currentKey == bookingKey) {
-                        // Prepare the updates for the booking
-                        val updates = mapOf(
-                            "bookingStatus" to "Accepted"  // Update the status to Accepted
-                        )
+                        val booking = bookingSnapshot.getValue(Bookings::class.java)
+                        if (booking != null) {
+                            // Prepare the updates for the booking
+                            val updates = mapOf("bookingStatus" to "Accepted")
 
-                        // Update the booking status
-                        bookingSnapshot.ref.updateChildren(updates).addOnCompleteListener { task ->
-                            if (task.isSuccessful) {
-                                // Optionally refresh the bookings list after accepting
-                                Toast.makeText(context, "Booking accepted successfully", Toast.LENGTH_SHORT).show()
-                                fetchBookingsForProvider(email.toString())  // Fetch updated bookings
-                            } else {
-                                Toast.makeText(context, "Failed to accept booking", Toast.LENGTH_SHORT).show()
+                            // Update the booking status
+                            bookingSnapshot.ref.updateChildren(updates).addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    Toast.makeText(context, "Booking accepted successfully", Toast.LENGTH_SHORT).show()
+                                    updateServiceStatus(booking.providerEmail, booking.serviceOffered) // Pass providerEmail and serviceOffered
+                                } else {
+                                    Toast.makeText(context, "Failed to accept booking", Toast.LENGTH_SHORT).show()
+                                }
                             }
                         }
-                        return  // Exit after finding and processing the correct node
+                        return
                     }
                 }
-                // If no matching booking was found
                 Toast.makeText(context, "Booking not found", Toast.LENGTH_SHORT).show()
             }
 
             override fun onCancelled(error: DatabaseError) {
-                // Handle possible errors
                 Log.e("Firebase", "Error loading bookings", error.toException())
             }
         })
+    }
+
+
+    private fun updateServiceStatus(providerEmail: String, serviceOffered: String) {
+        val skillsRef = FirebaseDatabase.getInstance().getReference("skills")
+
+        skillsRef.orderByChild("user").equalTo(providerEmail)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    for (skillSnapshot in snapshot.children) {
+                        val skillItemsSnapshot = skillSnapshot.child("skillItems")
+
+                        // Iterate over skillItems array to find the matching serviceOffered
+                        for (itemSnapshot in skillItemsSnapshot.children) {
+                            val name = itemSnapshot.child("name").getValue(String::class.java)
+                            if (name == serviceOffered) {
+                                // Update the visible field to false
+                                itemSnapshot.ref.child("visible").setValue(false)
+                                    .addOnCompleteListener { task ->
+                                        if (task.isSuccessful) {
+                                            Log.d("UpdateServiceStatus", "Visibility updated to false for $serviceOffered")
+                                        } else {
+                                            Log.e("UpdateServiceStatus", "Failed to update visibility")
+                                        }
+                                    }
+                                break // Exit loop once we find the matching service
+                            }
+                        }
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("Firebase", "Error updating service status", error.toException())
+                }
+            })
     }
 
 

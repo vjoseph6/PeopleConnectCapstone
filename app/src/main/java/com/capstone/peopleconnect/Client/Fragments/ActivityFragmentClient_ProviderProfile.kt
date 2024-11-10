@@ -1,5 +1,7 @@
 package com.capstone.peopleconnect.Client.Fragments
 
+import SkillsPostsAdapter
+import android.app.Dialog
 import android.content.ContentValues.TAG
 import android.os.Bundle
 import android.util.Log
@@ -135,6 +137,7 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
                             Log.d(TAG, "Retrieved email: $email")
                             if (email != null) {
                                 fetchSkills(email)  // Call fetchSkills with the user's email
+                                fetchWorks(email)
                             }
                         }
                     } else {
@@ -191,6 +194,55 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
             }
         })
     }
+
+    private fun fetchWorks(email: String) {
+        val postsRef = FirebaseDatabase.getInstance().getReference("posts")
+        val approvedImages = mutableListOf<String>()
+
+        postsRef.orderByChild("email").equalTo(email)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        for (postSnapshot in snapshot.children) {
+                            val postStatus = postSnapshot.child("postStatus").getValue(String::class.java)
+                            if (postStatus == "Approved") {
+                                val imagesList = postSnapshot.child("postImages").children.mapNotNull {
+                                    it.getValue(String::class.java)
+                                }
+                                approvedImages.addAll(imagesList) // Add all approved images
+                            }
+                        }
+                        // Pass the collected images to the RecyclerView adapter
+                        setupRecyclerView(approvedImages)
+                    } else {
+                        Log.d(TAG, "No approved posts found for email: $email")
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e(TAG, "Database error: ${error.message}")
+                }
+            })
+    }
+
+    private fun setupRecyclerView(postImages: List<String>) {
+        val recyclerView = view?.findViewById<RecyclerView>(R.id.worksRecyclerView)
+        recyclerView?.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        recyclerView?.adapter = SkillsPostsAdapter(postImages) { imageUrl ->
+            // Handle image click, show in full screen dialog
+            val fullScreenDialog = Dialog(requireContext())
+            fullScreenDialog.setContentView(R.layout.dialog_fullscreen_image)
+            val fullScreenImageView = fullScreenDialog.findViewById<ImageView>(R.id.fullscreen_image)
+
+            // Load the image into the full-screen view using Picasso
+            Picasso.get().load(imageUrl).into(fullScreenImageView)
+
+            // Show the full-screen dialog
+            fullScreenDialog.show()
+        }
+    }
+
+
 
 
     private fun fetchImage(name: String, callback: (String) -> Unit) {
