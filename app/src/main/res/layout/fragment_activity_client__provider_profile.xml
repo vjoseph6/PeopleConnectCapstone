@@ -121,7 +121,7 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/worksTitle"
-                tools:listitem="@layout/item_work_clientimage_for_provider" />
+                tools:listitem="@layout/skills_posts_list" />
 
             <!-- Offered Services Section -->
             <TextView

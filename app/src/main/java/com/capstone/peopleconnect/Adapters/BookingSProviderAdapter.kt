@@ -88,6 +88,7 @@ class BookingSProviderAdapter(
             onCancelBooking(bookingKey)
         }
 
+
         holder.serviceTextView.text = booking.serviceOffered
     }
 

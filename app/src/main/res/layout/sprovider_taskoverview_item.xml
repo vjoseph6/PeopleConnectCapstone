@@ -2,17 +2,20 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="horizontal"
-    android:padding="16dp"
-    android:layout_margin="10dp"
+    android:padding="10dp"
+    android:layout_margin="5dp"
     android:background="@drawable/sprovider_taskover_rounded_corner_background">
 
     <!-- Profile Image -->
-    <ImageView
+    <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/ivProfileImage"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_gravity="center"
         android:src="@drawable/profile1"
+        app:shapeAppearanceOverlay="@style/CircularImageViewStyle"
         android:layout_marginEnd="16dp"/>
 
     <!-- Task Info -->
@@ -29,7 +32,7 @@
             android:text="Name"
             android:textColor="@color/black"
             android:fontFamily="@font/semibold_poppins"
-            android:textSize="16sp"/>
+            android:textSize="14sp"/>
 
         <TextView
             android:id="@+id/tvLocation"
@@ -38,7 +41,7 @@
             android:text="Location"
             android:textColor="@color/white"
             android:fontFamily="@font/regular_poppins"
-            android:textSize="14sp"/>
+            android:textSize="12sp"/>
 
     </LinearLayout>
 
@@ -50,6 +53,7 @@
         android:text="Day"
         android:textColor="@color/black"
         android:fontFamily="@font/semibold_poppins"
-        android:textSize="16sp"/>
+        android:layout_gravity="center"
+        android:textSize="12sp"/>
 
 </LinearLayout>

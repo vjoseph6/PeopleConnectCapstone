@@ -1,5 +1,6 @@
 package com.capstone.peopleconnect.SPrvoider.Fragments
 
+import HomeBookingsAdapter
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -8,30 +9,37 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.TextView
+import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.capstone.peopleconnect.Classes.Bookings
+import com.capstone.peopleconnect.Classes.User
 import com.capstone.peopleconnect.R
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [HomeFragmentSProvider.newInstance] factory method to
- * create an instance of this fragment.
- */
 class HomeFragmentSProvider : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
+
+    private var email: String? = null
+    private var nameTextView: TextView? = null
+    private lateinit var rvInterests: RecyclerView
+    private val bookingList = mutableListOf<Bookings>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
+            email = it.getString("EMAIL")
         }
     }
 
@@ -39,44 +47,99 @@ class HomeFragmentSProvider : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_home_s_provider, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Assume ivFilter is the ImageView for the filter icon
+        updateDateText(view)
+
+         nameTextView = view.findViewById(R.id.tvName)
+
+
+        // Initialize RecyclerView
+        rvInterests = view.findViewById(R.id.rvInterests)
+        rvInterests.layoutManager = LinearLayoutManager(requireContext())
+        val bookingAdapter = HomeBookingsAdapter(bookingList, FirebaseDatabase.getInstance())
+        rvInterests.adapter = bookingAdapter
+
+        val currentEmail = email ?: return
+        val bookingsRef = FirebaseDatabase.getInstance().getReference("bookings")
+
+        // Fetch bookings for the current provider
+        bookingsRef.orderByChild("providerEmail").equalTo(currentEmail)
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    bookingList.clear()
+                    for (bookingSnapshot in snapshot.children) {
+                        val booking = bookingSnapshot.getValue(Bookings::class.java)
+                        booking?.let { bookingList.add(it) }
+                    }
+                    bookingAdapter.notifyDataSetChanged()
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Toast.makeText(requireContext(), "Failed to load bookings", Toast.LENGTH_SHORT).show()
+                }
+            })
+
+        fetchUserData(currentEmail) { userName, profileImageUrl ->
+            bookingAdapter.setProfileImageUrl(profileImageUrl)  // Set profile image URL in adapter
+            bookingAdapter.setUserName(userName)                // Set user name in adapter
+        }
+
+
+        // Set up icons and click listeners
+        setupIconClickListeners(view)
+    }
+
+
+    private fun fetchUserData(providerEmail: String, callback: (String?, String?) -> Unit) {
+        val userReference = FirebaseDatabase.getInstance().getReference("users")
+        userReference.orderByChild("email").equalTo(providerEmail)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    for (userSnapshot in snapshot.children) {
+                        val userName = userSnapshot.child("name").value as? String
+                        val profileImageUrl = userSnapshot.child("profileImageUrl").value as? String
+                        nameTextView?.text = userSnapshot.child("firstName").value as? String
+                        callback(userName, profileImageUrl) // Pass name and profile image URL
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    // Handle error
+                }
+            })
+    }
+
+
+
+    private fun updateDateText(view: View) {
+        val dateFormat = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault())
+        dateFormat.timeZone = TimeZone.getTimeZone("GMT+8")
+        val currentDate = dateFormat.format(Date())
+        view.findViewById<TextView>(R.id.tvDate_SPROVIDER).text = currentDate
+    }
+
+    private fun setupIconClickListeners(view: View) {
         val ivFilter: ImageView = view.findViewById(R.id.ivFilter)
-        ivFilter.setOnClickListener {
-            showFilterDialog()
-        }
+        ivFilter.setOnClickListener { showFilterDialog() }
 
-        
-
-        // Notification icons
-        val notificationIcons: LinearLayout = view.findViewById(R.id.notificationLayout_sprovider)
-        notificationIcons.setOnClickListener {
-            val notificationFragment = NotificationFragmentSProvider()
+        view.findViewById<LinearLayout>(R.id.notificationLayout_sprovider).setOnClickListener {
             parentFragmentManager.beginTransaction()
-                .replace(R.id.frame_layout, notificationFragment)
+                .replace(R.id.frame_layout, NotificationFragmentSProvider())
                 .addToBackStack(null)
                 .commit()
-
         }
 
-        // Message icons
-        val messageIcons: LinearLayout = view.findViewById(R.id.messageLayout_sprovider)
-        messageIcons.setOnClickListener {
-            val messageFragment = MessageFragmentSProvider()
+        view.findViewById<LinearLayout>(R.id.messageLayout_sprovider).setOnClickListener {
             parentFragmentManager.beginTransaction()
-                .replace(R.id.frame_layout, messageFragment)
+                .replace(R.id.frame_layout, MessageFragmentSProvider())
                 .addToBackStack(null)
                 .commit()
-
         }
-
-
     }
 
     private fun showFilterDialog() {
@@ -84,54 +147,23 @@ class HomeFragmentSProvider : Fragment() {
         val bottomSheetDialog = BottomSheetDialog(requireContext())
         bottomSheetDialog.setContentView(dialogView)
 
-        // Find buttons
-        val btnToday = dialogView.findViewById<Button>(R.id.btnToday)
-        val btnTomorrow = dialogView.findViewById<Button>(R.id.btnTomorrow)
-        val btnUpcoming = dialogView.findViewById<Button>(R.id.btnUpcoming)
-
-        // Function to handle button click
-        fun handleButtonClick(button: Button) {
-            // Set button background to green
-            button.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.gray))
-
-            // Delay for 200 milliseconds to allow the user to see the green background
-            button.postDelayed({
-                bottomSheetDialog.dismiss()  // Dismiss dialog and return to home
-            }, 200)
-        }
-
-        // Setting up click listeners for each button
-        btnToday.setOnClickListener {
-            handleButtonClick(btnToday)
-        }
-
-        btnTomorrow.setOnClickListener {
-            handleButtonClick(btnTomorrow)
-        }
-
-        btnUpcoming.setOnClickListener {
-            handleButtonClick(btnUpcoming)
+        // Handle button clicks with a delay
+        listOf(R.id.btnToday, R.id.btnTomorrow, R.id.btnUpcoming).forEach { buttonId ->
+            dialogView.findViewById<Button>(buttonId).setOnClickListener {
+                it.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.gray))
+                it.postDelayed({ bottomSheetDialog.dismiss() }, 200)
+            }
         }
 
         bottomSheetDialog.show()
     }
-
     companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment HomeFragmentSProvider.
-         */
-        // TODO: Rename and change types and number of parameters
+
         @JvmStatic
-        fun newInstance(param1: String, param2: String) =
+        fun newInstance(email: String) =
             HomeFragmentSProvider().apply {
                 arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
+                    putString("EMAIL", email)
                 }
             }
     }

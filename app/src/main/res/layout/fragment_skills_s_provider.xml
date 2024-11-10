@@ -73,7 +73,6 @@
         </LinearLayout>
 
 
-
         <!-- Popular Projects -->
         <TextView
             android:id="@+id/tvPopularProjects"

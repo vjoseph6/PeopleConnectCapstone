@@ -8,24 +8,35 @@
     android:id="@+id/fragment_container_present_booking"
     tools:context=".SPrvoider.Fragments.ActivityFragmentSProvider">
 
+    <TextView
+        android:id="@+id/tvDate_SPROVIDER"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/regular_poppins"
+        android:text="Thursday, July 18 2024"
+        android:textSize="12sp"
+        android:padding="16dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <!-- Notification Icons -->
     <LinearLayout
         android:id="@+id/layout1"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="end"
-        android:layout_margin="10dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         android:paddingTop="16dp"
         android:paddingEnd="16dp">
 
+
         <ImageView
             android:id="@+id/notificationIcon"
             android:layout_width="24dp"
             android:layout_height="24dp"
+            android:layout_marginEnd="4dp"
             android:src="@drawable/sprovider_notification"
             android:contentDescription="Notification Icon" />
 
