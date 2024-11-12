@@ -10,8 +10,10 @@ import com.capstone.peopleconnect.R
 import com.google.android.material.imageview.ShapeableImageView
 import com.squareup.picasso.Picasso
 
-class ServiceProviderAdapter(private val serviceProviderList: List<User>) :
-    RecyclerView.Adapter<ServiceProviderAdapter.ServiceProviderViewHolder>() {
+class ServiceProviderAdapter(
+    private val serviceProviderList: List<User>,
+    private val onItemClick: (User) -> Unit
+) : RecyclerView.Adapter<ServiceProviderAdapter.ServiceProviderViewHolder>() {
 
     class ServiceProviderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val tvName: TextView = itemView.findViewById(R.id.tvName)
@@ -29,6 +31,11 @@ class ServiceProviderAdapter(private val serviceProviderList: List<User>) :
 
         holder.tvName.text = user.name
         Picasso.get().load(user.profileImageUrl).into(holder.tvImage)
+        
+        // Set click listener for the entire item
+        holder.itemView.setOnClickListener {
+            onItemClick(user)
+        }
     }
 
     override fun getItemCount(): Int {

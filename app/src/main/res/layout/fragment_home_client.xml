@@ -6,14 +6,14 @@
     android:layout_height="match_parent"
     tools:context=".Client.Fragments.HomeFragmentClient">
 
-    <ScrollView
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="60dp"
+            android:layout_marginBottom="50dp"
             android:padding="16dp">
 
             <androidx.appcompat.widget.Toolbar
@@ -116,7 +116,6 @@
                 android:layout_below="@id/tvWelcome"
                 android:layout_alignParentStart="true" />
 
-
             <!-- Recommended Providers Title -->
             <TextView
                 android:id="@+id/tvRecommendationProvider"
@@ -130,56 +129,19 @@
                 android:layout_below="@id/tvSubtext"
                 android:layout_alignParentStart="true" />
 
-
-            <!-- Recommended Providers RecyclerView -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvRecommendation"
-                android:layout_width="match_parent"
-                android:layout_height="250dp"
-                android:layout_below="@id/tvRecommendationProvider"
-                android:layout_marginTop="16dp"
-                android:clipToPadding="false"
-                android:orientation="horizontal"
-                android:scrollbars="horizontal"
-                tools:listitem="@layout/recommendation_list" />
-
-            <!-- Filter Icon Button -->
-            <ImageButton
-                android:id="@+id/ivFilter"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/client_filter"
-                android:background="@drawable/back_button_background_client"
-                android:contentDescription="Filter Icon"
-                android:layout_below="@id/rvRecommendation"
-                android:layout_marginTop="4dp" />
-
-            <!-- Popular Projects Title -->
-            <TextView
-                android:id="@+id/tvPopularProjects"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Popular Projects"
-                android:textColor="@color/black"
-                android:fontFamily="@font/semibold_poppins"
-                android:textSize="18sp"
-                android:layout_marginTop="2dp"
-                android:layout_below="@id/ivFilter"
-                android:layout_alignParentStart="true" />
-
             <!-- Popular Projects RecyclerView -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvInterests"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/tvPopularProjects"
-                android:layout_marginTop="4dp"
+                android:layout_below="@id/tvRecommendationProvider"
+                android:layout_marginTop="10dp"
+                android:layout_centerHorizontal="true"
                 android:clipToPadding="false"
                 android:orientation="vertical"
                 android:scrollbars="vertical"
                 tools:listitem="@layout/provider_list" />
+
         </RelativeLayout>
-
-    </ScrollView>
-
+    </RelativeLayout>
 </FrameLayout>
