@@ -12,5 +12,6 @@ data class User(
     val roles: List<String> = listOf(),
     val userClicks: List<String> = listOf(),
     val userPref: List<String> = listOf(),
-    val interest: List<String> = listOf()
+    val interest: List<String> = listOf(),
+    val userRating: Float = 0.0f
 )

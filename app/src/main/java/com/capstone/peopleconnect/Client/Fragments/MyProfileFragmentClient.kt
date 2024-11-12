@@ -28,7 +28,6 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import com.squareup.picasso.Picasso
@@ -36,6 +35,7 @@ import java.util.Locale
 import android.Manifest
 import android.widget.ProgressBar
 import com.google.android.gms.location.LocationServices
+import com.google.firebase.database.ValueEventListener
 
 class MyProfileFragmentClient : Fragment() {
 
@@ -206,53 +206,47 @@ class MyProfileFragmentClient : Fragment() {
         val updatedLastName = view?.findViewById<EditText>(R.id.etLastName)?.text.toString()
         val addressText = view?.findViewById<EditText>(R.id.address)?.text.toString()
 
-        val updatedUser = User(
-            firstName = updatedFirstName,
-            middleName = updatedMiddleName,
-            lastName = updatedLastName,
-            name = "$updatedFirstName $updatedMiddleName $updatedLastName",
-            profileImageUrl = profileImageUrl ?: "",
-            email = email.toString(),
-            address = addressText // Include the address here
+        // Instead of creating a new User object, create a map of updates
+        val updates = hashMapOf<String, Any>(
+            "firstName" to updatedFirstName,
+            "middleName" to updatedMiddleName,
+            "lastName" to updatedLastName,
+            "name" to "$updatedFirstName $updatedMiddleName $updatedLastName",
+            "address" to addressText
         )
 
         if (selectedImageUri != null) {
             val fileReference = storageReference.child("$email.jpg")
-            handleImageUpload(fileReference, updatedUser)
+            handleImageUploadWithUpdates(fileReference, updates)
         } else {
-            updateUser(updatedUser)
+            updateUserData(updates)
         }
     }
 
-
-    private fun handleImageUpload(fileReference: StorageReference, updatedUser: User) {
-        // Check if the current profile image URL is empty
+    private fun handleImageUploadWithUpdates(fileReference: StorageReference, updates: HashMap<String, Any>) {
         if (profileImageUrl.isNullOrEmpty()) {
-            // If there's no old image, directly upload the new image
-            uploadNewImage(fileReference, updatedUser)
+            uploadNewImageWithUpdates(fileReference, updates)
         } else {
-            // If there's an old image, delete it first
             deleteOldProfileImage(profileImageUrl) {
-                uploadNewImage(fileReference, updatedUser)
+                uploadNewImageWithUpdates(fileReference, updates)
             }
         }
     }
 
-    // Method to upload the new image
-    private fun uploadNewImage(fileReference: StorageReference, updatedUser: User) {
+    private fun uploadNewImageWithUpdates(fileReference: StorageReference, updates: HashMap<String, Any>) {
         selectedImageUri?.let { uri ->
             fileReference.putFile(uri)
                 .addOnSuccessListener {
                     fileReference.downloadUrl.addOnSuccessListener { downloadUrl ->
-                        updatedUser.profileImageUrl = downloadUrl.toString()
-                        updateUser(updatedUser)
+                        updates["profileImageUrl"] = downloadUrl.toString()
+                        updateUserData(updates)
                     }.addOnFailureListener { e ->
                         handleImageUploadFailure(e)
-                        progressBar.visibility = View.GONE // Hide progress bar on failure
+                        progressBar.visibility = View.GONE
                     }
                 }.addOnFailureListener { e ->
                     handleImageUploadFailure(e)
-                    progressBar.visibility = View.GONE // Hide progress bar on failure
+                    progressBar.visibility = View.GONE
                 }
         }
     }
@@ -274,24 +268,11 @@ class MyProfileFragmentClient : Fragment() {
         }
     }
 
-
-    private fun updateUser(user: User) {
+    private fun updateUserData(updates: HashMap<String, Any>) {
         userKey?.let { key ->
-            val updates = mapOf(
-                "firstName" to user.firstName,
-                "middleName" to user.middleName,
-                "lastName" to user.lastName,
-                "name" to user.name,
-                "email" to user.email,
-                "profileImageUrl" to user.profileImageUrl,
-                "address" to user.address
-            )
-
             databaseReference.child(key).updateChildren(updates)
                 .addOnCompleteListener { task ->
-                    // Hide progress bar after the update is complete
                     progressBar.visibility = View.GONE
-
                     if (task.isSuccessful) {
                         Toast.makeText(requireContext(), "Profile updated successfully", Toast.LENGTH_SHORT).show()
                         requireActivity().supportFragmentManager.popBackStack()
@@ -301,12 +282,10 @@ class MyProfileFragmentClient : Fragment() {
                     }
                 }
         } ?: run {
-            // Hide progress bar if user key is not found
             progressBar.visibility = View.GONE
-            Toast.makeText(requireContext(), "User key not found, cannot update profile", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "User key not found", Toast.LENGTH_SHORT).show()
         }
     }
-
 
     private fun handleImageUploadFailure(exception: Exception) {
         Toast.makeText(requireContext(), "Failed to upload image", Toast.LENGTH_SHORT).show()
@@ -315,7 +294,8 @@ class MyProfileFragmentClient : Fragment() {
 
     private fun fetchUserKey() {
         email?.let { userEmail ->
-            databaseReference.orderByChild("email").equalTo(userEmail).addListenerForSingleValueEvent(object : ValueEventListener {
+            databaseReference.orderByChild("email").equalTo(userEmail).addListenerForSingleValueEvent(object :
+                ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (snapshot.exists()) {
                         snapshot.children.forEach { dataSnapshot ->

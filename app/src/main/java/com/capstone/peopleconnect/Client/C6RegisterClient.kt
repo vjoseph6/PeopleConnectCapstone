@@ -251,11 +251,12 @@ class C6RegisterClient : AppCompatActivity() {
 
 
     private fun saveUserData(email: String, pass: String, userId: String) {
-        // Create a User object and assign the userId (UID)
+        // Create a User object with default userRating
         val user = User(
             email = email,
             roles = listOf(userRole),
-            userId = userId  // Ensure this field is passed correctly
+            userId = userId,
+            userRating = 0.0f  // Set default rating
         )
 
         // Save the user object under their UID in the database

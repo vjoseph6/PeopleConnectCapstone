@@ -7,6 +7,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.RelativeLayout
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -14,6 +16,7 @@ import com.capstone.peopleconnect.Adapters.ProviderAdapter
 import com.capstone.peopleconnect.Classes.ProviderData
 import com.capstone.peopleconnect.R
 import com.google.firebase.database.*
+import com.bumptech.glide.Glide
 
 class ClientChooseProvider : Fragment() {
     private lateinit var skillName: String
@@ -24,6 +27,8 @@ class ClientChooseProvider : Fragment() {
     private var bookDay: String? = null
     private var startTime: String? = null
     private var endTime: String? = null
+    private lateinit var emptyView: RelativeLayout
+    private lateinit var recyclerView: RecyclerView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,8 +52,18 @@ class ClientChooseProvider : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        emptyView = view.findViewById(R.id.emptyView)
+        recyclerView = view.findViewById(R.id.categoryRecyclerView)
+
+        // Initialize the empty view image with Glide animation
+        val emptyImage = view.findViewById<ImageView>(R.id.image)
+        Glide.with(this)
+            .asGif()
+            .load(R.drawable.nothing) // Make sure this is a GIF file
+            .into(emptyImage)
+
         setupRecyclerView(view)
-        retrieveProviders() // Call to fetch providers should happen here
+        retrieveProviders()
 
         val backBtn = view.findViewById<ImageButton>(R.id.btnBackClient)
         backBtn.setOnClickListener {
@@ -100,14 +115,16 @@ class ClientChooseProvider : Fragment() {
     }
 
     private fun retrieveProviders() {
-        // Clear the provider list to avoid duplication
-        providerList.clear() // Clear existing data
-        providerAdapter.notifyDataSetChanged() // Notify the adapter about the cleared list
+        providerList.clear()
+        providerAdapter.notifyDataSetChanged()
+        updateEmptyView()
 
         val skillsRef = FirebaseDatabase.getInstance().getReference("skills")
 
         skillsRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+                providerList.clear()
+
                 if (snapshot.exists()) {
                     for (skillSetSnapshot in snapshot.children) {
                         val user = skillSetSnapshot.child("user").getValue(String::class.java)
@@ -144,10 +161,14 @@ class ClientChooseProvider : Fragment() {
                         }
                     }
                 }
+
+                updateEmptyView()
+                providerAdapter.notifyDataSetChanged()
             }
 
             override fun onCancelled(error: DatabaseError) {
                 Log.e("SkillData", "Database error: ${error.message}")
+                updateEmptyView()
             }
         })
     }
@@ -186,6 +207,7 @@ class ClientChooseProvider : Fragment() {
                                         )
                                     )
                                     providerAdapter.notifyDataSetChanged()
+                                    updateEmptyView()
                                 }
                             }
                         }
@@ -194,6 +216,7 @@ class ClientChooseProvider : Fragment() {
 
                 override fun onCancelled(error: DatabaseError) {
                     Log.e("UserData", "Database error: ${error.message}")
+                    updateEmptyView()
                 }
             })
     }
@@ -202,10 +225,22 @@ class ClientChooseProvider : Fragment() {
     private fun removeProviderByEmailAndSkill(userEmail: String, skillName: String) {
         providerList.clear()
         providerAdapter.notifyDataSetChanged()
+        updateEmptyView()
         val indexToRemove = providerList.indexOfFirst { it.userName == userEmail && it.name == skillName }
         if (indexToRemove != -1) {
             providerList.removeAt(indexToRemove)
             providerAdapter.notifyDataSetChanged()
+            updateEmptyView()
+        }
+    }
+
+    private fun updateEmptyView() {
+        if (providerList.isEmpty()) {
+            emptyView.visibility = View.VISIBLE
+            recyclerView.visibility = View.GONE
+        } else {
+            emptyView.visibility = View.GONE
+            recyclerView.visibility = View.VISIBLE
         }
     }
 
