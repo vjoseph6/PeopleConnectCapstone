@@ -8,8 +8,10 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -21,11 +23,17 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.squareup.picasso.Picasso
+import androidx.core.content.ContextCompat
+import androidx.constraintlayout.widget.ConstraintLayout
+import android.content.Intent
+import android.net.Uri
+import com.bumptech.glide.Glide
 
 
 class BookingDetailsFragment : Fragment() {
 
     private var bookingId: String? = null
+    private var isClient: Boolean = false
 
     // Views for displaying booking details
     private lateinit var providerEmailTextView: TextView
@@ -35,7 +43,6 @@ class BookingDetailsFragment : Fragment() {
     private lateinit var bookingEndTimeTextView: TextView
     private lateinit var bookingDescriptionTextView: TextView
     private lateinit var bookingDayTextView: TextView
-    private lateinit var bookingLocationTextView: TextView
     private lateinit var bookingAmountTextView: TextView
     private lateinit var bookingTotalTextView: TextView
     private lateinit var paymentMethodTextView: TextView
@@ -49,6 +56,7 @@ class BookingDetailsFragment : Fragment() {
         super.onCreate(savedInstanceState)
         arguments?.let {
             bookingId = it.getString("BOOKING_ID")
+            isClient = it.getBoolean("IS_CLIENT", false)
         }
     }
 
@@ -58,6 +66,26 @@ class BookingDetailsFragment : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_booking_details, container, false)
 
+        // Set background color based on isClient flag
+        val layoutBackground = view.findViewById<ConstraintLayout>(R.id.layoutBackground)
+        if (isClient) {
+            layoutBackground.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.green))
+            
+            // Change background for all views with border_style
+            val borderViews = listOf(
+                view.findViewById<LinearLayout>(R.id.layout1),
+                view.findViewById<LinearLayout>(R.id.layout2),
+                view.findViewById<LinearLayout>(R.id.activitySummaryLayout),
+                view.findViewById<TextView>(R.id.tvBookingDescription),
+                view.findViewById<RecyclerView>(R.id.imageContainer),
+                view.findViewById<RelativeLayout>(R.id.totalRateLayout)
+            )
+
+            borderViews.forEach { borderView ->
+                borderView?.setBackgroundResource(R.drawable.border_style_2)
+            }
+        }
+
         // Initialize views
         bookingStatusTextView = view.findViewById(R.id.tvBookingStatus)
         serviceOfferedTextView = view.findViewById(R.id.tvServiceOffered)
@@ -65,7 +93,6 @@ class BookingDetailsFragment : Fragment() {
         bookingEndTimeTextView = view.findViewById(R.id.tvBookingEndTime)
         bookingDescriptionTextView = view.findViewById(R.id.tvBookingDescription)
         bookingDayTextView = view.findViewById(R.id.tvBookingDay)
-        bookingLocationTextView = view.findViewById(R.id.tvBookingLocation)
         bookingAmountTextView = view.findViewById(R.id.tvBookingAmount)
         bookingTotalTextView = view.findViewById(R.id.tvBookingTotals)
         paymentMethodTextView = view.findViewById(R.id.tvPaymentMethod)
@@ -74,6 +101,25 @@ class BookingDetailsFragment : Fragment() {
         clientProfileImage = view.findViewById(R.id.imgClientProfile)
         clientNameTextView = view.findViewById(R.id.tvClientName)
         imagesRecyclerView = view.findViewById(R.id.imageContainer)
+
+        val btnBackClient: ImageButton = view.findViewById(R.id.btnBack)
+        btnBackClient.setOnClickListener {
+            requireActivity().supportFragmentManager.popBackStack()
+        }
+
+        // Initialize the location button and animate it
+        val viewLocationBtn: ImageButton = view.findViewById(R.id.viewLocationBtn)
+        
+        // Animate the GIF using Glide
+        Glide.with(this)
+            .asGif()
+            .load(R.drawable.location_gif)
+            .into(viewLocationBtn)
+
+        // Set up location button click listener
+        viewLocationBtn.setOnClickListener {
+            openLocationInGoogleMaps()
+        }
 
         fetchBookingDetails()
 
@@ -88,14 +134,14 @@ class BookingDetailsFragment : Fragment() {
             val booking = snapshot.getValue(Bookings::class.java)
             if (booking != null) {
                 bookingStatusTextView.text = booking.bookingStatus
+                updateBookingStatusColor(booking.bookingStatus)
                 serviceOfferedTextView.text = booking.serviceOffered
                 bookingStartTimeTextView.text = booking.bookingStartTime
                 bookingEndTimeTextView.text = booking.bookingEndTime
-                bookingDescriptionTextView.text = booking.bookingDescription
+                bookingDescriptionTextView.text = "Description: ${booking.bookingDescription}"
                 bookingDayTextView.text = booking.bookingDay
-                bookingLocationTextView.text = booking.bookingLocation
                 bookingAmountTextView.text = booking.bookingAmount.toString()
-                bookingTotalTextView.text = booking.bookingAmount.toString()
+                bookingTotalTextView.text = "${booking.bookingAmount} PHP"
                 paymentMethodTextView.text = booking.bookingPaymentMethod
 
                 // Set up RecyclerView for displaying images
@@ -170,10 +216,56 @@ class BookingDetailsFragment : Fragment() {
         })
     }
 
+    private fun updateBookingStatusColor(status: String) {
+        val color = when (status) {
+            "Pending" -> R.color.orange
+            "Accepted" -> R.color.green
+            "Rejected" -> R.color.red
+            "Completed" -> R.color.blue
+            else -> R.color.black
+        }
+        bookingStatusTextView.setTextColor(ContextCompat.getColor(requireContext(), color))
+    }
+
+    private fun openLocationInGoogleMaps() {
+        val databaseReference = FirebaseDatabase.getInstance()
+            .getReference("bookings")
+            .child(bookingId ?: return)
+
+        databaseReference.get().addOnSuccessListener { snapshot ->
+            val booking = snapshot.getValue(Bookings::class.java)
+            booking?.let {
+                val location = it.bookingLocation
+                if (!location.isNullOrEmpty()) {
+                    // Create a Uri for Google Maps search
+                    val gmmIntentUri = Uri.parse("geo:0,0?q=${Uri.encode(location)}")
+                    
+                    // Create an Intent to open Google Maps
+                    val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+                    mapIntent.setPackage("com.google.android.apps.maps")
+
+                    // Verify that Google Maps is installed
+                    if (mapIntent.resolveActivity(requireActivity().packageManager) != null) {
+                        startActivity(mapIntent)
+                    } else {
+                        // If Google Maps is not installed, open in browser
+                        val browserIntent = Intent(Intent.ACTION_VIEW, 
+                            Uri.parse("https://www.google.com/maps/search/?api=1&query=${Uri.encode(location)}")
+                        )
+                        startActivity(browserIntent)
+                    }
+                }
+            }
+        }.addOnFailureListener { exception ->
+            Log.e("BookingDetailsFragment", "Error fetching location", exception)
+        }
+    }
+
     companion object {
-        fun newInstance(bookingId: String) = BookingDetailsFragment().apply {
+        fun newInstance(bookingId: String, isClient: Boolean = false) = BookingDetailsFragment().apply {
             arguments = Bundle().apply {
                 putString("BOOKING_ID", bookingId)
+                putBoolean("IS_CLIENT", isClient)
             }
         }
     }

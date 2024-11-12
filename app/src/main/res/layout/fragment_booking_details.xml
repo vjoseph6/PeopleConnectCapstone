@@ -9,6 +9,7 @@
 
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layoutBackground"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/blue"
@@ -52,6 +53,7 @@
             app:layout_constraintTop_toBottomOf="@id/activityDetails"
             app:layout_constraintBottom_toBottomOf="parent"
             android:background="@drawable/sprovider_card_background_top_corners"
+            android:layout_marginBottom="56dp"
             android:padding="16dp">
 
             <TextView
@@ -68,43 +70,59 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
+            <ImageButton
+                android:id="@+id/viewLocationBtn"
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:layout_marginEnd="5dp"
+                android:background="@drawable/location_gif"
+                app:layout_constraintBottom_toTopOf="@+id/clientProviderInfoLayout"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="1.0"
+                app:layout_constraintStart_toEndOf="@+id/tvBookingStatus"
+                app:layout_constraintTop_toTopOf="@+id/tvBookingStatus"
+                app:layout_constraintVertical_bias="0.0" />
+
             <LinearLayout
                 android:id="@+id/clientProviderInfoLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
                 android:orientation="vertical"
-                android:layout_marginBottom="16dp"
-                app:layout_constraintTop_toBottomOf="@id/tvBookingStatus"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent">
+                app:layout_constraintTop_toBottomOf="@id/tvBookingStatus">
 
                 <!-- Client Information -->
                 <LinearLayout
+                    android:id="@+id/layout1"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
+                    android:layout_marginBottom="10dp"
                     android:background="@drawable/border_style"
-                    android:padding="8dp">
+                    android:orientation="horizontal"
+                    android:padding="5dp">
 
                     <com.google.android.material.imageview.ShapeableImageView
                         android:id="@+id/imgClientProfile"
                         android:layout_width="50dp"
                         android:layout_height="50dp"
-                        android:src="@drawable/profile"
-                        android:layout_marginEnd="8dp"/>
+                        android:layout_marginEnd="8dp"
+                        android:src="@drawable/profile" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:paddingEnd="20dp"
-                        android:orientation="vertical">
+                        android:orientation="vertical"
+                        android:paddingEnd="20dp">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Client (Your Customer)"
-                            android:textSize="14sp"
-                            android:fontFamily="@font/regular_poppins"/>
+                            android:fontFamily="@font/regular_poppins"
+                            android:textStyle="bold"
+                            android:text="Client"
+                            android:textSize="13sp" />
 
                         <RelativeLayout
                             android:layout_width="match_parent"
@@ -114,17 +132,17 @@
                                 android:id="@+id/tvClientName"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:fontFamily="@font/semibold_poppins"
                                 android:text="Joseph Lhee Villarasa"
-                                android:textSize="16sp"
-                                android:fontFamily="@font/semibold_poppins"/>
+                                android:textSize="12sp" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="4.5"
-                                android:textSize="14sp"
                                 android:layout_alignParentEnd="true"
-                                android:drawableLeft="@drawable/star_icon"/>
+                                android:drawableLeft="@drawable/star_icon"
+                                android:text="4.6"
+                                android:textSize="12sp" />
 
 
                         </RelativeLayout>
@@ -135,12 +153,14 @@
 
                 <!-- Service Provider Information -->
                 <LinearLayout
+                    android:id="@+id/layout2"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="10dp"
                     android:background="@drawable/border_style"
-                    android:padding="8dp"
-                    android:layout_marginTop="8dp">
+                    android:orientation="horizontal"
+                    android:padding="5dp">
 
                     <com.google.android.material.imageview.ShapeableImageView
                         android:id="@+id/imgProviderProfile"
@@ -152,15 +172,17 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:paddingEnd="20dp"
-                        android:orientation="vertical">
+                        android:layout_gravity="center"
+                        android:orientation="vertical"
+                        android:paddingEnd="20dp">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Service Provider (You)"
-                            android:textSize="14sp"
-                            android:fontFamily="@font/regular_poppins"/>
+                            android:fontFamily="@font/regular_poppins"
+                            android:text="Service Provider"
+                            android:textStyle="bold"
+                            android:textSize="13sp" />
 
                         <RelativeLayout
                             android:layout_width="match_parent"
@@ -170,18 +192,18 @@
                                 android:id="@+id/tvProviderName"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Earl Brando Andrino"
-                                android:textSize="16sp"
                                 android:layout_alignParentStart="true"
-                                android:fontFamily="@font/semibold_poppins"/>
+                                android:fontFamily="@font/semibold_poppins"
+                                android:text="Earl Brando Andrino"
+                                android:textSize="12sp" />
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="4.5"
-                                android:textSize="14sp"
                                 android:layout_alignParentEnd="true"
-                                android:drawableLeft="@drawable/star_icon"/>
+                                android:drawableLeft="@drawable/star_icon"
+                                android:text="4.5"
+                                android:textSize="12sp" />
 
                         </RelativeLayout>
 
@@ -192,10 +214,10 @@
                     android:id="@+id/activitySummaryLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:background="@drawable/border_style"
-                    android:padding="16dp"
                     android:layout_marginBottom="16dp"
+                    android:background="@drawable/border_style"
+                    android:orientation="vertical"
+                    android:padding="16dp"
                     app:layout_constraintTop_toBottomOf="@id/clientProviderInfoLayout">
 
                     <!-- Add details here -->
@@ -203,10 +225,10 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Activity Summary"
-                        android:textSize="16sp"
+                        android:layout_marginBottom="8dp"
                         android:fontFamily="@font/semibold_poppins"
-                        android:layout_marginBottom="8dp"/>
+                        android:text="Activity Summary"
+                        android:textSize="16sp" />
 
                     <RelativeLayout
                         android:layout_width="match_parent"
@@ -216,10 +238,10 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Date"
-                            android:textSize="14sp"
+                            android:layout_alignParentStart="true"
                             android:fontFamily="@font/regular_poppins"
-                            android:layout_alignParentStart="true" />
+                            android:text="Date"
+                            android:textSize="14sp" />
 
 
                         <!-- Right-aligned TextView -->
@@ -229,9 +251,9 @@
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
                             android:layout_marginEnd="12dp"
+                            android:fontFamily="@font/regular_poppins"
                             android:text="11-11-24"
-                            android:textSize="14sp"
-                            android:fontFamily="@font/regular_poppins" />
+                            android:textSize="12sp" />
 
                     </RelativeLayout>
 
@@ -243,10 +265,10 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Service Offered"
-                            android:textSize="14sp"
                             android:layout_alignParentStart="true"
-                            android:fontFamily="@font/regular_poppins"/>
+                            android:fontFamily="@font/regular_poppins"
+                            android:text="Service Offered"
+                            android:textSize="14sp" />
 
 
                         <!-- Right-aligned TextView -->
@@ -256,9 +278,9 @@
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
                             android:layout_marginEnd="12dp"
+                            android:fontFamily="@font/regular_poppins"
                             android:text="Baking and Pastry"
-                            android:textSize="14sp"
-                            android:fontFamily="@font/regular_poppins" />
+                            android:textSize="12sp" />
 
                     </RelativeLayout>
 
@@ -270,10 +292,10 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Start Time"
-                            android:textSize="14sp"
                             android:layout_alignParentStart="true"
-                            android:fontFamily="@font/regular_poppins"/>
+                            android:fontFamily="@font/regular_poppins"
+                            android:text="Start Time"
+                            android:textSize="14sp" />
 
 
                         <!-- Right-aligned TextView -->
@@ -283,9 +305,9 @@
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
                             android:layout_marginEnd="12dp"
+                            android:fontFamily="@font/regular_poppins"
                             android:text="11:05 PM"
-                            android:textSize="14sp"
-                            android:fontFamily="@font/regular_poppins" />
+                            android:textSize="12sp" />
 
                     </RelativeLayout>
 
@@ -297,10 +319,10 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="End Time"
-                            android:textSize="14sp"
                             android:layout_alignParentStart="true"
-                            android:fontFamily="@font/regular_poppins"/>
+                            android:fontFamily="@font/regular_poppins"
+                            android:text="End Time"
+                            android:textSize="14sp" />
 
 
                         <!-- Right-aligned TextView -->
@@ -310,9 +332,9 @@
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
                             android:layout_marginEnd="12dp"
+                            android:fontFamily="@font/regular_poppins"
                             android:text="12:05 AM"
-                            android:textSize="14sp"
-                            android:fontFamily="@font/regular_poppins" />
+                            android:textSize="12sp" />
 
                     </RelativeLayout>
 
@@ -324,10 +346,10 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Amount"
-                            android:textSize="14sp"
                             android:layout_alignParentStart="true"
-                            android:fontFamily="@font/regular_poppins"/>
+                            android:fontFamily="@font/regular_poppins"
+                            android:text="Amount"
+                            android:textSize="14sp" />
 
 
                         <!-- Right-aligned TextView -->
@@ -337,9 +359,9 @@
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
                             android:layout_marginEnd="12dp"
+                            android:fontFamily="@font/regular_poppins"
                             android:text="₱200.00"
-                            android:textSize="14sp"
-                            android:fontFamily="@font/regular_poppins" />
+                            android:textSize="12sp" />
 
                     </RelativeLayout>
 
@@ -351,10 +373,10 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Payment Use"
-                            android:textSize="14sp"
                             android:layout_alignParentStart="true"
-                            android:fontFamily="@font/regular_poppins"/>
+                            android:fontFamily="@font/regular_poppins"
+                            android:text="Payment Use"
+                            android:textSize="14sp" />
 
 
                         <!-- Right-aligned TextView -->
@@ -364,36 +386,10 @@
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
                             android:layout_marginEnd="12dp"
+                            android:fontFamily="@font/regular_poppins"
                             android:text="Stripe"
-                            android:textSize="14sp"
-                            android:fontFamily="@font/regular_poppins" />
+                            android:textSize="12sp" />
 
-                    </RelativeLayout>
-
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-
-                        <!-- Left-aligned TextView -->
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Location"
-                            android:textSize="14sp"
-                            android:layout_alignParentStart="true"
-                            android:fontFamily="@font/regular_poppins"/>
-
-
-                        <!-- Right-aligned TextView -->
-                        <TextView
-                            android:id="@+id/tvBookingLocation"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_marginEnd="12dp"
-                            android:text="Mandaue City"
-                            android:textSize="14sp"
-                            android:fontFamily="@font/regular_poppins" />
                     </RelativeLayout>
                 </LinearLayout>
 
@@ -401,25 +397,24 @@
                     android:id="@+id/tvBookingDescription"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
                     android:background="@drawable/border_style"
-                    android:padding="16dp"
-                    android:hint="Description"
-                    android:textSize="14sp"
                     android:fontFamily="@font/regular_poppins"
-                    app:layout_constraintTop_toBottomOf="@id/activitySummaryLayout"
-                    android:layout_marginBottom="16dp"/>
+                    android:hint="Description"
+                    android:padding="16dp"
+                    android:textSize="14sp"
+                    app:layout_constraintTop_toBottomOf="@id/activitySummaryLayout" />
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/imageContainer"
                     android:layout_width="match_parent"
-                    tools:listitem="@layout/skills_posts_list"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
+                    android:layout_marginBottom="16dp"
                     android:background="@drawable/border_style"
+                    android:orientation="horizontal"
                     android:padding="8dp"
                     app:layout_constraintTop_toBottomOf="@id/tvBookingDescription"
-                    android:layout_marginBottom="16dp">
-                </androidx.recyclerview.widget.RecyclerView>
+                    tools:listitem="@layout/skills_posts_list"></androidx.recyclerview.widget.RecyclerView>
 
 
                 <RelativeLayout
@@ -435,24 +430,24 @@
                         android:id="@+id/totalRateLabel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Total Rate:"
-                        android:textSize="18sp"
-                        android:fontFamily="@font/semibold_poppins"
-                        android:textColor="@color/black"
                         android:layout_alignParentStart="true"
-                        android:layout_centerVertical="true" />
+                        android:layout_centerVertical="true"
+                        android:fontFamily="@font/semibold_poppins"
+                        android:text="Total Rate:"
+                        android:textColor="@color/black"
+                        android:textSize="18sp" />
 
                     <!-- Dynamic Amount TextView for "₱255.00" -->
                     <TextView
                         android:id="@+id/tvBookingTotals"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="₱255.00"
-                        android:textSize="18sp"
-                        android:fontFamily="@font/semibold_poppins"
-                        android:textColor="@color/black"
                         android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true" />
+                        android:layout_centerVertical="true"
+                        android:fontFamily="@font/semibold_poppins"
+                        android:text="₱255.00"
+                        android:textColor="@color/black"
+                        android:textSize="18sp" />
 
                 </RelativeLayout>
 

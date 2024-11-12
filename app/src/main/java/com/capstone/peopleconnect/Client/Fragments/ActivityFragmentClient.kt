@@ -58,8 +58,8 @@ class ActivityFragmentClient : Fragment() {
 
         recyclerView = view.findViewById(R.id.recyclerView)
         adapter = BookingClientAdapter(bookings, ::fetchUserData, ::cancelBooking){ bookingId ->
-            // Navigate to BookingDetailsFragment with the bookingId only
-            val bookingDetailsFragment = BookingDetailsFragment.newInstance(bookingId)
+            // Navigate to BookingDetailsFragment with the bookingId and isClient flag
+            val bookingDetailsFragment = BookingDetailsFragment.newInstance(bookingId, isClient = true)
             parentFragmentManager.beginTransaction()
                 .replace(R.id.frame_layout, bookingDetailsFragment)
                 .addToBackStack(null)
