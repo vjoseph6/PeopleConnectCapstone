@@ -1,5 +1,6 @@
 package com.capstone.peopleconnect.Client.Fragments
 
+import android.content.ContentValues.TAG
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -8,6 +9,8 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -112,18 +115,25 @@ class HomeFragmentClient : Fragment() {
             .orderByChild("email")
             .equalTo(email)
 
-        clientReference.addListenerForSingleValueEvent(object : ValueEventListener {
+        clientReference.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val interests = mutableListOf<String>()
                 for (userSnapshot in snapshot.children) {
                     val user = userSnapshot.getValue(User::class.java)
-                    user?.interest?.let { interestList ->
-                        interests.addAll(interestList)
+                    user?.let { currentUser ->
+                        // Check if userPref exists and is not empty
+                        if (!currentUser.userPref.isNullOrEmpty()) {
+                            interests.addAll(currentUser.userPref)
+                        } else {
+                            // Fallback to interest if userPref is empty or null
+                            currentUser.interest?.let { interestList ->
+                                interests.addAll(interestList)
+                            }
+                        }
+                        firstName!!.text = currentUser.firstName
                     }
-                    firstName!!.text = user?.firstName.toString()
-
                 }
-                onInterestsFetched(interests) // Pass the interests list to the callback
+                onInterestsFetched(interests)
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -156,7 +166,9 @@ class HomeFragmentClient : Fragment() {
                             // Check if fragment is still attached before setting the adapter
                             context?.let {
                                 recyclerView.layoutManager = GridLayoutManager(it, 2)
-                                serviceProviderAdapter = ServiceProviderAdapter(serviceProviderList)
+                                serviceProviderAdapter = ServiceProviderAdapter(serviceProviderList) { provider ->
+                                    showSkillSelectionDialog(provider.email)
+                                }
                                 recyclerView.adapter = serviceProviderAdapter
                             }
                         }
@@ -165,7 +177,7 @@ class HomeFragmentClient : Fragment() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                // Handle errors
+                Log.e(TAG, "Error fetching service providers: ${error.message}")
             }
         })
     }
@@ -190,6 +202,71 @@ class HomeFragmentClient : Fragment() {
                 // Handle errors
             }
         })
+    }
+
+    private fun showSkillSelectionDialog(providerEmail: String) {
+        val skillsRef = FirebaseDatabase.getInstance().getReference("skills")
+        skillsRef.orderByChild("user").equalTo(providerEmail).addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val skills = mutableListOf<SkillItem>()
+                for (skillSnapshot in snapshot.children) {
+                    val skillItemsSnapshot = skillSnapshot.child("skillItems")
+                    for (itemSnapshot in skillItemsSnapshot.children) {
+                        val name = itemSnapshot.child("name").getValue(String::class.java) ?: ""
+                        val description = itemSnapshot.child("description").getValue(String::class.java) ?: ""
+                        val noOfBookings = itemSnapshot.child("noOfBookings").getValue(Int::class.java) ?: 0
+                        val rating = itemSnapshot.child("rating").getValue(Float::class.java) ?: 0f
+                        val skillRate = itemSnapshot.child("skillRate").getValue(Int::class.java) ?: 0 // Retrieve as Int
+
+                        val skill = SkillItem(name, description = description, noOfBookings = noOfBookings, rating = rating, skillRate = skillRate)
+                        skills.add(skill)
+                    }
+                }
+
+                if (skills.isNotEmpty()) {
+                    fetchUserByEmail(providerEmail) { user ->
+                        if (user != null) {
+                            val skillNames = skills.map { it.name }.toTypedArray()
+                            val builder = AlertDialog.Builder(requireContext())
+                            builder.setTitle("Select a Service")
+                            builder.setItems(skillNames) { _, which ->
+                                val selectedSkill = skills[which]
+                                navigateToProviderProfile(providerEmail, selectedSkill, user.name, user.profileImageUrl)
+                            }
+                            builder.show()
+                        } else {
+                            Toast.makeText(context, "Provider details not found.", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } else {
+                    Toast.makeText(context, "No skills available for this provider.", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "Error fetching skills: ${error.message}")
+            }
+        })
+    }
+
+    private fun navigateToProviderProfile(providerEmail: String, selectedSkill: SkillItem, providerName: String?, profileImageUrl: String?) {
+        val providerProfileFragment = ActivityFragmentClient_ProviderProfile().apply {
+            arguments = Bundle().apply {
+                putString("EMAIL", providerEmail)
+                putString("SERVICE_OFFERED", selectedSkill.name)
+                putString("DESCRIPTION", selectedSkill.description)
+                putString("NO_OF_BOOKINGS", selectedSkill.noOfBookings.toString())
+                putFloat("RATING", selectedSkill.rating)
+                putString("RATE", selectedSkill.skillRate.toString())
+                putString("NAME", providerName)
+                putString("PROFILE_IMAGE_URL", profileImageUrl)
+            }
+        }
+
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.frame_layout, providerProfileFragment)
+            .addToBackStack(null)
+            .commit()
     }
 
 }

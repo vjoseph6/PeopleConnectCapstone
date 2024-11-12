@@ -76,8 +76,7 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
         bookDay = arguments?.getString("bookDay") ?: ""
         startTime = arguments?.getString("startTime") ?: ""
         endTime = arguments?.getString("endTime") ?: ""
-        Log.d("Rating retrieved", "$skillRate")
-        Log.d("SERVICE RETRIEVED", "$serviceOffered")
+
 
         val bookNowButton: ImageButton = view.findViewById(R.id.bookNowButton)
         bookNowButton.setOnClickListener {
@@ -133,7 +132,7 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
                     if (snapshot.exists()) {
                         Log.d(TAG, "User data exists for: $providerName")
                         for (userSnapshot in snapshot.children) {
-                             email = userSnapshot.child("email").getValue(String::class.java).toString()
+                            email = userSnapshot.child("email").getValue(String::class.java).toString()
                             Log.d(TAG, "Retrieved email: $email")
                             if (email != null) {
                                 fetchSkills(email)  // Call fetchSkills with the user's email
@@ -300,4 +299,3 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
             }
     }
 }
-

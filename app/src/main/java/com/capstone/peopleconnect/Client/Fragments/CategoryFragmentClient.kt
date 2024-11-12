@@ -4,11 +4,14 @@ package com.capstone.peopleconnect.Client.Fragments
 
 import android.os.Bundle
 import android.os.Handler
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -20,7 +23,6 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.capstone.peopleconnect.Adapters.CategoryAdapter
 import com.capstone.peopleconnect.Classes.Category
-import com.capstone.peopleconnect.Classes.User
 import com.capstone.peopleconnect.Helper.ClickData
 import com.capstone.peopleconnect.Helper.RetrofitInstance
 import com.capstone.peopleconnect.R
@@ -114,8 +116,73 @@ class CategoryFragmentClient : Fragment() {
 
         }
 
+        val searchCategory: EditText = view.findViewById(R.id.searchCategory)
+
+        // Initialize RecyclerView
+        recyclerView = view.findViewById(R.id.rvCategories)
+        recyclerView.layoutManager = GridLayoutManager(requireContext(), 3)
+
+        database = FirebaseDatabase.getInstance().getReference("category")
+
+        // Fetch categories and set up filtering
+        fetchCategoriesAndCheckSubcategory(serviceType)
+
+        // Set up TextWatcher for search functionality
+        searchCategory.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+                filterCategories(s.toString())
+            }
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        })
+
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                handleFragmentBackPress()
+            }
+        })
+        
+
 
     }
+
+    private fun filterCategories(query: String) {
+        val filteredSubcategories = mutableListOf<Category>()
+
+        // Loop through each category to filter out subcategories
+        categoryList.forEach { category ->
+            val subcategoryReference = database.child(category.name).child("Sub Categories")
+
+            subcategoryReference.addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    for (subcategorySnapshot in snapshot.children) {
+                        val subcategoryName = subcategorySnapshot.child("name").getValue(String::class.java) ?: continue
+                        val subcategoryImage = subcategorySnapshot.child("image").getValue(String::class.java) ?: ""
+
+                        // Check if the subcategory matches the query
+                        if (subcategoryName.contains(query, ignoreCase = true)) {
+                            val subcategory = Category(name = subcategoryName, image = subcategoryImage)
+                            filteredSubcategories.add(subcategory)
+                        }
+                    }
+
+                    // After collecting all matching subcategories, set up the adapter with the updated list
+                    categoryAdapter = CategoryAdapter(filteredSubcategories) { subcategory ->
+                        navigateToChooseProviderFragment(subcategory)  // Keep the click listener for navigation
+                    }
+                    recyclerView.adapter = categoryAdapter
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("Firebase", "Database error: ${error.message}")
+                }
+            })
+        }
+    }
+
+
+
 
     private fun updateDateText(view: View) {
         val dateFormat = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault())

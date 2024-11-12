@@ -4,6 +4,7 @@ import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.app.Dialog
 import android.app.TimePickerDialog
+import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -134,8 +135,9 @@ class ActivityFragmentClient_BookDetails : Fragment() {
 
         //save booking
         bookNow = view.findViewById(R.id.btnBookNow)
-        /*bookNow.setOnClickListener { saveBooking() }*/
-        bookNow.setOnClickListener { initiatePayment() }
+        bookNow.setOnClickListener {
+            initiatePayment()
+        }
 
 
 
@@ -199,15 +201,58 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         return view
     }
 
-    private fun initiatePayment() { //this communicates to stripe helper that will make it generate a payment sheet
-        showLoadingDialog()
-        val userEmail = auth.currentUser?.email ?: ""
-        val providerEmail = arguments?.getString("EMAIL") ?: ""
-        val serviceOffered = arguments?.getString("SERVICE_OFFERED") ?: ""
-        val bookingAmountString = view?.findViewById<EditText>(R.id.etRate)?.text?.toString()
-        val bookingAmount = bookingAmountString?.toDoubleOrNull() ?: 0.0
-        val currency = "php"
 
+    private fun showDatePicker(onDateSet: (Int, Int, Int) -> Unit) {
+        val calendar = Calendar.getInstance()
+        val datePickerDialog = DatePickerDialog(requireContext(), { _, year, month, dayOfMonth ->
+            onDateSet(year, month, dayOfMonth)
+        }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH))
+
+        // Set the minimum date to today
+        datePickerDialog.datePicker.minDate = calendar.timeInMillis
+
+        datePickerDialog.show()
+    }
+
+    private fun showTimePicker(year: Int, month: Int, dayOfMonth: Int, onTimeSet: (Int, Int) -> Unit) {
+        val calendar = Calendar.getInstance()
+        val timePickerDialog = TimePickerDialog(requireContext(), { _, hourOfDay, minute ->
+            // Create a Calendar object for the selected time
+            val selectedTime = Calendar.getInstance().apply {
+                set(year, month, dayOfMonth, hourOfDay, minute)
+            }
+
+            // Check if the selected time is before the current time on the same day
+            val currentTime = Calendar.getInstance()
+            if (selectedTime.get(Calendar.YEAR) == currentTime.get(Calendar.YEAR) &&
+                selectedTime.get(Calendar.DAY_OF_YEAR) == currentTime.get(Calendar.DAY_OF_YEAR) &&
+                selectedTime.before(currentTime)) {
+                Toast.makeText(requireContext(), "Selected time cannot be in the past.", Toast.LENGTH_SHORT).show()
+            } else {
+                onTimeSet(hourOfDay, minute) // Call the onTimeSet callback if the time is valid
+            }
+        }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), false)
+
+        // Restrict time selection if the selected date is today
+        if (year == Calendar.getInstance().get(Calendar.YEAR) &&
+            month == Calendar.getInstance().get(Calendar.MONTH) &&
+            dayOfMonth == Calendar.getInstance().get(Calendar.DAY_OF_MONTH)) {
+            timePickerDialog.updateTime(Calendar.getInstance().get(Calendar.HOUR_OF_DAY), Calendar.getInstance().get(Calendar.MINUTE))
+        }
+
+        timePickerDialog.show()
+    }
+
+    private fun initiatePayment() {
+        val userEmail = auth.currentUser?.email ?: ""
+        val serviceOffered = arguments?.getString("SERVICE_OFFERED") ?: ""
+        val currency = "php"
+        val providerEmail = arguments?.getString("EMAIL") ?: ""
+        val bookingStartTime = startTimeEditText.text.toString()
+        val bookingEndTime = endTimeEditText.text.toString()
+        val bookingDay = dateEditText.text.toString()
+        val bookingAmountString = view?.findViewById<EditText>(R.id.etRate)?.text?.toString()
+        val bookingAmount = bookingAmountString?.toDoubleOrNull() ?: 0.0 // Fallback to 0.0 if the conversion fails
 
         // Validate input fields
         if (providerEmail.isEmpty() ||
@@ -218,12 +263,22 @@ class ActivityFragmentClient_BookDetails : Fragment() {
             dateEditText.text.isEmpty()
         ) {
             Toast.makeText(requireContext(), "Please fill in all the required fields.", Toast.LENGTH_SHORT).show()
-            dismissLoadingDialog()
             return
         }
 
-        // Initiate payment
-        stripeHelper.fetchPayment(bookingAmount, currency, userEmail, providerEmail, serviceOffered)
+        // Check for duplicate booking first
+        checkForDuplicateBooking(userEmail.toString(), providerEmail, bookingDay, bookingStartTime, bookingEndTime, serviceOffered.toString()) { duplicateFound ->
+            if (duplicateFound) {
+                requireContext().let {
+                    dismissLoadingDialog()
+                    Toast.makeText(it, "You already have a pending booking with this provider for this service.", Toast.LENGTH_SHORT).show()
+                }
+            }else {
+                // Proceed to initiate payment
+                showLoadingDialog()
+                stripeHelper.fetchPayment(bookingAmount, currency, userEmail, providerEmail, serviceOffered)
+            }
+        }
     }
 
 
@@ -325,10 +380,14 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         return currentStart < existingEndAdjusted && currentEndAdjusted > existingStart
     }
 
-    private fun convertToMinutesSinceMidnight(time: String): Int {
-        val format = SimpleDateFormat("hh:mm a", Locale.getDefault()) // e.g., 11:45 PM or 12:00 AM
-        val date = format.parse(time)
+    private fun convertToMinutesSinceMidnight(timeString: String): Int {
+        if (timeString.isEmpty()) {
+            Log.e(TAG, "Time string is empty, cannot convert to minutes.")
+            return -1 // Return a default value or handle this case appropriately
+        }
 
+        val dateFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
+        val date = dateFormat.parse(timeString)
         val calendar = Calendar.getInstance()
         calendar.time = date
 
@@ -675,8 +734,8 @@ class ActivityFragmentClient_BookDetails : Fragment() {
 
     private fun showStartDateTimePicker(onDateTimeSet: (Calendar) -> Unit) {
         showDatePicker { year, month, dayOfMonth ->
-            showTimePicker { hour, minute ->
-                 startTimeCalendar = Calendar.getInstance().apply {
+            showTimePicker(year, month, dayOfMonth) { hour, minute ->
+                startTimeCalendar = Calendar.getInstance().apply {
                     set(year, month, dayOfMonth, hour, minute)
                 }
                 onDateTimeSet(startTimeCalendar!!)
@@ -687,7 +746,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
     // Show End Date and Time Picker
     private fun showEndDateTimePicker(onDateTimeSet: (Calendar) -> Unit) {
         showDatePicker { year, month, dayOfMonth ->
-            showTimePicker { hour, minute ->
+            showTimePicker(year, month, dayOfMonth) { hour, minute ->
                 val endTimeCalendar = Calendar.getInstance().apply {
                     set(year, month, dayOfMonth, hour, minute)
                 }
@@ -705,27 +764,6 @@ class ActivityFragmentClient_BookDetails : Fragment() {
             }
         }
     }
-
-    // Date Picker dialog
-    private fun showDatePicker(onDateSet: (Int, Int, Int) -> Unit) {
-        val calendar = Calendar.getInstance()
-        val datePickerDialog = DatePickerDialog(requireContext(), { _, year, month, dayOfMonth ->
-            onDateSet(year, month, dayOfMonth)
-        }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH))
-
-        datePickerDialog.show()
-    }
-
-    // Time Picker dialog
-    private fun showTimePicker(onTimeSet: (Int, Int) -> Unit) {
-        val calendar = Calendar.getInstance()
-        val timePickerDialog = TimePickerDialog(requireContext(), { _, hourOfDay, minute ->
-            onTimeSet(hourOfDay, minute)
-        }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), false)
-        timePickerDialog.show()
-    }
-
-
 
     companion object {
         @JvmStatic
