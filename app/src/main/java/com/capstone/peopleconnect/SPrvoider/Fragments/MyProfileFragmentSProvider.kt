@@ -196,158 +196,119 @@ class MyProfileFragmentSProvider : Fragment() {
 
     private fun saveProfile() {
         progressBar.visibility = View.VISIBLE
-        val updatedFirstName = view?.findViewById<EditText>(R.id.etFirstName)?.text.toString()
-        val updatedMiddleName = view?.findViewById<EditText>(R.id.etMiddleName)?.text.toString()
-        val updatedLastName = view?.findViewById<EditText>(R.id.etLastName)?.text.toString()
-        val addressText = view?.findViewById<EditText>(R.id.address)?.text.toString()
 
-        val updatedUser = User(
-            firstName = updatedFirstName,
-            middleName = updatedMiddleName,
-            lastName = updatedLastName,
-            name = "$updatedFirstName $updatedMiddleName $updatedLastName",
-            profileImageUrl = profileImageUrl ?: "",
-            email = email.toString(),
-            address = addressText
-
+        val updates = hashMapOf<String, Any>(
+            "firstName" to (view?.findViewById<EditText>(R.id.etFirstName)?.text.toString() ?: ""),
+            "middleName" to (view?.findViewById<EditText>(R.id.etMiddleName)?.text.toString() ?: ""),
+            "lastName" to (view?.findViewById<EditText>(R.id.etLastName)?.text.toString() ?: ""),
+            "address" to (view?.findViewById<EditText>(R.id.address)?.text.toString() ?: "")
         )
 
+        // Add full name to updates
+        updates["name"] = "${updates["firstName"]} ${updates["middleName"]} ${updates["lastName"]}"
+
         if (selectedImageUri != null) {
-            val fileReference = storageReference.child("$email.jpg")
-            handleImageUpload(fileReference, updatedUser)
+            uploadImage(updates)
         } else {
-            updateUser(updatedUser, userKey)
+            updateUserData(updates)
         }
     }
 
-    private fun handleImageUpload(fileReference: StorageReference, updatedUser: User) {
-        // Check if the current profile image URL is empty
-        if (profileImageUrl.isNullOrEmpty()) {
-            // If there's no old image, directly upload the new image
-            uploadNewImage(fileReference, updatedUser)
-        } else {
-            // If there's an old image, delete it first
-            deleteOldProfileImage(profileImageUrl) {
-                uploadNewImage(fileReference, updatedUser)
-            }
-        }
-    }
+    private fun uploadImage(updates: HashMap<String, Any>) {
+        val fileReference = storageReference.child("$email.jpg")
 
-    // Method to upload the new image
-    private fun uploadNewImage(fileReference: StorageReference, updatedUser: User) {
+        // Delete old image if exists
+        if (!profileImageUrl.isNullOrEmpty()) {
+            FirebaseStorage.getInstance().getReferenceFromUrl(profileImageUrl!!).delete()
+                .addOnFailureListener { e ->
+                    Log.e("ProfileUpdate", "Failed to delete old image", e)
+                }
+        }
+
+        // Upload new image
         selectedImageUri?.let { uri ->
             fileReference.putFile(uri)
                 .addOnSuccessListener {
-                    fileReference.downloadUrl.addOnSuccessListener { downloadUrl ->
-                        updatedUser.profileImageUrl = downloadUrl.toString()
-                        updateUser(updatedUser, userKey)
-                    }.addOnFailureListener { e ->
-                        handleImageUploadFailure(e)
-                        progressBar.visibility = View.GONE // Hide progress bar on failure
-                    }
-                }.addOnFailureListener { e ->
-                    handleImageUploadFailure(e)
-                    progressBar.visibility = View.GONE // Hide progress bar on failure
-                }
-        }
-    }
-
-    private fun deleteOldProfileImage(oldPath: String?, onComplete: () -> Unit) {
-        if (!oldPath.isNullOrEmpty()) { // Check if the oldPath is not null or empty
-            FirebaseStorage.getInstance().getReferenceFromUrl(oldPath).delete()
-                .addOnSuccessListener {
-                    Log.d("ProfileUpdate", "Old profile image deleted successfully")
-                    onComplete()
+                    fileReference.downloadUrl
+                        .addOnSuccessListener { downloadUrl ->
+                            updates["profileImageUrl"] = downloadUrl.toString()
+                            updateUserData(updates)
+                        }
+                        .addOnFailureListener { e ->
+                            handleError("Failed to get download URL", e)
+                        }
                 }
                 .addOnFailureListener { e ->
-                    Log.e("ProfileUpdate", "Failed to delete old profile image", e)
-                    onComplete() // Proceed even if deletion fails
+                    handleError("Failed to upload image", e)
                 }
-        } else {
-            Log.d("ProfileUpdate", "No old profile image to delete")
-            onComplete() // No old image to delete, proceed
         }
     }
 
-
-
-    private fun updateUser(user: User, userKey: String?) {
+    private fun updateUserData(updates: HashMap<String, Any>) {
         userKey?.let { key ->
-            val updates = mapOf(
-                "firstName" to user.firstName,
-                "middleName" to user.middleName,
-                "lastName" to user.lastName,
-                "name" to user.name,
-                "email" to user.email,
-                "profileImageUrl" to user.profileImageUrl,
-                "address" to user.address
-            )
-
             databaseReference.child(key).updateChildren(updates)
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        Toast.makeText(requireContext(), "Profile updated successfully", Toast.LENGTH_SHORT).show()
-                        requireActivity().supportFragmentManager.popBackStack()
-                    } else {
-                        Toast.makeText(requireContext(), "Failed to update profile", Toast.LENGTH_SHORT).show()
-                        Log.e("ProfileUpdate", "Update failed", task.exception)
-                    }
+                .addOnSuccessListener {
+                    Toast.makeText(requireContext(), "Profile updated successfully", Toast.LENGTH_SHORT).show()
+                    requireActivity().supportFragmentManager.popBackStack()
                 }
-        }
+                .addOnFailureListener { e ->
+                    handleError("Failed to update profile", e)
+                }
+                .addOnCompleteListener {
+                    progressBar.visibility = View.GONE
+                }
+        } ?: handleError("User key not found", null)
     }
 
-    private fun handleImageUploadFailure(exception: Exception) {
-        Toast.makeText(requireContext(), "Failed to upload image", Toast.LENGTH_SHORT).show()
-        Log.e("ProfileUpdate", "Image upload failed", exception)
+    private fun handleError(message: String, exception: Exception?) {
+        progressBar.visibility = View.GONE
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+        exception?.let {
+            Log.e("ProfileUpdate", message, it)
+        }
     }
 
     private fun setupRealTimeProfileListener() {
         email?.let { userEmail ->
-            databaseReference.orderByChild("email").equalTo(userEmail).addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (snapshot.exists()) {
-                        snapshot.children.forEach { dataSnapshot ->
-                            userKey = dataSnapshot.key
-                            firstName = dataSnapshot.child("firstName").value as? String
-                            middleName = dataSnapshot.child("middleName").value as? String
-                            lastName = dataSnapshot.child("lastName").value as? String
-                            profileImageUrl = dataSnapshot.child("profileImageUrl").value as? String
-
-                            updateUI()
+            databaseReference.orderByChild("email").equalTo(userEmail)
+                .addValueEventListener(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        if (snapshot.exists()) {
+                            snapshot.children.firstOrNull()?.let { dataSnapshot ->
+                                userKey = dataSnapshot.key
+                                firstName = dataSnapshot.child("firstName").value as? String
+                                middleName = dataSnapshot.child("middleName").value as? String
+                                lastName = dataSnapshot.child("lastName").value as? String
+                                profileImageUrl = dataSnapshot.child("profileImageUrl").value as? String
+                                updateUI()
+                            }
+                        } else {
+                            handleError("User not found", null)
                         }
-                    } else {
-                        Toast.makeText(requireContext(), "User not found", Toast.LENGTH_SHORT).show()
                     }
-                }
 
-                override fun onCancelled(error: DatabaseError) {
-                    Toast.makeText(requireContext(), "Failed to retrieve user data", Toast.LENGTH_SHORT).show()
-                    Log.e("ProfileUpdate", "Data retrieval failed", error.toException())
-                }
-            })
+                    override fun onCancelled(error: DatabaseError) {
+                        handleError("Failed to retrieve user data", error.toException())
+                    }
+                })
         }
     }
 
     private fun updateUI() {
         view?.let { view ->
-            val firstNameEditText: EditText = view.findViewById(R.id.etFirstName)
-            val middleNameEditText: EditText = view.findViewById(R.id.etMiddleName)
-            val lastNameEditText: EditText = view.findViewById(R.id.etLastName)
-            val profilePictureImageView: ImageView = view.findViewById(R.id.profilePicture)
+            view.findViewById<EditText>(R.id.etFirstName)?.setText(firstName)
+            view.findViewById<EditText>(R.id.etMiddleName)?.setText(middleName)
+            view.findViewById<EditText>(R.id.etLastName)?.setText(lastName)
 
-            firstNameEditText.setText(firstName)
-            middleNameEditText.setText(middleName)
-            lastNameEditText.setText(lastName)
-
+            val profilePictureImageView = view.findViewById<ImageView>(R.id.profilePicture)
             if (!profileImageUrl.isNullOrEmpty()) {
                 Picasso.get()
                     .load(profileImageUrl)
-                    .placeholder(R.drawable.profile1)  // Default placeholder
-                    .error(R.drawable.profile1)        // Default error image
+                    .placeholder(R.drawable.profile1)
+                    .error(R.drawable.profile1)
                     .into(profilePictureImageView)
             } else {
-                // Set a default placeholder if profileImageUrl is empty
-                profilePictureImageView?.setImageResource(R.drawable.profile1)
+                profilePictureImageView.setImageResource(R.drawable.profile1)
             }
         }
     }
