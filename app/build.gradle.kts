@@ -78,12 +78,14 @@ dependencies {
     //Circle image
     implementation ("de.hdodenhof:circleimageview:3.1.0")
 
+    implementation ("com.google.firebase:firebase-messaging:23.4.0")
+    implementation ("com.google.firebase:firebase-analytics:21.5.0")
 
 
     //volley
     implementation ("com.android.volley:volley:1.2.1")
 
 
-    
+
 
 }

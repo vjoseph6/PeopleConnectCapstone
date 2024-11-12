@@ -37,6 +37,7 @@ class BookingDetailsFragment : Fragment() {
     private lateinit var bookingDayTextView: TextView
     private lateinit var bookingLocationTextView: TextView
     private lateinit var bookingAmountTextView: TextView
+    private lateinit var bookingTotalTextView: TextView
     private lateinit var paymentMethodTextView: TextView
     private lateinit var providerProfileImage: ShapeableImageView
     private lateinit var providerNameTextView: TextView
@@ -66,6 +67,7 @@ class BookingDetailsFragment : Fragment() {
         bookingDayTextView = view.findViewById(R.id.tvBookingDay)
         bookingLocationTextView = view.findViewById(R.id.tvBookingLocation)
         bookingAmountTextView = view.findViewById(R.id.tvBookingAmount)
+        bookingTotalTextView = view.findViewById(R.id.tvBookingTotals)
         paymentMethodTextView = view.findViewById(R.id.tvPaymentMethod)
         providerProfileImage = view.findViewById(R.id.imgProviderProfile)
         providerNameTextView = view.findViewById(R.id.tvProviderName)
@@ -93,6 +95,7 @@ class BookingDetailsFragment : Fragment() {
                 bookingDayTextView.text = booking.bookingDay
                 bookingLocationTextView.text = booking.bookingLocation
                 bookingAmountTextView.text = booking.bookingAmount.toString()
+                bookingTotalTextView.text = booking.bookingAmount.toString()
                 paymentMethodTextView.text = booking.bookingPaymentMethod
 
                 // Set up RecyclerView for displaying images

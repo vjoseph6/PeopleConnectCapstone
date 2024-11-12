@@ -1,186 +1,471 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    tools:context=".BookingDetailsFragment"
-    android:layout_marginBottom="56dp">
+    tools:context=".BookingDetailsFragment">
 
-    <ScrollView
+
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="16dp">
+        android:layout_height="wrap_content"
+        android:background="@color/blue"
+        >
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="44dp"
+            android:background="@drawable/back_button_background_sprovider"
+            android:contentDescription="Back Button"
+            android:elevation="4dp"
+            android:src="@drawable/backbtn2_sprovider_"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/activityDetails"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <TextView
-                android:text="Client"
-                android:textStyle="bold"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
-
-            <!-- Client Section -->
-            <LinearLayout
-                android:orientation="horizontal"
-                android:layout_width="wrap_content"
-                android:layout_margin="10dp"
-                android:layout_height="wrap_content">
-
-                <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/imgClientProfile"
-                    android:layout_width="50dp"
-                    android:scaleType="fitCenter"
-                    app:shapeAppearanceOverlay="@style/CircularImageViewStyle"
-                    android:layout_gravity="center"
-                    android:layout_height="50dp"/>
-
-                <TextView
-                    android:id="@+id/tvClientName"
-                    android:layout_width="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_marginStart="10dp"
-                    android:layout_height="wrap_content"/>
-
-            </LinearLayout>
-
-            <!-- Service Provider Section -->
-            <TextView
-                android:text="Service Provider"
-                android:textStyle="bold"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
-
-            <LinearLayout
-                android:orientation="horizontal"
-                android:layout_width="wrap_content"
-                android:layout_margin="10dp"
-                android:layout_height="wrap_content">
-
-                <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/imgProviderProfile"
-                    android:layout_width="50dp"
-                    android:layout_gravity="center"
-                    android:scaleType="fitCenter"
-                    app:shapeAppearanceOverlay="@style/CircularImageViewStyle"
-                    android:layout_height="50dp"/>
-
-                <TextView
-                    android:id="@+id/tvProviderName"
-                    android:layout_width="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_marginStart="10dp"
-                    android:layout_height="wrap_content"/>
-            </LinearLayout>
+            android:fontFamily="@font/semibold_poppins"
+            android:text="Activity Details"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            app:layout_constraintBottom_toBottomOf="@id/btnBack"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            />
 
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Booking Status:"
-                android:textStyle="bold"/>
+        <!-- Scrollable Content -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="15dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/activityDetails"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:background="@drawable/sprovider_card_background_top_corners"
+            android:padding="16dp">
+
             <TextView
                 android:id="@+id/tvBookingStatus"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:backgroundTint="@color/orange"
+                android:fontFamily="@font/semibold_poppins"
+                android:padding="8dp"
+                android:text="Pending"
+                android:textColor="@color/orange"
+                android:textSize="16sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
-            <TextView
-                android:text="Service Offered:"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textStyle="bold"/>
-            <TextView
-                android:id="@+id/tvServiceOffered"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
-
-            <TextView
-                android:text="Booking Start Time:"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textStyle="bold"/>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/tvBookingStartTime"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Booking End Time:"
-                android:textStyle="bold"/>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/tvBookingEndTime"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Booking Description:"
-                android:textStyle="bold"/>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/tvBookingDescription"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Booking Day:"
-                android:textStyle="bold"/>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/tvBookingDay"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Booking Location:"
-                android:textStyle="bold"/>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/tvBookingLocation"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Booking Amount:"
-                android:textStyle="bold"/>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/tvBookingAmount"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Payment Method:"
-                android:textStyle="bold"/>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/tvPaymentMethod"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Uploaded Images:"
-                android:textStyle="bold"/>
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:layout_marginTop="10dp"
-                android:id="@+id/imageContainer"
+            <LinearLayout
+                android:id="@+id/clientProviderInfoLayout"
                 android:layout_width="match_parent"
-                tools:listitem="@layout/skills_posts_list"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="16dp"
+                app:layout_constraintTop_toBottomOf="@id/tvBookingStatus"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
 
-        </LinearLayout>
-    </ScrollView>
+                <!-- Client Information -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:background="@drawable/border_style"
+                    android:padding="8dp">
 
-</FrameLayout>
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/imgClientProfile"
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        android:src="@drawable/profile"
+                        android:layout_marginEnd="8dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingEnd="20dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Client (Your Customer)"
+                            android:textSize="14sp"
+                            android:fontFamily="@font/regular_poppins"/>
+
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                android:id="@+id/tvClientName"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Joseph Lhee Villarasa"
+                                android:textSize="16sp"
+                                android:fontFamily="@font/semibold_poppins"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="4.5"
+                                android:textSize="14sp"
+                                android:layout_alignParentEnd="true"
+                                android:drawableLeft="@drawable/star_icon"/>
+
+
+                        </RelativeLayout>
+
+
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Service Provider Information -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:background="@drawable/border_style"
+                    android:padding="8dp"
+                    android:layout_marginTop="8dp">
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/imgProviderProfile"
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        android:layout_marginEnd="8dp"
+                        android:src="@drawable/profile1" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingEnd="20dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Service Provider (You)"
+                            android:textSize="14sp"
+                            android:fontFamily="@font/regular_poppins"/>
+
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                android:id="@+id/tvProviderName"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Earl Brando Andrino"
+                                android:textSize="16sp"
+                                android:layout_alignParentStart="true"
+                                android:fontFamily="@font/semibold_poppins"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="4.5"
+                                android:textSize="14sp"
+                                android:layout_alignParentEnd="true"
+                                android:drawableLeft="@drawable/star_icon"/>
+
+                        </RelativeLayout>
+
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/activitySummaryLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/border_style"
+                    android:padding="16dp"
+                    android:layout_marginBottom="16dp"
+                    app:layout_constraintTop_toBottomOf="@id/clientProviderInfoLayout">
+
+                    <!-- Add details here -->
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Activity Summary"
+                        android:textSize="16sp"
+                        android:fontFamily="@font/semibold_poppins"
+                        android:layout_marginBottom="8dp"/>
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <!-- Left-aligned TextView -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Date"
+                            android:textSize="14sp"
+                            android:fontFamily="@font/regular_poppins"
+                            android:layout_alignParentStart="true" />
+
+
+                        <!-- Right-aligned TextView -->
+                        <TextView
+                            android:id="@+id/tvBookingDay"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_marginEnd="12dp"
+                            android:text="11-11-24"
+                            android:textSize="14sp"
+                            android:fontFamily="@font/regular_poppins" />
+
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <!-- Left-aligned TextView -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Service Offered"
+                            android:textSize="14sp"
+                            android:layout_alignParentStart="true"
+                            android:fontFamily="@font/regular_poppins"/>
+
+
+                        <!-- Right-aligned TextView -->
+                        <TextView
+                            android:id="@+id/tvServiceOffered"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_marginEnd="12dp"
+                            android:text="Baking and Pastry"
+                            android:textSize="14sp"
+                            android:fontFamily="@font/regular_poppins" />
+
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <!-- Left-aligned TextView -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Start Time"
+                            android:textSize="14sp"
+                            android:layout_alignParentStart="true"
+                            android:fontFamily="@font/regular_poppins"/>
+
+
+                        <!-- Right-aligned TextView -->
+                        <TextView
+                            android:id="@+id/tvBookingStartTime"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_marginEnd="12dp"
+                            android:text="11:05 PM"
+                            android:textSize="14sp"
+                            android:fontFamily="@font/regular_poppins" />
+
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <!-- Left-aligned TextView -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="End Time"
+                            android:textSize="14sp"
+                            android:layout_alignParentStart="true"
+                            android:fontFamily="@font/regular_poppins"/>
+
+
+                        <!-- Right-aligned TextView -->
+                        <TextView
+                            android:id="@+id/tvBookingEndTime"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_marginEnd="12dp"
+                            android:text="12:05 AM"
+                            android:textSize="14sp"
+                            android:fontFamily="@font/regular_poppins" />
+
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <!-- Left-aligned TextView -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Amount"
+                            android:textSize="14sp"
+                            android:layout_alignParentStart="true"
+                            android:fontFamily="@font/regular_poppins"/>
+
+
+                        <!-- Right-aligned TextView -->
+                        <TextView
+                            android:id="@+id/tvBookingAmount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_marginEnd="12dp"
+                            android:text="₱200.00"
+                            android:textSize="14sp"
+                            android:fontFamily="@font/regular_poppins" />
+
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <!-- Left-aligned TextView -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Payment Use"
+                            android:textSize="14sp"
+                            android:layout_alignParentStart="true"
+                            android:fontFamily="@font/regular_poppins"/>
+
+
+                        <!-- Right-aligned TextView -->
+                        <TextView
+                            android:id="@+id/tvPaymentMethod"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_marginEnd="12dp"
+                            android:text="Stripe"
+                            android:textSize="14sp"
+                            android:fontFamily="@font/regular_poppins" />
+
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <!-- Left-aligned TextView -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Location"
+                            android:textSize="14sp"
+                            android:layout_alignParentStart="true"
+                            android:fontFamily="@font/regular_poppins"/>
+
+
+                        <!-- Right-aligned TextView -->
+                        <TextView
+                            android:id="@+id/tvBookingLocation"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_marginEnd="12dp"
+                            android:text="Mandaue City"
+                            android:textSize="14sp"
+                            android:fontFamily="@font/regular_poppins" />
+                    </RelativeLayout>
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvBookingDescription"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/border_style"
+                    android:padding="16dp"
+                    android:hint="Description"
+                    android:textSize="14sp"
+                    android:fontFamily="@font/regular_poppins"
+                    app:layout_constraintTop_toBottomOf="@id/activitySummaryLayout"
+                    android:layout_marginBottom="16dp"/>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/imageContainer"
+                    android:layout_width="match_parent"
+                    tools:listitem="@layout/skills_posts_list"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:background="@drawable/border_style"
+                    android:padding="8dp"
+                    app:layout_constraintTop_toBottomOf="@id/tvBookingDescription"
+                    android:layout_marginBottom="16dp">
+                </androidx.recyclerview.widget.RecyclerView>
+
+
+                <RelativeLayout
+                    android:id="@+id/totalRateLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/border_style"
+                    android:padding="16dp"
+                    app:layout_constraintTop_toBottomOf="@id/imageContainer">
+
+                    <!-- Label TextView for "Total Rate:" -->
+                    <TextView
+                        android:id="@+id/totalRateLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Total Rate:"
+                        android:textSize="18sp"
+                        android:fontFamily="@font/semibold_poppins"
+                        android:textColor="@color/black"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true" />
+
+                    <!-- Dynamic Amount TextView for "₱255.00" -->
+                    <TextView
+                        android:id="@+id/tvBookingTotals"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="₱255.00"
+                        android:textSize="18sp"
+                        android:fontFamily="@font/semibold_poppins"
+                        android:textColor="@color/black"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true" />
+
+                </RelativeLayout>
+
+
+            </LinearLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+
+</ScrollView>
