@@ -139,7 +139,7 @@ class ActivityFragmentClient : Fragment() {
         val filteredBookings = when (statusFilter) {
             "Booking" -> allBookings.filter { it.second.bookingStatus != "Canceled" && it.second.bookingStatus != "Completed" }
             "Successful" -> allBookings.filter { it.second.bookingStatus == "Completed" }
-            "Failed" -> allBookings.filter { it.second.bookingStatus == "Canceled" }
+            "Failed" -> allBookings.filter { it.second.bookingStatus == "Failed" }
             else -> allBookings
         }
 
