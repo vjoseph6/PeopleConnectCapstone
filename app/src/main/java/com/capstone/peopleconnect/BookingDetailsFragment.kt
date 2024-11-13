@@ -51,6 +51,9 @@ class BookingDetailsFragment : Fragment() {
     private lateinit var clientProfileImage: ShapeableImageView
     private lateinit var clientNameTextView: TextView
     private lateinit var imagesRecyclerView: RecyclerView
+    private lateinit var btnBackClient: ImageButton
+    private lateinit var clientRatingTextView: TextView
+    private lateinit var providerRatingTextView: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,11 +68,13 @@ class BookingDetailsFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_booking_details, container, false)
-
+        btnBackClient = view.findViewById(R.id.btnBack)
         // Set background color based on isClient flag
         val layoutBackground = view.findViewById<ConstraintLayout>(R.id.layoutBackground)
         if (isClient) {
             layoutBackground.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.green))
+
+            btnBackClient.setImageResource(R.drawable.backbtn2_client_)
             
             // Change background for all views with border_style
             val borderViews = listOf(
@@ -101,8 +106,10 @@ class BookingDetailsFragment : Fragment() {
         clientProfileImage = view.findViewById(R.id.imgClientProfile)
         clientNameTextView = view.findViewById(R.id.tvClientName)
         imagesRecyclerView = view.findViewById(R.id.imageContainer)
+        clientRatingTextView = view.findViewById(R.id.clientRating)
+        providerRatingTextView = view.findViewById(R.id.providerRating)
 
-        val btnBackClient: ImageButton = view.findViewById(R.id.btnBack)
+        btnBackClient = view.findViewById(R.id.btnBack)
         btnBackClient.setOnClickListener {
             requireActivity().supportFragmentManager.popBackStack()
         }
@@ -181,12 +188,16 @@ class BookingDetailsFragment : Fragment() {
             .orderByChild("email")
             .equalTo(clientEmail)
 
-        userDatabaseReference.addListenerForSingleValueEvent(object : ValueEventListener {
+        userDatabaseReference.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val user = snapshot.children.firstOrNull()?.getValue(User::class.java)
                 user?.let {
                     clientNameTextView.text = it.name
                     Picasso.get().load(it.profileImageUrl).into(clientProfileImage)
+                    
+                    // Set client rating
+                    val rating = it.userRating ?: 0f
+                    clientRatingTextView.text = "★ ${String.format("%.1f", rating)}"
                 }
             }
 
@@ -197,16 +208,20 @@ class BookingDetailsFragment : Fragment() {
     }
 
     private fun fetchServiceProviderDetails(providerEmail: String) {
+        // Fetch provider user details
         val userDatabaseReference = FirebaseDatabase.getInstance().getReference("users")
             .orderByChild("email")
             .equalTo(providerEmail)
 
-        userDatabaseReference.addListenerForSingleValueEvent(object : ValueEventListener {
+        userDatabaseReference.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val user = snapshot.children.firstOrNull()?.getValue(User::class.java)
                 user?.let {
                     providerNameTextView.text = it.name
                     Picasso.get().load(it.profileImageUrl).into(providerProfileImage)
+                    
+                    // After getting user details, fetch their skill rating
+                    fetchProviderSkillRating(providerEmail)
                 }
             }
 
@@ -214,6 +229,33 @@ class BookingDetailsFragment : Fragment() {
                 Log.e("BookingDetailsFragment", "Error fetching service provider details", error.toException())
             }
         })
+    }
+
+    private fun fetchProviderSkillRating(providerEmail: String) {
+        val skillsRef = FirebaseDatabase.getInstance().getReference("skills")
+        
+        skillsRef.orderByChild("user").equalTo(providerEmail)
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        for (skillSetSnapshot in snapshot.children) {
+                            val skillItems = skillSetSnapshot.child("skillItems")
+                            for (skillItem in skillItems.children) {
+                                val skillName = skillItem.child("name").getValue(String::class.java)
+                                if (skillName == serviceOfferedTextView.text.toString()) {
+                                    val rating = skillItem.child("rating").getValue(Float::class.java) ?: 0f
+                                    providerRatingTextView.text = "★ ${String.format("%.1f", rating)}"
+                                    return
+                                }
+                            }
+                        }
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("BookingDetailsFragment", "Error fetching provider skill rating", error.toException())
+                }
+            })
     }
 
     private fun updateBookingStatusColor(status: String) {
