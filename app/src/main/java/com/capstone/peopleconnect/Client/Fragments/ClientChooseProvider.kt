@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.RelativeLayout
+import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -29,6 +30,11 @@ class ClientChooseProvider : Fragment() {
     private var endTime: String? = null
     private lateinit var emptyView: RelativeLayout
     private lateinit var recyclerView: RecyclerView
+    private lateinit var previousBookingsAdapter: ProviderAdapter
+    private val previouslyBookedProviders = mutableListOf<ProviderData>()
+    private lateinit var previousBookingsRecyclerView: RecyclerView
+    private lateinit var previousBookingsTitle: TextView
+    private lateinit var previousBookingsSubTitle: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,6 +60,9 @@ class ClientChooseProvider : Fragment() {
 
         emptyView = view.findViewById(R.id.emptyView)
         recyclerView = view.findViewById(R.id.categoryRecyclerView)
+        previousBookingsRecyclerView = view.findViewById(R.id.previousBookingsRecyclerView)
+        previousBookingsTitle = view.findViewById(R.id.previousBookingsTitle)
+        previousBookingsSubTitle = view.findViewById(R.id.previousBookingsSubtitle)
 
         // Initialize the empty view image with Glide animation
         val emptyImage = view.findViewById<ImageView>(R.id.image)
@@ -62,7 +71,7 @@ class ClientChooseProvider : Fragment() {
             .load(R.drawable.nothing) // Make sure this is a GIF file
             .into(emptyImage)
 
-        setupRecyclerView(view)
+        setupRecyclerViews(view)
         retrieveProviders()
 
         val backBtn = view.findViewById<ImageButton>(R.id.btnBackClient)
@@ -82,170 +91,232 @@ class ClientChooseProvider : Fragment() {
         }
     }
 
-    private fun setupRecyclerView(view: View) {
-        val recyclerView = view.findViewById<RecyclerView>(R.id.categoryRecyclerView)
+    private fun setupRecyclerViews(view: View) {
+        // Setup main RecyclerView
+        recyclerView = view.findViewById(R.id.categoryRecyclerView)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         providerAdapter = ProviderAdapter(providerList) { provider ->
-
-            // Handle provider item clicks
-            val fragment = ActivityFragmentClient_ProviderProfile().apply {
-                arguments = Bundle().apply {
-                    putString("NAME", provider.userName)
-                    putString("PROFILE_IMAGE_URL", provider.imageUrl)
-                    putFloat("RATING", provider.rating ?: 0f)
-                    putInt("NO_OF_BOOKINGS", provider.noOfBookings ?: 0)
-                    putString("DESCRIPTION", provider.description)
-                    putString("RATE", (provider.skillRate ?: 0).toString())
-                    putString("SERVICE_OFFERED", subCategoryName)
-                    putString("bookDay", bookDay)
-                    putString("startTime", startTime)
-                    putString("endTime", endTime)
-                    Log.d("SKILL NAME" , subCategoryName.toString())
-                }
-            }
-
-
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.frame_layout, fragment)
-                .addToBackStack(null)
-                .commit()
+            navigateToProviderProfile(provider)
         }
         recyclerView.adapter = providerAdapter
 
+        // Setup previous bookings RecyclerView
+        previousBookingsRecyclerView.layoutManager = LinearLayoutManager(requireContext())
+        previousBookingsAdapter = ProviderAdapter(previouslyBookedProviders) { provider ->
+            navigateToProviderProfile(provider)
+        }
+        previousBookingsRecyclerView.adapter = previousBookingsAdapter
+    }
+
+    private fun navigateToProviderProfile(provider: ProviderData) {
+        val fragment = ActivityFragmentClient_ProviderProfile().apply {
+            arguments = Bundle().apply {
+                putString("NAME", provider.userName)
+                putString("PROFILE_IMAGE_URL", provider.imageUrl)
+                putFloat("RATING", provider.rating ?: 0f)
+                putInt("NO_OF_BOOKINGS", provider.noOfBookings ?: 0)
+                putString("DESCRIPTION", provider.description)
+                putString("RATE", (provider.skillRate ?: 0).toString())
+                putString("SERVICE_OFFERED", subCategoryName)
+                putString("bookDay", bookDay)
+                putString("startTime", startTime)
+                putString("endTime", endTime)
+                putString("LAST_BOOKING_DATE", provider.lastBookingDate)
+            }
+        }
+
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.frame_layout, fragment)
+            .addToBackStack(null)
+            .commit()
     }
 
     private fun retrieveProviders() {
         providerList.clear()
-        providerAdapter.notifyDataSetChanged()
-        updateEmptyView()
-
-        val skillsRef = FirebaseDatabase.getInstance().getReference("skills")
-
-        skillsRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                providerList.clear()
-
-                if (snapshot.exists()) {
-                    for (skillSetSnapshot in snapshot.children) {
-                        val user = skillSetSnapshot.child("user").getValue(String::class.java)
-
-                        // Skip if the user matches the current user's email
-                        if (user == email) {
-                            continue
-                        }
-
-                        val skillItemsSnapshot = skillSetSnapshot.child("skillItems")
-
-                        if (skillItemsSnapshot.exists()) {
-                            for (skillSnapshot in skillItemsSnapshot.children) {
-                                skillName = skillSnapshot.child("name").getValue(String::class.java).toString()
-                                val skillRate = skillSnapshot.child("skillRate").getValue(Int::class.java)
-                                val description = skillSnapshot.child("description").getValue(String::class.java)
-                                val rating = skillSnapshot.child("rating").getValue(Float::class.java)
-                                val isVisible = skillSnapshot.child("visible").getValue(Boolean::class.java) ?: false
-
-                                if (skillName == subCategoryName) {
-                                    // If visible, add the provider to the list
-                                    if (isVisible) {
-                                        user?.let {
-                                            retrieveUserName(it, skillName, skillRate, description, rating, isVisible)
-                                        }
-                                    } else {
-                                        // If not visible, remove the provider from the list
-                                        user?.let {
-                                            removeProviderByEmailAndSkill(it, skillName)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                updateEmptyView()
-                providerAdapter.notifyDataSetChanged()
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                Log.e("SkillData", "Database error: ${error.message}")
-                updateEmptyView()
-            }
-        })
-    }
-
-
-    private fun retrieveUserName(userEmail: String, skillName: String?, skillRate: Int?, description: String?, rating: Float?, isVisible: Boolean
-    ) {
-        val userRef = FirebaseDatabase.getInstance().getReference("users")
-
-        userRef.orderByChild("email").equalTo(userEmail)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
+        previouslyBookedProviders.clear()
+        
+        // First, get previous bookings that are completed
+        val bookingsRef = FirebaseDatabase.getInstance().getReference("bookings")
+        bookingsRef.orderByChild("bookByEmail").equalTo(email)
+            .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    if (snapshot.exists()) {
-                        for (userSnapshot in snapshot.children) {
-                            val userName = userSnapshot.child("name").getValue(String::class.java)
-                            val imageUrl = userSnapshot.child("profileImageUrl").getValue(String::class.java)
-                            val noOfBookings = userSnapshot.child("noOfBookings").getValue(Int::class.java) ?: 0
+                    val previouslyBookedEmails = mutableMapOf<String, String>()
 
-                            if (isVisible) {
-                                // Check if provider already exists in the list
-                                val exists = providerList.any {
-                                    it.userName == userName && it.name == skillName
-                                }
-
-                                if (!exists) {
-                                    // Add only if not already in the list
-                                    providerList.add(
-                                        ProviderData(
-                                            name = skillName,
-                                            skillRate = skillRate,
-                                            description = description,
-                                            userName = userName,
-                                            imageUrl = imageUrl,
-                                            rating = rating,
-                                            noOfBookings = noOfBookings
-                                        )
-                                    )
-                                    providerAdapter.notifyDataSetChanged()
-                                    updateEmptyView()
+                    for (bookingSnapshot in snapshot.children) {
+                        val serviceOffered = bookingSnapshot.child("serviceOffered").getValue(String::class.java)
+                        val bookingStatus = bookingSnapshot.child("bookingStatus").getValue(String::class.java)
+                        
+                        Log.d("Booking", "Service: $serviceOffered, Status: $bookingStatus")
+                        
+                        // Only consider completed bookings with matching service
+                        if (serviceOffered == subCategoryName && bookingStatus == "Completed") {
+                            val providerEmail = bookingSnapshot.child("providerEmail").getValue(String::class.java)
+                            val bookingDate = bookingSnapshot.child("bookingDay").getValue(String::class.java)
+                            
+                            Log.d("Booking", "Found match - Provider: $providerEmail, Date: $bookingDate")
+                            
+                            if (providerEmail != null && bookingDate != null) {
+                                // Keep the most recent booking date
+                                if (!previouslyBookedEmails.containsKey(providerEmail) || 
+                                    bookingDate > previouslyBookedEmails[providerEmail]!!) {
+                                    previouslyBookedEmails[providerEmail] = bookingDate
                                 }
                             }
                         }
                     }
+
+                    Log.d("Booking", "Previously booked providers: ${previouslyBookedEmails.keys}")
+                    
+                    // Now retrieve all providers
+                    retrieveAllProviders(previouslyBookedEmails)
                 }
 
                 override fun onCancelled(error: DatabaseError) {
-                    Log.e("UserData", "Database error: ${error.message}")
-                    updateEmptyView()
+                    Log.e("Bookings", "Error: ${error.message}")
                 }
             })
     }
 
+    private fun retrieveAllProviders(previouslyBookedEmails: Map<String, String>) {
+        val skillsRef = FirebaseDatabase.getInstance().getReference("skills")
+        
+        skillsRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                providerList.clear()
+                previouslyBookedProviders.clear()
 
-    private fun removeProviderByEmailAndSkill(userEmail: String, skillName: String) {
-        providerList.clear()
-        providerAdapter.notifyDataSetChanged()
-        updateEmptyView()
-        val indexToRemove = providerList.indexOfFirst { it.userName == userEmail && it.name == skillName }
-        if (indexToRemove != -1) {
-            providerList.removeAt(indexToRemove)
-            providerAdapter.notifyDataSetChanged()
-            updateEmptyView()
+                for (skillSetSnapshot in snapshot.children) {
+                    val user = skillSetSnapshot.child("user").getValue(String::class.java)
+                    
+                    if (user == email) continue
+
+                    processSkillSnapshot(skillSetSnapshot, user, previouslyBookedEmails)
+                }
+
+                // Log the results
+                Log.d("Providers", "Previous bookings: ${previouslyBookedProviders.size}")
+                Log.d("Providers", "New providers: ${providerList.size}")
+
+                updateVisibility()
+                providerAdapter.notifyDataSetChanged()
+                previousBookingsAdapter.notifyDataSetChanged()
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("SkillData", "Error: ${error.message}")
+            }
+        })
+    }
+
+    private fun processSkillSnapshot(
+        skillSetSnapshot: DataSnapshot, 
+        userEmail: String?, 
+        previouslyBookedEmails: Map<String, String>
+    ) {
+        val skillItemsSnapshot = skillSetSnapshot.child("skillItems")
+        
+        if (skillItemsSnapshot.exists()) {
+            for (skillSnapshot in skillItemsSnapshot.children) {
+                val skillName = skillSnapshot.child("name").getValue(String::class.java)
+                if (skillName == subCategoryName) {
+                    val isVisible = skillSnapshot.child("visible").getValue(Boolean::class.java) ?: false
+                    if (isVisible) {
+                        // Log the skill rate for debugging
+                        val rate = skillSnapshot.child("skillRate").getValue(Int::class.java)
+                        Log.d("SkillRate", "SkillRate for $skillName: $rate")
+                        
+                        userEmail?.let { email ->
+                            retrieveUserDetails(
+                                email,
+                                skillSnapshot,
+                                previouslyBookedEmails[email]
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 
-    private fun updateEmptyView() {
-        if (providerList.isEmpty()) {
+    private fun retrieveUserDetails(
+        userEmail: String,
+        skillSnapshot: DataSnapshot,
+        lastBookingDate: String?
+    ) {
+        val userRef = FirebaseDatabase.getInstance().getReference("users")
+        
+        userRef.orderByChild("email").equalTo(userEmail)
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        for (userSnapshot in snapshot.children) {
+                            val providerData = createProviderData(userSnapshot, skillSnapshot, lastBookingDate)
+                            
+                            if (lastBookingDate != null) {
+                                previouslyBookedProviders.add(providerData)
+                            } else {
+                                providerList.add(providerData)
+                            }
+                        }
+                        updateVisibility()
+                        providerAdapter.notifyDataSetChanged()
+                        previousBookingsAdapter.notifyDataSetChanged()
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("UserData", "Error: ${error.message}")
+                }
+            })
+    }
+
+    private fun updateVisibility() {
+        if (previouslyBookedProviders.isEmpty() && providerList.isEmpty()) {
+            // Show empty view if both lists are empty
             emptyView.visibility = View.VISIBLE
             recyclerView.visibility = View.GONE
+            previousBookingsRecyclerView.visibility = View.GONE
+            previousBookingsTitle.visibility = View.GONE
         } else {
+            // Hide empty view
             emptyView.visibility = View.GONE
-            recyclerView.visibility = View.VISIBLE
+            
+            // Show/hide previous bookings section
+            if (previouslyBookedProviders.isEmpty()) {
+                previousBookingsRecyclerView.visibility = View.GONE
+                previousBookingsTitle.visibility = View.GONE
+                previousBookingsSubTitle.visibility = View.GONE
+            } else {
+                previousBookingsRecyclerView.visibility = View.VISIBLE
+                previousBookingsTitle.visibility = View.VISIBLE
+                previousBookingsSubTitle.visibility = View.VISIBLE
+            }
+            
+            // Always show main recycler view if there are any providers
+            recyclerView.visibility = if (providerList.isEmpty()) View.GONE else View.VISIBLE
         }
     }
 
-
-
+    private fun createProviderData(
+        userSnapshot: DataSnapshot,
+        skillSnapshot: DataSnapshot,
+        lastBookingDate: String?
+    ): ProviderData {
+        // Log the data for debugging
+        val rate = skillSnapshot.child("skillRate").getValue(Int::class.java)
+        Log.d("ProviderData", "SkillRate from snapshot: $rate")
+        
+        return ProviderData(
+            userName = userSnapshot.child("name").getValue(String::class.java),
+            name = skillSnapshot.child("name").getValue(String::class.java),
+            imageUrl = userSnapshot.child("profileImageUrl").getValue(String::class.java),
+            skillRate = rate,
+            description = skillSnapshot.child("description").getValue(String::class.java),
+            rating = skillSnapshot.child("rating").getValue(Float::class.java) ?: 0f,
+            noOfBookings = userSnapshot.child("noOfBookings").getValue(Int::class.java) ?: 0,
+            lastBookingDate = lastBookingDate
+        )
+    }
 
     companion object {
         fun newInstance(subCategoryName: String, email: String, bookDay: String, startTime: String, endTime: String) =

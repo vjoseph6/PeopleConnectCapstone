@@ -137,11 +137,11 @@
                                 android:textSize="12sp" />
 
                             <TextView
+                                android:id="@+id/clientRating"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_alignParentEnd="true"
-                                android:drawableLeft="@drawable/star_icon"
-                                android:text="4.6"
+                                android:text=" ★ 4.6"
                                 android:textSize="12sp" />
 
 
@@ -198,11 +198,11 @@
                                 android:textSize="12sp" />
 
                             <TextView
+                                android:id="@+id/providerRating"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_alignParentEnd="true"
-                                android:drawableLeft="@drawable/star_icon"
-                                android:text="4.5"
+                                android:text="★ 4.5"
                                 android:textSize="12sp" />
 
                         </RelativeLayout>
