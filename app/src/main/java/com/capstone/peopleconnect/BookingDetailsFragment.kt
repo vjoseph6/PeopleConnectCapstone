@@ -28,6 +28,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import android.content.Intent
 import android.net.Uri
 import com.bumptech.glide.Glide
+import com.capstone.peopleconnect.Helper.StripeHelper
 
 
 class BookingDetailsFragment : Fragment() {
@@ -157,6 +158,14 @@ class BookingDetailsFragment : Fragment() {
                 // Fetch Client and Service Provider details
                 fetchClientDetails(booking.bookByEmail)
                 fetchServiceProviderDetails(booking.providerEmail)
+
+                // Check if booking is completed and has a payment ID
+                if (booking.bookingStatus == "Completed" && !booking.bookingPaymentId.isNullOrEmpty()) {
+                    // Initialize StripeHelper
+                    val stripeHelper = StripeHelper(requireContext(), this)
+                    // Send receipt
+                    stripeHelper.sendReceipt(booking.bookingPaymentId)
+                }
             }
         }.addOnFailureListener { exception ->
             Log.e("BookingDetailsFragment", "Error fetching booking details", exception)

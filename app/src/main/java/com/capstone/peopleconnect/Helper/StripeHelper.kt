@@ -75,20 +75,32 @@ class StripeHelper(
 
                         val json = JSONObject(responseData ?: "")
                         
-                        // Store all payment details
+                        // Store payment details from the response
                         originalAmount = json.getDouble("originalAmount")
-                        commissionAmount = json.getDouble("commissionAmount")
                         totalAmount = json.getDouble("totalAmount")
                         paymentId = json.getString("paymentId")
                         paymentMethod = json.getString("paymentMethod")
                         paymentDate = json.getString("paymentDate")
 
-                        // Get payment details
+                        // Calculate commission amount (15% of original amount)
+                        commissionAmount = originalAmount * 0.15
+
+                        // Get payment details for Stripe
                         val clientSecret = json.getString("clientSecret")
                         val ephemeralKey = json.getString("ephemeralKey")
                         val customerId = json.getString("customerId")
                         
-                        // Present payment sheet with updated configuration
+                        // Debug log
+                        Log.d("StripeHelper", """
+                            Payment Details:
+                            Original Amount: $originalAmount
+                            Commission Rate: 15%
+                            Commission Amount: $commissionAmount
+                            Total Amount: $totalAmount
+                            Payment ID: $paymentId
+                            Payment Date: $paymentDate
+                        """.trimIndent())
+                        
                         Handler(Looper.getMainLooper()).post {
                             presentPaymentSheet(
                                 clientSecret,
@@ -99,11 +111,13 @@ class StripeHelper(
                         }
                     } catch (e: Exception) {
                         Log.e("StripeHelper", "Error parsing response: ${e.message}")
-                        showToast("Error processing payment details")
+                        showToast("Error processing payment details: ${e.message}")
                         (fragment as? ActivityFragmentClient_BookDetails)?.dismissLoadingDialog()
                     }
                 } else {
+                    val errorBody = response.body?.string()
                     Log.e("StripeHelper", "Request failed: ${response.code} - ${response.message}")
+                    Log.e("StripeHelper", "Error body: $errorBody")
                     showToast("Request failed: ${response.message}")
                     (fragment as? ActivityFragmentClient_BookDetails)?.dismissLoadingDialog()
                 }
@@ -214,5 +228,48 @@ class StripeHelper(
                 Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    fun sendReceipt(paymentId: String) {
+        val client = OkHttpClient()
+        val url = "https://server-stripe-test.vercel.app/api/receipt"
+
+        val jsonObject = JSONObject().apply {
+            put("paymentId", paymentId)
+        }
+
+        val requestBody = jsonObject.toString()
+            .toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
+        
+        val request = Request.Builder()
+            .url(url)
+            .post(requestBody)
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e("StripeHelper", "Failed to send receipt: ${e.message}")
+                showToast("Failed to send receipt: ${e.message}")
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                if (response.isSuccessful) {
+                    try {
+                        val responseData = response.body?.string()
+                        val json = JSONObject(responseData ?: "")
+                        
+                        Log.d("StripeHelper", "Receipt sent successfully: $responseData")
+                        showToast("Receipt sent successfully!")
+                        
+                    } catch (e: Exception) {
+                        Log.e("StripeHelper", "Error parsing receipt response: ${e.message}")
+                        showToast("Error processing receipt")
+                    }
+                } else {
+                    Log.e("StripeHelper", "Receipt request failed: ${response.code} - ${response.message}")
+                    showToast("Failed to send receipt: ${response.message}")
+                }
+            }
+        })
     }
 }
