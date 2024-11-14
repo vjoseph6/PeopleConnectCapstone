@@ -32,6 +32,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
 import com.capstone.peopleconnect.Classes.Bookings
+import com.capstone.peopleconnect.Classes.Payments
 import com.capstone.peopleconnect.Helper.StripeHelper
 import com.capstone.peopleconnect.R
 import com.google.android.material.imageview.ShapeableImageView
@@ -51,7 +52,7 @@ import java.util.UUID
 
 class ActivityFragmentClient_BookDetails : Fragment() {
 
-    private var serviceOffered: String? = null
+    private var serviceOffered: String = ""
     private var userEmail: String? = null
     private lateinit var dateEditText: EditText
     private lateinit var auth: FirebaseAuth
@@ -92,6 +93,8 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_activity_client__book_details, container, false)
+
+        serviceOffered = arguments?.getString("SERVICE_OFFERED") ?: ""
 
         arguments.let {
             bookDay = arguments?.getString("bookDay") ?: ""
@@ -398,70 +401,114 @@ class ActivityFragmentClient_BookDetails : Fragment() {
     }
 
 
-    fun saveBooking() {
+    fun saveBooking(
+        originalAmount: Double = 0.0,
+        commissionAmount: Double = 0.0,
+        totalAmount: Double = 0.0,
+        paymentId: String,
+        paymentMethod: String,
+        paymentDate: String
+    ) {
         dismissLoadingDialog()
-        showLoadingDialog() // Show loading dialog immediately
+        showLoadingDialog()
 
         userEmail = auth.currentUser?.email ?: ""
         val providerEmail = arguments?.getString("EMAIL") ?: ""
-        val bookingStatus = "Pending"
-        serviceOffered = arguments?.getString("SERVICE_OFFERED") ?: ""
-        val bookingStartTime = startTimeEditText.text.toString()
-        val bookingEndTime = endTimeEditText.text.toString()
-        val bookingDescription = descEditText.text.toString()
-        val bookingDay = dateEditText.text.toString()
-        val bookingLocation = locationEditText.text.toString()
-        val bookingAmountString = view?.findViewById<EditText>(R.id.etRate)?.text?.toString()
-        val bookingAmount = bookingAmountString?.toDoubleOrNull() ?: 0.0 // Fallback to 0.0 if the conversion fails
-        val bookingPaymentMethod = ""
-
         val bookingReference = FirebaseDatabase.getInstance().getReference("bookings")
-        val bookingId = bookingReference.push().key ?: return // Generate booking ID once
+        val paymentReference = FirebaseDatabase.getInstance().getReference("payments")
+        val bookingId = bookingReference.push().key ?: return
 
+        // Create payment object using the Payments class
+        val payment = Payments(
+            paymentId = paymentId,
+            paymentMethod = paymentMethod,
+            bookBy = userEmail.toString(),
+            providerEmail = providerEmail,
+            paymentAmount = totalAmount,
+            paymentDate = paymentDate,
+            bookingId = bookingId,
+            originalAmount = originalAmount,
+            commissionAmount = commissionAmount
+        )
+
+        // Save payment details
+        paymentReference.child(paymentId).setValue(payment)
+            .addOnSuccessListener {
+                Log.d("Payment", "Payment details saved successfully")
+                // Proceed with saving booking details
+                proceedWithBookingSave(
+                    bookingId,
+                    payment,
+                    userEmail.toString(),
+                    providerEmail
+                )
+            }
+            .addOnFailureListener { e ->
+                Log.e("Payment", "Error saving payment details", e)
+                dismissLoadingDialog()
+                Toast.makeText(requireContext(), "Failed to save payment details", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun proceedWithBookingSave(
+        bookingId: String,
+        payment: Payments,
+        userEmail: String,
+        providerEmail: String
+    ) {
         val validImageUris = imageUris.filterNotNull()
 
-        // Check for duplicate booking first
-        checkForDuplicateBooking(userEmail.toString(), providerEmail, bookingDay, bookingStartTime, bookingEndTime, serviceOffered.toString()) { duplicateFound ->
-            if (duplicateFound) {
-                requireContext().let {
-                    dismissLoadingDialog()
-                    Toast.makeText(it, "You already have a pending booking with this provider for this service.", Toast.LENGTH_SHORT).show()
-                }
-            } else {
-                // Proceed to upload images
-                Log.d("SaveBooking", "Starting image upload...")
-                uploadImagesToFirebase(userEmail.toString(), validImageUris, bookingId) { imageUrls ->
-                    if (imageUrls.isNotEmpty()) {
-                        val booking = Bookings(
-                            bookingId = bookingId, // Use the same bookingId generated initially
-                            bookByEmail = userEmail.toString(),
-                            providerEmail = providerEmail,
-                            bookingStatus = bookingStatus,
-                            serviceOffered = serviceOffered.toString(),
-                            bookingStartTime = bookingStartTime,
-                            bookingEndTime = bookingEndTime,
-                            bookingDescription = bookingDescription,
-                            bookingDay = bookingDay,
-                            bookingLocation = bookingLocation,
-                            bookingAmount = bookingAmount,
-                            bookingPaymentMethod = bookingPaymentMethod,
-                            bookingCancelClient = "",
-                            bookingCancelProvider = "",
-                            bookingUploadImages = imageUrls
-                        )
+        uploadImagesToFirebase(userEmail, validImageUris, bookingId) { imageUrls ->
+            if (imageUrls.isNotEmpty()) {
+                val booking = Bookings(
+                    bookingId = bookingId,
+                    bookByEmail = userEmail,
+                    providerEmail = providerEmail,
+                    bookingStatus = "Pending",
+                    serviceOffered = serviceOffered,
+                    bookingStartTime = startTimeEditText.text.toString(),
+                    bookingEndTime = endTimeEditText.text.toString(),
+                    bookingDescription = descEditText.text.toString(),
+                    bookingDay = dateEditText.text.toString(),
+                    bookingLocation = locationEditText.text.toString(),
+                    bookingAmount = payment.originalAmount,
+                    bookingCommissionAmount = payment.commissionAmount,
+                    bookingTotalAmount = payment.paymentAmount,
+                    bookingPaymentMethod = payment.paymentMethod,
+                    bookingPaymentId = payment.paymentId,
+                    bookingCancelClient = "",
+                    bookingCancelProvider = "",
+                    bookingUploadImages = imageUrls
+                )
 
-                        // Save booking to the database
-                        Log.d("SaveBooking", "Saving booking to database...")
-                        saveBookingToDatabase(bookingId, booking)
-                    } else {
-                        Log.e("SaveBooking", "Image upload failed.")
-                        Toast.makeText(requireContext(), "Image upload failed. Please try again.", Toast.LENGTH_SHORT).show()
-                    }
-                    dismissLoadingDialog() // Dismiss loading dialog after all operations are done
-                }
+                saveBookingToDatabase(bookingId, booking)
+            } else {
+                Log.e("SaveBooking", "Image upload failed.")
+                Toast.makeText(requireContext(), "Image upload failed. Please try again.", Toast.LENGTH_SHORT).show()
+                dismissLoadingDialog()
             }
         }
     }
+
+    private fun saveBookingToDatabase(bookingId: String, booking: Bookings) {
+        val bookingReference = FirebaseDatabase.getInstance().getReference("bookings")
+        
+        bookingReference.child(bookingId).setValue(booking)
+            .addOnSuccessListener {
+                dismissLoadingDialog()
+                Toast.makeText(requireContext(), "Booking saved successfully", Toast.LENGTH_SHORT).show()
+
+                val fragmentTransaction = requireActivity().supportFragmentManager.beginTransaction()
+                fragmentTransaction.replace(R.id.frame_layout, ActivityFragmentClient.newInstance(email = userEmail.toString()))
+                fragmentTransaction.addToBackStack(null)
+                fragmentTransaction.commit()
+            }
+            .addOnFailureListener { e ->
+                dismissLoadingDialog()
+                Toast.makeText(requireContext(), "Failed to save booking: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
+
 
 
 
@@ -493,27 +540,6 @@ class ActivityFragmentClient_BookDetails : Fragment() {
                     Toast.makeText(requireContext(), "Failed to upload image $index", Toast.LENGTH_SHORT).show()
                 }
         }
-    }
-
-    // Save booking to Realtime Database
-    private fun saveBookingToDatabase(bookingId: String, booking: Bookings) {
-        val bookingReference = FirebaseDatabase.getInstance().getReference("bookings")
-
-        bookingReference.child(bookingId).setValue(booking)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    dismissLoadingDialog()
-                    Toast.makeText(requireContext(), "Booking saved successfully!", Toast.LENGTH_SHORT).show()
-
-                    // Navigate to ActivityFragmentClient after successful booking
-                    val fragmentTransaction = requireActivity().supportFragmentManager.beginTransaction()
-                    fragmentTransaction.replace(R.id.frame_layout, ActivityFragmentClient.newInstance(email = userEmail.toString()))
-                    fragmentTransaction.addToBackStack(null)
-                    fragmentTransaction.commit()
-                } else {
-                    Toast.makeText(requireContext(), "Failed to save booking", Toast.LENGTH_SHORT).show()
-                }
-            }
     }
 
 
