@@ -13,6 +13,11 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CAMERA" />
 
+    <!--        PLEASE AYAW NI E DELETE KAY MAO NI NA CODE ANG CONNECTION PARA NOTIFICATION KWANGAN PALANG NI MAONG WAPA NI FUNCTION-->
+<!--    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />-->
+<!--    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />-->
+
+
     <application
         android:name=".Message.MyApplication"
         android:allowBackup="true"
@@ -24,16 +29,31 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PeopleConnect"
         tools:targetApi="31">
-        <activity
 
+        <!--        PLEASE AYAW NI E DELETE KAY MAO NI NA CODE ANG CONNECTION PARA NOTIFICATION KWANGAN PALANG NI MAONG WAPA NI FUNCTION-->
+
+        <!-- FCM Service is correctly declared here -->
+<!--        <service-->
+<!--            android:name=".Notifications.FCMService"-->
+<!--            android:exported="false">-->
+<!--            <intent-filter>-->
+<!--                <action android:name="com.google.firebase.MESSAGING_EVENT" />-->
+<!--            </intent-filter>-->
+<!--        </service>-->
+
+<!--        PLEASE AYAW NI E DELETE KAY MAO NI NA CODE ANG CONNECTION PARA NOTIFICATION KWANGAN PALANG NI MAONG WAPA NI FUNCTION-->
+        <!-- Add metadata for default notification channel -->
+<!--        <meta-data-->
+<!--            android:name="com.google.firebase.messaging.default_notification_channel_id"-->
+<!--            android:value="chat_messages" />-->
+
+        <activity
             android:name=".Helper.ImagePreviewActivity"
             android:exported="false" />
-
         <activity
             android:name=".Message.chat.ChatActivity"
             android:exported="false" />
         <activity
-
             android:name=".SPrvoider.AddSkillsProviderRate"
             android:exported="false"
             android:screenOrientation="portrait" />

@@ -1,5 +1,7 @@
 package com.capstone.peopleconnect.Message.chat
 
+import android.content.Intent
+import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
@@ -14,9 +16,11 @@ import com.android.volley.Request
 import com.android.volley.Response
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
+//import com.capstone.peopleconnect.Notifications.model.NotificationModel
 import com.capstone.peopleconnect.R
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.database.FirebaseDatabase
 import io.getstream.chat.android.client.ChatClient
 import io.getstream.chat.android.models.Channel
 import io.getstream.chat.android.models.ConnectionData
@@ -25,6 +29,8 @@ import io.getstream.chat.android.models.User
 import io.getstream.chat.android.ui.feature.messages.MessageListFragment
 import io.getstream.result.Result
 import org.json.JSONObject
+import com.google.firebase.messaging.FirebaseMessaging
+import io.getstream.chat.android.ui.feature.messages.list.MessageListView
 
 
 class ChatActivity : AppCompatActivity() {
@@ -41,6 +47,22 @@ class ChatActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_chat)
+
+        // Please do not delete this, as this code is the connection for the notification. It's just missing something, which is why it isn't functioning yet.
+        /* Notification-related code commented out
+        // Add this to test notifications when the activity starts
+        testPushNotification()
+
+        // Check if this was opened from a call notification
+        val isFromCallNotification = intent.getBooleanExtra("isFromCallNotification", false)
+        if (isFromCallNotification) {
+            val channelId = intent.getStringExtra("channelId")
+            val callId = intent.getStringExtra("callId")
+            if (channelId != null && callId != null) {
+                handleCallNotification(channelId, callId)
+            }
+        }
+        */
 
         Log.d("ChatActivity", "onCreate called")
 
@@ -89,47 +111,114 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
-    private fun startVideoCall() {
-        // Show the loading spinner
-        chatLoadingSpinner.visibility = View.VISIBLE
 
+// Please do not delete this, as this code is the connection for the notification. It's just missing something, which is why it isn't functioning yet.
+//    private fun handleCallNotification(channelId: String, callId: String) {
+//        loadMessageListFragment(channelId)
+//
+//        // Show a toast to inform the user they can join the call
+//        Toast.makeText(
+//            this,
+//            "Click on the call message to join the video call",
+//            Toast.LENGTH_LONG
+//        ).show()
+//    }
+
+    //  Please do not delete this, as this code is the connection for the notification. It's just missing something, which is why it isn't functioning yet.
+    // Add this function to test push notifications
+//    private fun testPushNotification() {
+//        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+//            if (task.isSuccessful) {
+//                val token = task.result
+//                Log.d("PushTest", "FCM Token: $token")
+//            } else {
+//                Log.e("PushTest", "Failed to get FCM token", task.exception)
+//            }
+//        }
+//    }
+
+
+
+    private fun startVideoCall() {
+        chatLoadingSpinner.visibility = View.VISIBLE
         Log.d("VideoCall", "Start video call button clicked")
-        Toast.makeText(this, "Start video call button clicked", Toast.LENGTH_SHORT).show()
 
         val callId = "$currentUserId$selectedUserId"
         val callLink = "https://getstream.io/video/demos/join/$callId?id=$callId"
-        Log.d("VideoCall", "Generated call link: $callLink")
 
-        // Ensure the channel ID is consistent with how channels are created
+        // Ensure the channel ID is consistent
         val sortedUserIds = listOf(currentUserId, selectedUserId).sorted()
         val sanitizedUserIds = sortedUserIds.joinToString("_").replace(Regex("[^a-z0-9_-]"), "").lowercase()
         val channelPrefix = "messaging"
         val channelId = "$channelPrefix:$sanitizedUserIds"
 
-        Log.d("VideoCall", "Using Channel ID: $channelId")
-
-        // Load the message list fragment immediately
-        loadMessageListFragment(channelId)
-
-        // Send a message with the call link
+        // Create message with just the call link as text
         val message = Message(
-            text = "You have an incoming video call. Join This Link: $callLink",
+            text = callLink,  // Just send the link in chat
+            type = "regular",
             user = User(id = currentUserId)
         )
 
         val channel = chatClient.channel(channelPrefix, sanitizedUserIds)
         channel.sendMessage(message).enqueue { result ->
-            // Hide the loading spinner after the message is sent
             chatLoadingSpinner.visibility = View.GONE
-            Log.d("VideoCall", "Loading spinner set to gone")
 
             if (result.isSuccess) {
-                Log.d("VideoCall", "Message sent successfully with call link.")
+                //  Please do not delete this, as this code is the connection for the notification. It's just missing something, which is why it isn't functioning yet.
+                // Send notification with the call icon
+//                sendNotificationData(
+//                    userId = selectedUserId,
+//                    title = "📞 Video Call Invitation",  // Show call icon in notification
+//                    message = "Tap to join the video call",
+//                    type = "call",
+//                    channelId = channelId,
+//                    callLink = callLink
+//                )
+                Log.d("VideoCall", "Message and notification sent successfully")
             } else {
                 Log.e("VideoCall", "Error sending message: ${result.errorOrNull()?.message}")
             }
         }
     }
+
+
+    //  Please do not delete this, as this code is the connection for the notification. It's just missing something, which is why it isn't functioning yet.
+
+//    // Update the sendNotificationData function to include callLink
+//    private fun sendNotificationData(
+//        userId: String,
+//        title: String,
+//        message: String,
+//        type: String,
+//        channelId: String? = null,
+//        callLink: String? = null
+//    ) {
+//        val database = FirebaseDatabase.getInstance()
+//        val notificationsRef = database.reference.child("notifications").child(userId)
+//
+//        val notification = NotificationModel(
+//            id = database.reference.push().key ?: return,
+//            title = title,
+//            description = message,
+//            type = type,
+//            senderId = currentUserId,
+//            senderName = currentUser?.displayName ?: "Unknown",
+//            timestamp = System.currentTimeMillis(),
+//            isRead = false,
+//            channelId = channelId,
+//            callLink = callLink  // Add this field to your NotificationModel
+//        )
+//
+//        notificationsRef.child(notification.id).setValue(notification)
+//            .addOnSuccessListener {
+//                Log.d("Notification", "Notification data saved successfully")
+//            }
+//            .addOnFailureListener { e ->
+//                Log.e("Notification", "Error saving notification data", e)
+//            }
+//    }
+
+
 
 
     private fun requestTokenFromBackend(userId: String) {
@@ -205,6 +294,8 @@ class ChatActivity : AppCompatActivity() {
     }
 
 
+
+
     private fun connectCurrentUserToStreamChat() {
         if (token.isEmpty()) {
             Log.e("ConnectUser", "Token is empty. Cannot connect user.")
@@ -277,11 +368,35 @@ class ChatActivity : AppCompatActivity() {
         if (supportFragmentManager.findFragmentById(R.id.channel_fragment_container) == null) {
             val fragment = MessageListFragment.newInstance(channelId) {
                 showHeader(true)
+                MessageListView.MessageClickListener { message ->
+                    // Check if this is a video call message
+                    if (message.extraData.containsKey("is_video_call") &&
+                        message.extraData["is_video_call"] as? Boolean == true) {
+                        try {
+                            // Get the call link from the message
+                            val callLink = message.extraData["call_link"] as? String
+                            if (callLink != null) {
+                                // Open the call link
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(callLink))
+                                startActivity(intent)
+                                Toast.makeText(this@ChatActivity, "Joining video call...", Toast.LENGTH_SHORT).show()
+                                Log.d("VideoCall", "Opening call link from message: $callLink")
+                            } else {
+                                Toast.makeText(this@ChatActivity, "Call link not found", Toast.LENGTH_SHORT).show()
+                                Log.e("VideoCall", "Call link is null in message")
+                            }
+                        } catch (e: Exception) {
+                            Log.e("VideoCall", "Error opening call link from message", e)
+                            Toast.makeText(this@ChatActivity, "Unable to open call link", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
             }
+
             supportFragmentManager.beginTransaction()
                 .replace(R.id.channel_fragment_container, fragment)
                 .commit()
-            Log.d("MessageListFragment", "Message list loaded successfully.")
+            Log.d("MessageListFragment", "Message list fragment loaded with message click listener")
         }
     }
 }

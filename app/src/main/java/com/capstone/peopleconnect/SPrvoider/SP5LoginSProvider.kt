@@ -236,6 +236,13 @@ class SP5LoginSProvider : AppCompatActivity() {
                         }
 
                         if (isServiceProvider) {
+                            // Please do not delete this, as this code is the connection for the notification.
+                            // It's just missing something, which is why it isn't functioning yet.
+                            /*
+                            FirebaseAuth.getInstance().currentUser?.let { user ->
+                                SelectAccount.registerDeviceForPushNotifications(user, this@SP5LoginSProvider)
+                            }
+                            */
                             // Save current user details in shared preferences
                             saveCurrentUser(email, userName, userAddress, profileImageUrl)
 

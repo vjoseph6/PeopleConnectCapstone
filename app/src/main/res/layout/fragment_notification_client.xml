@@ -59,4 +59,19 @@
         app:layout_constraintBottom_toBottomOf="parent"
         android:orientation="vertical"/>
 
+    <!-- Add this after your RecyclerView -->
+    <TextView
+        android:id="@+id/no_notifications_text_client"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="No notifications yet"
+        android:textSize="16sp"
+        android:fontFamily="@font/medium_poppins"
+        android:textColor="@color/green"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

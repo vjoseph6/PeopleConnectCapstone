@@ -12,7 +12,7 @@
         android:id="@+id/layoutBackground"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/blue"
+        android:background="@color/white"
         >
 
         <ImageButton
@@ -24,7 +24,7 @@
             android:background="@drawable/back_button_background_sprovider"
             android:contentDescription="Back Button"
             android:elevation="4dp"
-            android:src="@drawable/backbtn2_sprovider_"
+            android:src="@drawable/both_backbtn"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
@@ -34,7 +34,7 @@
             android:layout_height="wrap_content"
             android:fontFamily="@font/semibold_poppins"
             android:text="Activity Details"
-            android:textColor="@color/white"
+            android:textColor="@color/black"
             android:textSize="18sp"
             app:layout_constraintBottom_toBottomOf="@id/btnBack"
             app:layout_constraintEnd_toEndOf="parent"
@@ -52,7 +52,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/activityDetails"
             app:layout_constraintBottom_toBottomOf="parent"
-            android:background="@drawable/sprovider_card_background_top_corners"
+            android:background="@drawable/both_card_gradient_background"
             android:layout_marginBottom="56dp"
             android:padding="16dp">
 

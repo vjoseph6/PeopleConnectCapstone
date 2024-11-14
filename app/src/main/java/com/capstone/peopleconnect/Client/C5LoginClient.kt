@@ -251,6 +251,14 @@ class C5LoginClient : AppCompatActivity() {
 
                         if (isClient) {
 
+                            // PLEASE AYAW NI E DELETE KAY MAO NI NA CODE ANG CONNECTION PARA NOTIFICATION KWANGAN PALANG NI MAONG WAPA NI FUNCTION
+                            // Register device for push notifications (commented out for now)
+                            /*
+                            FirebaseAuth.getInstance().currentUser?.let { user ->
+                                SelectAccount.registerDeviceForPushNotifications(user, this@C5LoginClient)
+                            }
+                            */
+
                             // Save current user details in shared preferences
                             saveCurrentUser(email, userName, userAddress, profileImageUrl)
 
