@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".Client.Fragments.OngoingFragmentClient">
+
+    <!-- Scrollable Content -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/green">
+
+            <!-- Back Button -->
+            <ImageButton
+                android:id="@+id/btnBackClient"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="44dp"
+                android:background="@drawable/back_button_background_client"
+                android:elevation="4dp"
+                android:src="@drawable/backbtn2_client_"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <!-- Title TextView -->
+            <TextView
+                android:id="@+id/filter_by_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/semibold_poppins"
+                android:text="Ongoing"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                app:layout_constraintBottom_toBottomOf="@id/btnBackClient"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <!-- Client Card Layout -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="50dp"
+                android:background="@drawable/client_card_background_top_corners"
+                android:padding="16dp"
+                app:layout_constraintTop_toBottomOf="@id/filter_by_title"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <!-- Profile Picture -->
+                <de.hdodenhof.circleimageview.CircleImageView
+                    android:id="@+id/profile_picture"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="8dp"
+                    android:src="@drawable/profile1"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    android:scaleType="centerCrop" />
+
+                <!-- Client Name TextView -->
+                <TextView
+                    android:id="@+id/sprovider_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="John Doe"
+                    android:textSize="18sp"
+                    android:textColor="@color/black"
+                    android:fontFamily="@font/semibold_poppins"
+                    app:layout_constraintTop_toBottomOf="@id/profile_picture"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent" />
+
+                <!-- Rating TextView -->
+                <TextView
+                    android:id="@+id/client_rating"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="4dp"
+                    android:text="★ 4.9 (50 Reviews)"
+                    android:textColor="@color/black"
+                    android:textSize="14sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/sprovider_name" />
+
+                <!-- Progress Status Bar -->
+                <LinearLayout
+                    android:id="@+id/progress_status_bar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:padding="16dp"
+                    android:background="@drawable/progress_bar_background"
+                    app:layout_constraintTop_toBottomOf="@id/client_rating"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent">
+
+                    <!-- Step 1 Icon -->
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/final_logo__client__short_2"
+                        android:contentDescription="Step 1" />
+
+                    <!-- Line between icons -->
+                    <View
+                        android:layout_width="70dp"
+                        android:layout_height="3dp"
+                        android:layout_marginHorizontal="4dp"
+                        android:background="@color/black" />
+
+                    <!-- Step 2 Icon -->
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/icon_location"
+                        android:contentDescription="Step 2" />
+
+                    <!-- Line between icons -->
+                    <View
+                        android:layout_width="70dp"
+                        android:layout_height="3dp"
+                        android:layout_marginHorizontal="4dp"
+                        android:background="@color/black" />
+
+                    <!-- Step 3 Icon -->
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/icon_work"
+                        android:contentDescription="Step 3" />
+
+                    <!-- Line between icons -->
+                    <View
+                        android:layout_width="70dp"
+                        android:layout_height="3dp"
+                        android:layout_marginHorizontal="4dp"
+                        android:background="@color/black" />
+
+                    <!-- Step 4 Icon -->
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/icon_done"
+                        android:contentDescription="Step 4" />
+                </LinearLayout>
+
+                <!-- Illustration Image -->
+                <ImageView
+                    android:id="@+id/illustration_image"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:src="@drawable/client_well_done_ongoing"
+                    app:layout_constraintTop_toBottomOf="@id/progress_status_bar"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    android:contentDescription="Illustration showing service progress" />
+
+                <!-- Submit Button -->
+                <Button
+                    android:id="@+id/btnViewMessage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="View Message"
+                    android:textColor="@color/white"
+                    android:textAllCaps="false"
+                    style="@style/GreenButtonStyle"
+                    android:fontFamily="@font/regular_poppins"
+                    android:background="@drawable/btn_rounded_corner_client"
+                    app:layout_constraintTop_toBottomOf="@id/illustration_image" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
+</FrameLayout>
