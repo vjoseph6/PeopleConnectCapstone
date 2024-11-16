@@ -29,17 +29,25 @@ class StripeHelper(
     private var paymentDate: String = ""
 
     init {
+        // (Mao rani ako gi add/modify)
+        // Gi tangtangan nako og paymentSheet ako gihimo og functions
         PaymentConfiguration.init(
             context,
             "pk_test_51PF9FWAhzNNxsP4Y16z3rl21cn5T7WtCrwTj2hIIFqXxwbBY3UhjhWtRkpkpQ6FncE9yv6FjHS2SVEEuT0f5zjnj00eAOub2Sx"
         )
-        paymentSheet = PaymentSheet(fragment, ::onPaymentSheetResult)
+    }
+
+    // (Mao rani ako gi add/modify)
+    fun initializePaymentSheet() {
+        if (!::paymentSheet.isInitialized) {
+            paymentSheet = PaymentSheet(fragment, ::onPaymentSheetResult)
+        }
     }
 
     fun fetchPayment(amount: Double, currency: String, userEmail: String, providerEmail: String, serviceOffered: String) {
         // Store original amount for later use
         this.originalAmount = amount
-        
+
         val client = OkHttpClient()
         val url = "https://server-stripe-test.vercel.app/api/create-payment-intent"
 
@@ -54,7 +62,7 @@ class StripeHelper(
 
         val requestBody = jsonObject.toString()
             .toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
-        
+
         val request = Request.Builder()
             .url(url)
             .post(requestBody)
@@ -74,7 +82,7 @@ class StripeHelper(
                         Log.d("StripeHelper", "Response Data: $responseData")
 
                         val json = JSONObject(responseData ?: "")
-                        
+
                         // Store payment details from the response
                         originalAmount = json.getDouble("originalAmount")
                         totalAmount = json.getDouble("totalAmount")
@@ -89,7 +97,7 @@ class StripeHelper(
                         val clientSecret = json.getString("clientSecret")
                         val ephemeralKey = json.getString("ephemeralKey")
                         val customerId = json.getString("customerId")
-                        
+
                         // Debug log
                         Log.d("StripeHelper", """
                             Payment Details:
@@ -100,7 +108,7 @@ class StripeHelper(
                             Payment ID: $paymentId
                             Payment Date: $paymentDate
                         """.trimIndent())
-                        
+
                         Handler(Looper.getMainLooper()).post {
                             presentPaymentSheet(
                                 clientSecret,
@@ -158,7 +166,7 @@ class StripeHelper(
             is PaymentSheetResult.Completed -> {
                 Log.d("StripeHelper", "Payment Successful")
                 showToast("Payment successful! Total amount: ₱${"%.2f".format(totalAmount)}")
-                
+
                 (fragment as? ActivityFragmentClient_BookDetails)?.let { fragment ->
                     fragment.saveBooking(
                         originalAmount = originalAmount,
@@ -190,7 +198,7 @@ class StripeHelper(
 
             val requestBody = jsonObject.toString()
                 .toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
-            
+
             val request = Request.Builder()
                 .url(url)
                 .post(requestBody)
@@ -207,10 +215,10 @@ class StripeHelper(
                         try {
                             val responseData = response.body?.string()
                             val json = JSONObject(responseData ?: "")
-                            
+
                             Log.d("StripeHelper", "Receipt sent successfully: $responseData")
                             showToast(context, "Receipt sent successfully!")
-                            
+
                         } catch (e: Exception) {
                             Log.e("StripeHelper", "Error parsing receipt response: ${e.message}")
                             showToast(context, "Error processing receipt")
@@ -240,7 +248,7 @@ class StripeHelper(
 
         val requestBody = jsonObject.toString()
             .toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull())
-        
+
         val request = Request.Builder()
             .url(url)
             .post(requestBody)
@@ -257,10 +265,10 @@ class StripeHelper(
                     try {
                         val responseData = response.body?.string()
                         val json = JSONObject(responseData ?: "")
-                        
+
                         Log.d("StripeHelper", "Receipt sent successfully: $responseData")
                         showToast("Receipt sent successfully!")
-                        
+
                     } catch (e: Exception) {
                         Log.e("StripeHelper", "Error parsing receipt response: ${e.message}")
                         showToast("Error processing receipt")

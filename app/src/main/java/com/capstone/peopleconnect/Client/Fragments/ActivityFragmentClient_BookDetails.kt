@@ -286,7 +286,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
 
 
 
-     fun showLoadingDialog() {
+    fun showLoadingDialog() {
         // Create the dialog builder
         val dialogBuilder = AlertDialog.Builder(requireContext())
 
@@ -307,7 +307,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
     }
 
 
-     fun dismissLoadingDialog() {
+    fun dismissLoadingDialog() {
         if (::loadingDialog.isInitialized && loadingDialog.isShowing) {
             loadingDialog.dismiss()
         }
@@ -492,7 +492,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
 
     private fun saveBookingToDatabase(bookingId: String, booking: Bookings) {
         val bookingReference = FirebaseDatabase.getInstance().getReference("bookings")
-        
+
         bookingReference.child(bookingId).setValue(booking)
             .addOnSuccessListener {
                 dismissLoadingDialog()

@@ -25,6 +25,16 @@
                 android:layout_marginStart="20dp"
                 />
 
+            <!-- Add this view for online status -->
+            <View
+                android:id="@+id/online_status_indicator"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:layout_alignEnd="@id/sprovider_profile_pic"
+                android:layout_alignBottom="@id/sprovider_profile_pic"
+                android:background="@drawable/online_status_indicator"
+                android:visibility="gone" />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -45,6 +55,15 @@
                     android:text="Fullname"
                     android:textStyle="bold"
                     />
+
+                <!-- Add this for last seen -->
+                <TextView
+                    android:id="@+id/last_active_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="12sp"
+                    android:textColor="@color/gray"
+                    android:visibility="gone" />
 
             </LinearLayout>
 

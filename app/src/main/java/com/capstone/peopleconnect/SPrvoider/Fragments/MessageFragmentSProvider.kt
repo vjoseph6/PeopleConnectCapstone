@@ -2,6 +2,8 @@ package com.capstone.peopleconnect.SPrvoider.Fragments
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -9,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -32,10 +35,16 @@ class MessageFragmentSProvider : Fragment() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var userAdapter: UserAdapters
     private var chatUser = mutableListOf<ChatUser>()
+    private var isRetrying = false
+    private val maxRetries = 3
+    private var retryCount = 0
+    private lateinit var emptyStateText: TextView
 
     private var currentUser: FirebaseUser? = null
     private lateinit var auth: FirebaseAuth
     private lateinit var loaderMessage: ProgressBar
+    private var chatConnectionsListener: ValueEventListener? = null
+    private lateinit var chatConnectionsRef: DatabaseReference
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,6 +56,18 @@ class MessageFragmentSProvider : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         val rootView = inflater.inflate(R.layout.fragment_message_s_provider, container, false)
+
+        // Initialize chat connections reference
+        val currentUserId = getCurrentUserId()
+        if (currentUserId != null) {
+            chatConnectionsRef = FirebaseDatabase.getInstance()
+                .getReference("chat_connections")
+                .child(currentUserId)
+        }
+
+        // Add empty state TextView initialization
+        emptyStateText = rootView.findViewById(R.id.emptyStateText)
+
 
         loaderMessage = rootView.findViewById(R.id.LoadUserMessages)
         recyclerView = rootView.findViewById(R.id.message_recycler_view)
@@ -60,9 +81,32 @@ class MessageFragmentSProvider : Fragment() {
         recyclerView.adapter = userAdapter
 
         fetchUsersFromFirebase()
+        setupRealtimeUpdates()
 
         return rootView
     }
+
+    private fun setupRealtimeUpdates() {
+        val currentUserId = getCurrentUserId() ?: return
+
+        chatConnectionsRef = FirebaseDatabase.getInstance()
+            .getReference("chat_connections")
+            .child(currentUserId)
+
+        chatConnectionsListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                fetchUsersFromFirebase() // Refresh the list when connections change
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                handleError("Real-time update failed", error.toException())
+            }
+        }
+
+        chatConnectionsRef.addValueEventListener(chatConnectionsListener!!)
+    }
+
+
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -76,42 +120,150 @@ class MessageFragmentSProvider : Fragment() {
     }
 
     private fun fetchUsersFromFirebase() {
-        val dbRef: DatabaseReference = FirebaseDatabase.getInstance().getReference("users")
-        loaderMessage.visibility = View.VISIBLE
+        val currentUserId = getCurrentUserId() ?: run {
+            handleError("User not logged in")
+            return
+        }
 
-        dbRef.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val newChatUserList = mutableListOf<ChatUser>()
-                for (userSnapshot in snapshot.children) {
-                    // Retrieve data with default values
-                    val userId = userSnapshot.child("userId").getValue(String::class.java) ?: ""
-                    val name = userSnapshot.child("name").getValue(String::class.java) ?: "Unknown User"
-                    val profileImageUrl = userSnapshot.child("profileImageUrl").getValue(String::class.java) ?: ""
-                    val roles = userSnapshot.child("roles").getValue(object : GenericTypeIndicator<List<String>>() {}) ?: listOf()
+        showLoading()
+        retryCount = 0
+        fetchChatConnections(currentUserId)
+    }
 
-                    // Only add users who have the role "Client" and are not the current user
-                    if ("Client" in roles && userId != getCurrentUserId()) {
-                        newChatUserList.add(ChatUser(userId, name, profileImageUrl))
-                    }
+    private fun fetchChatConnections(currentUserId: String) {
+        // Change to addValueEventListener for real-time updates
+        chatConnectionsRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(connectionsSnapshot: DataSnapshot) {
+                val connectedClientIds = connectionsSnapshot.children.mapNotNull {
+                    if (it.getValue(Boolean::class.java) == true) it.key else null
                 }
 
-                // Efficiently update the RecyclerView using DiffUtil
-                val diffCallback = ChatUserDiffCallback(chatUser, newChatUserList)
-                val diffResult = DiffUtil.calculateDiff(diffCallback)
+                if (connectedClientIds.isEmpty()) {
+                    hideLoading()
+                    showEmptyState("No clients have booked your services yet")
+                    return
+                }
 
-                chatUser.clear()
-                chatUser.addAll(newChatUserList)
-                diffResult.dispatchUpdatesTo(userAdapter)
-
-                loaderMessage.visibility = View.GONE
+                fetchUserDetails(connectedClientIds)
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.w("UserMessage", "Error getting data.", error.toException())
-                Toast.makeText(context, "Failed to load users. Please try again.", Toast.LENGTH_SHORT).show()
-                loaderMessage.visibility = View.GONE
+                handleError("Failed to load chat connections", error.toException())
             }
         })
+    }
+
+    private fun fetchUserDetails(connectedClientIds: List<String>) {
+        val usersRef = FirebaseDatabase.getInstance().getReference("users")
+        val bookingsRef = FirebaseDatabase.getInstance().getReference("bookings")
+        val currentUserEmail = auth.currentUser?.email
+
+        showLoading()
+
+        bookingsRef.orderByChild("providerEmail").equalTo(currentUserEmail)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(bookingsSnapshot: DataSnapshot) {
+                    // Get all client emails with active bookings
+                    val activeClientEmails = bookingsSnapshot.children
+                        .mapNotNull { booking ->
+                            val status = booking.child("bookingStatus").getValue(String::class.java)
+                            val clientEmail = booking.child("bookByEmail").getValue(String::class.java)
+                            if (status == "Pending" || status == "Accepted") clientEmail else null
+                        }
+
+                    // Now fetch user details for clients with active bookings
+                    usersRef.addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(usersSnapshot: DataSnapshot) {
+                            try {
+                                val newChatUserList = mutableListOf<ChatUser>()
+
+                                for (userSnapshot in usersSnapshot.children) {
+                                    val userId = userSnapshot.child("userId").getValue(String::class.java) ?: continue
+                                    val email = userSnapshot.child("email").getValue(String::class.java) ?: continue
+
+                                    if (userId in connectedClientIds && email in activeClientEmails) {
+                                        val name = userSnapshot.child("name").getValue(String::class.java) ?: continue
+                                        val profileImageUrl = userSnapshot.child("profileImageUrl").getValue(String::class.java) ?: ""
+                                        val roles = userSnapshot.child("roles")
+                                            .getValue(object : GenericTypeIndicator<List<String>>() {}) ?: continue
+
+                                        if ("Client" in roles) {
+                                            newChatUserList.add(ChatUser(userId, name, profileImageUrl))
+                                        }
+                                    }
+                                }
+
+                                updateUserList(newChatUserList)
+                                hideLoading()
+
+                                if (newChatUserList.isEmpty()) {
+                                    showEmptyState("No active clients available")
+                                }
+
+                            } catch (e: Exception) {
+                                handleError("Error processing user data", e)
+                            }
+                        }
+
+                        override fun onCancelled(error: DatabaseError) {
+                            handleError("Failed to load user details", error.toException())
+                        }
+                    })
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    handleError("Failed to load bookings", error.toException())
+                }
+            })
+    }
+
+    // Add these utility functions
+    private fun showLoading() {
+        loaderMessage.visibility = View.VISIBLE
+        recyclerView.visibility = View.GONE
+        emptyStateText.visibility = View.GONE
+    }
+
+    private fun hideLoading() {
+        loaderMessage.visibility = View.GONE
+        recyclerView.visibility = View.VISIBLE
+        emptyStateText.visibility = View.GONE
+    }
+
+    private fun showEmptyState(message: String) {
+        emptyStateText.text = message
+        emptyStateText.visibility = View.VISIBLE
+        recyclerView.visibility = View.GONE
+        loaderMessage.visibility = View.GONE
+    }
+
+    private fun handleError(message: String, error: Throwable? = null) {
+        hideLoading()
+        error?.let { Log.e("MessageFragment", message, it) }
+
+        if (retryCount < maxRetries && !isRetrying) {
+            retryCount++
+            isRetrying = true
+
+            Handler(Looper.getMainLooper()).postDelayed({
+                isRetrying = false
+                fetchUsersFromFirebase()
+            }, 2000) // 2 second delay before retry
+
+            Toast.makeText(context, "$message. Retrying...", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            showEmptyState("Unable to load messages")
+        }
+    }
+
+    private fun updateUserList(newList: List<ChatUser>) {
+        val diffCallback = ChatUserDiffCallback(chatUser, newList)
+        val diffResult = DiffUtil.calculateDiff(diffCallback)
+
+        chatUser.clear()
+        chatUser.addAll(newList)
+        diffResult.dispatchUpdatesTo(userAdapter)
     }
 
 
@@ -126,6 +278,14 @@ class MessageFragmentSProvider : Fragment() {
         intent.putExtra("name", user.name)
         Log.d("UserMessage", "Opening chat with user ID: ${user.userId}")
         startActivity(intent)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        // Remove the listener when the view is destroyed
+        chatConnectionsListener?.let {
+            chatConnectionsRef.removeEventListener(it)
+        }
     }
 
 }

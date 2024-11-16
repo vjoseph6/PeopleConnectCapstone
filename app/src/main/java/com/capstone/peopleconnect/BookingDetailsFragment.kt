@@ -35,6 +35,7 @@ class BookingDetailsFragment : Fragment() {
 
     private var bookingId: String? = null
     private var isClient: Boolean = false
+    private lateinit var stripeHelper: StripeHelper  // Add this line (Mao rani ako gi add/modify)
 
     // Views for displaying booking details
     private lateinit var providerEmailTextView: TextView
@@ -62,6 +63,10 @@ class BookingDetailsFragment : Fragment() {
             bookingId = it.getString("BOOKING_ID")
             isClient = it.getBoolean("IS_CLIENT", false)
         }
+
+        // Initialize StripeHelper here (Mao rani ako gi add/modify)
+        stripeHelper = StripeHelper(requireContext(), this)
+        stripeHelper.initializePaymentSheet()
     }
 
     override fun onCreateView(
@@ -76,7 +81,7 @@ class BookingDetailsFragment : Fragment() {
             layoutBackground.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.green))
 
             btnBackClient.setImageResource(R.drawable.backbtn2_client_)
-            
+
             // Change background for all views with border_style
             val borderViews = listOf(
                 view.findViewById<LinearLayout>(R.id.layout1),
@@ -117,7 +122,7 @@ class BookingDetailsFragment : Fragment() {
 
         // Initialize the location button and animate it
         val viewLocationBtn: ImageButton = view.findViewById(R.id.viewLocationBtn)
-        
+
         // Animate the GIF using Glide
         Glide.with(this)
             .asGif()
@@ -134,6 +139,7 @@ class BookingDetailsFragment : Fragment() {
         return view
     }
 
+    // Modify the fetchBookingDetails function to use the class-level stripeHelper
     private fun fetchBookingDetails() {
         val databaseReference =
             FirebaseDatabase.getInstance().getReference("bookings").child(bookingId ?: return)
@@ -159,11 +165,9 @@ class BookingDetailsFragment : Fragment() {
                 fetchClientDetails(booking.bookByEmail)
                 fetchServiceProviderDetails(booking.providerEmail)
 
-                // Check if booking is completed and has a payment ID
+                // Check if booking is completed and has a payment ID (Mao rani ako gi add/modify)
                 if (booking.bookingStatus == "Completed" && !booking.bookingPaymentId.isNullOrEmpty()) {
-                    // Initialize StripeHelper
-                    val stripeHelper = StripeHelper(requireContext(), this)
-                    // Send receipt
+                    // Use the class-level stripeHelper instead of creating a new instance
                     stripeHelper.sendReceipt(booking.bookingPaymentId)
                 }
             }
@@ -203,7 +207,7 @@ class BookingDetailsFragment : Fragment() {
                 user?.let {
                     clientNameTextView.text = it.name
                     Picasso.get().load(it.profileImageUrl).into(clientProfileImage)
-                    
+
                     // Set client rating
                     val rating = it.userRating ?: 0f
                     clientRatingTextView.text = "★ ${String.format("%.1f", rating)}"
@@ -228,7 +232,7 @@ class BookingDetailsFragment : Fragment() {
                 user?.let {
                     providerNameTextView.text = it.name
                     Picasso.get().load(it.profileImageUrl).into(providerProfileImage)
-                    
+
                     // After getting user details, fetch their skill rating
                     fetchProviderSkillRating(providerEmail)
                 }
@@ -242,7 +246,7 @@ class BookingDetailsFragment : Fragment() {
 
     private fun fetchProviderSkillRating(providerEmail: String) {
         val skillsRef = FirebaseDatabase.getInstance().getReference("skills")
-        
+
         skillsRef.orderByChild("user").equalTo(providerEmail)
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
@@ -290,7 +294,7 @@ class BookingDetailsFragment : Fragment() {
                 if (!location.isNullOrEmpty()) {
                     // Create a Uri for Google Maps search
                     val gmmIntentUri = Uri.parse("geo:0,0?q=${Uri.encode(location)}")
-                    
+
                     // Create an Intent to open Google Maps
                     val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
                     mapIntent.setPackage("com.google.android.apps.maps")
@@ -300,7 +304,7 @@ class BookingDetailsFragment : Fragment() {
                         startActivity(mapIntent)
                     } else {
                         // If Google Maps is not installed, open in browser
-                        val browserIntent = Intent(Intent.ACTION_VIEW, 
+                        val browserIntent = Intent(Intent.ACTION_VIEW,
                             Uri.parse("https://www.google.com/maps/search/?api=1&query=${Uri.encode(location)}")
                         )
                         startActivity(browserIntent)
