@@ -86,6 +86,8 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         super.onCreate(savedInstanceState)
         auth = FirebaseAuth.getInstance()
         databaseReference = FirebaseDatabase.getInstance().getReference("users")
+        // Initialize StripeHelper in onCreate instead of onCreateView
+        stripeHelper = StripeHelper(requireContext(), this)
     }
 
     override fun onCreateView(
@@ -101,8 +103,6 @@ class ActivityFragmentClient_BookDetails : Fragment() {
             startTime = arguments?.getString("startTime") ?: ""
             endTime = arguments?.getString("endTime") ?: ""
         }
-
-        stripeHelper = StripeHelper(requireContext(), this) // 'this' refers to the fragment's lifecycle owner
 
 
         // Initialize views

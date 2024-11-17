@@ -20,7 +20,7 @@ class StripeHelper(
     private val context: Context,
     private val fragment: Fragment
 ) {
-    private lateinit var paymentSheet: PaymentSheet
+    private var paymentSheet: PaymentSheet = PaymentSheet(fragment, ::onPaymentSheetResult)
     private var originalAmount: Double = 0.0
     private var commissionAmount: Double = 0.0
     private var totalAmount: Double = 0.0
@@ -29,20 +29,12 @@ class StripeHelper(
     private var paymentDate: String = ""
 
     init {
-        // (Mao rani ako gi add/modify)
-        // Gi tangtangan nako og paymentSheet ako gihimo og functions
         PaymentConfiguration.init(
             context,
             "pk_test_51PF9FWAhzNNxsP4Y16z3rl21cn5T7WtCrwTj2hIIFqXxwbBY3UhjhWtRkpkpQ6FncE9yv6FjHS2SVEEuT0f5zjnj00eAOub2Sx"
         )
     }
 
-    // (Mao rani ako gi add/modify)
-    fun initializePaymentSheet() {
-        if (!::paymentSheet.isInitialized) {
-            paymentSheet = PaymentSheet(fragment, ::onPaymentSheetResult)
-        }
-    }
 
     fun fetchPayment(amount: Double, currency: String, userEmail: String, providerEmail: String, serviceOffered: String) {
         // Store original amount for later use

@@ -66,7 +66,6 @@ class BookingDetailsFragment : Fragment() {
 
         // Initialize StripeHelper here (Mao rani ako gi add/modify)
         stripeHelper = StripeHelper(requireContext(), this)
-        stripeHelper.initializePaymentSheet()
     }
 
     override fun onCreateView(
@@ -165,10 +164,13 @@ class BookingDetailsFragment : Fragment() {
                 fetchClientDetails(booking.bookByEmail)
                 fetchServiceProviderDetails(booking.providerEmail)
 
-                // Check if booking is completed and has a payment ID (Mao rani ako gi add/modify)
+                // Check if booking is completed and has a payment ID
                 if (booking.bookingStatus == "Completed" && !booking.bookingPaymentId.isNullOrEmpty()) {
-                    // Use the class-level stripeHelper instead of creating a new instance
-                    stripeHelper.sendReceipt(booking.bookingPaymentId)
+                    try {
+                        stripeHelper.sendReceipt(booking.bookingPaymentId)
+                    } catch (e: Exception) {
+                        Log.e("BookingDetailsFragment", "Error sending receipt", e)
+                    }
                 }
             }
         }.addOnFailureListener { exception ->
