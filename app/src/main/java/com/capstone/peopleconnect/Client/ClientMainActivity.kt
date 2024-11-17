@@ -54,41 +54,103 @@ class ClientMainActivity : AppCompatActivity() {
         // Initialize the speech recognition helper with a callback to handle speech results
         speechRecognitionHelper = SpeechRecognitionHelper(this, object : SpeechRecognitionCallback {
             override fun onSpeechResult(result: String) {
-                // Send the recognized text to Wit.ai for further processing
                 witAiHandler.sendMessageToWit(result, object : WitAiHandler.WitAiCallback {
-                    // In your onResponse method
                     override fun onResponse(
                         bookDay: String,
                         startTime: String,
                         endTime: String,
                         rating: String,
                         serviceType: String,
-                        intentName: String
+                        target: String
                     ) {
-                        Log.d("ClientMainActivity", "Wit.ai response: Day: $bookDay, Time: $startTime to $endTime, Rating: $rating, Service: $serviceType")
+                        Log.d("ClientMainActivity", """
+                            Wit.ai response:
+                            Target: $target
+                            Day: $bookDay
+                            Time: $startTime to $endTime
+                            Rating: $rating
+                            Service: $serviceType
+                        """.trimIndent())
 
-                        val name = "book_service"
-
-                        // Create an additional bundle for other parameters
-                        val additionalParams = Bundle().apply {
-                            putString("bookDay", bookDay)
-                            putString("startTime", startTime)
-                            putString("endTime", endTime)
-                            putString("rating", rating)
-                            putString("serviceType", serviceType)
-                        }
-
-                        if (intentName == name) {
-                            // Load CategoryFragmentClient and include email
-                            loadFragment(CategoryFragmentClient(), "categories", firstName, middleName, lastName, userName, address, email, profileImage, additionalParams)
-                            bottomNavigationView.selectedItemId = R.id.categories
+                        runOnUiThread {
+                            when (target) {
+                                "book_service" -> {
+                                    val additionalParams = Bundle().apply {
+                                        putString("bookDay", bookDay)
+                                        putString("startTime", startTime)
+                                        putString("endTime", endTime)
+                                        putString("rating", rating)
+                                        putString("serviceType", serviceType)
+                                        putString("target", target)
+                                    }
+                                    
+                                    loadFragment(
+                                        CategoryFragmentClient(),
+                                        "categories",
+                                        firstName,
+                                        middleName,
+                                        lastName,
+                                        userName,
+                                        address,
+                                        email,
+                                        profileImage,
+                                        additionalParams
+                                    )
+                                    bottomNavigationView.selectedItemId = R.id.categories
+                                }
+                                "view_profile" -> {
+                                    loadFragment(
+                                        ProfileFragmentClient(),
+                                        "profile",
+                                        firstName,
+                                        middleName,
+                                        lastName,
+                                        userName,
+                                        address,
+                                        email,
+                                        profileImage
+                                    )
+                                    bottomNavigationView.selectedItemId = R.id.profile
+                                }
+                                "cancel_booking" -> {
+                                    val additionalParams = Bundle().apply {
+                                        putString("target", target)
+                                        putString("serviceType", serviceType)
+                                    }
+                                    loadFragment(
+                                        ActivityFragmentClient(),
+                                        "activities",
+                                        firstName,
+                                        middleName,
+                                        lastName,
+                                        userName,
+                                        address,
+                                        email,
+                                        profileImage,
+                                        additionalParams
+                                    )
+                                    bottomNavigationView.selectedItemId = R.id.activities
+                                }
+                                else -> {
+                                    Toast.makeText(
+                                        this@ClientMainActivity,
+                                        "Command not recognized: $target",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            }
                         }
                     }
 
-
-
                     override fun onError(errorMessage: String) {
                         Log.e("ClientMainActivity", "Wit.ai error: $errorMessage")
+                        runOnUiThread {
+                            Toast.makeText(
+                                this@ClientMainActivity,
+                                "Error processing command: $errorMessage",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
                 })
             }
