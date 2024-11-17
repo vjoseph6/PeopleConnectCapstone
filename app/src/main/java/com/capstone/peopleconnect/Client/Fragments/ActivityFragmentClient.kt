@@ -31,6 +31,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import android.os.Handler
 
 
 class ActivityFragmentClient : Fragment() {
@@ -108,6 +109,29 @@ class ActivityFragmentClient : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         updateDateText(view)
+
+        // Check if we need to auto-cancel bookings
+        arguments?.let { args ->
+            val target = args.getString("target")
+            val serviceType = args.getString("serviceType")
+            
+            if (target == "cancel_booking") {
+                val tvBooking = view.findViewById<TextView>(R.id.tvBooking_Present)
+                tvBooking.performClick()
+                
+                // Wait for bookings to load
+                Handler().postDelayed({
+                    // Check if serviceType is null, empty, or "Service Type not found"
+                    if (serviceType.isNullOrEmpty() || serviceType == "Service Type not found") {
+                        // Cancel all pending bookings
+                        cancelAllPendingBookings()
+                    } else {
+                        // Cancel specific service type bookings
+                        cancelBookingsByService(serviceType)
+                    }
+                }, 500)
+            }
+        }
 
         // Notification icons
         val notificationIcons: LinearLayout = view.findViewById(R.id.notificationLayout)
@@ -286,6 +310,127 @@ class ActivityFragmentClient : Fragment() {
                 }
             })
     }
+
+    private fun cancelAllPendingBookings() {
+        val pendingBookings = allBookings.filter { 
+            it.second.bookingStatus != "Canceled" && 
+            it.second.bookingStatus != "Completed" && 
+            it.second.bookingStatus != "Failed"
+        }
+
+        if (pendingBookings.isEmpty()) {
+            Toast.makeText(context, "No pending bookings to cancel", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Show confirmation dialog first
+        val confirmDialog = AlertDialog.Builder(requireContext())
+            .setTitle("Cancel All Bookings")
+            .setMessage("Are you sure you want to cancel all pending bookings?")
+            .setPositiveButton("Yes") { _, _ ->
+                showCancellationDialog(pendingBookings)
+            }
+            .setNegativeButton("No", null)
+            .create()
+
+        confirmDialog.window?.attributes?.windowAnimations = R.style.DialogAnimation
+        confirmDialog.show()
+    }
+
+    private fun cancelBookingsByService(targetServiceType: String) {
+        val pendingBookings = allBookings.filter { 
+            it.second.bookingStatus != "Canceled" && 
+            it.second.bookingStatus != "Completed" && 
+            it.second.bookingStatus != "Failed" &&
+            it.second.serviceOffered == targetServiceType
+        }
+
+        if (pendingBookings.isEmpty()) {
+            Toast.makeText(
+                context, 
+                "No pending bookings found for $targetServiceType", 
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        // Show confirmation dialog first
+        val confirmDialog = AlertDialog.Builder(requireContext())
+            .setTitle("Cancel $targetServiceType Bookings")
+            .setMessage("Are you sure you want to cancel all pending bookings for $targetServiceType?")
+            .setPositiveButton("Yes") { _, _ ->
+                showCancellationDialog(pendingBookings)
+            }
+            .setNegativeButton("No", null)
+            .create()
+
+        confirmDialog.window?.attributes?.windowAnimations = R.style.DialogAnimation
+        confirmDialog.show()
+    }
+
+    private fun showCancellationDialog(bookingsToCancel: List<Pair<String, Bookings>>) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_cancel_booking, null)
+        val builder = AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .setCancelable(true)
+
+        val alertDialog = builder.create()
+        val btnYes: Button = dialogView.findViewById(R.id.btnYes)
+        val btnNo: TextView = dialogView.findViewById(R.id.btnNo)
+        val radioGroup: RadioGroup = dialogView.findViewById(R.id.optionsRadioGroup)
+
+
+        btnYes.setOnClickListener {
+            val selectedOptionId = radioGroup.checkedRadioButtonId
+            if (selectedOptionId != -1) {
+                val selectedRadioButton: RadioButton = dialogView.findViewById(selectedOptionId)
+                val cancellationReason = selectedRadioButton.text.toString()
+
+                var successCount = 0
+                bookingsToCancel.forEach { (bookingKey, _) ->
+                    val databaseReference = FirebaseDatabase.getInstance()
+                        .getReference("bookings/$bookingKey")
+
+                    val updates = mapOf(
+                        "bookingCancelClient" to cancellationReason
+                    )
+
+                    databaseReference.updateChildren(updates).addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            databaseReference.removeValue().addOnCompleteListener { removeTask ->
+                                if (removeTask.isSuccessful) {
+                                    successCount++
+                                    if (successCount == bookingsToCancel.size) {
+                                        Toast.makeText(
+                                            context,
+                                            "Successfully canceled ${bookingsToCancel.size} booking(s)",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        email?.let { fetchBookingsForClient(it) }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                alertDialog.dismiss()
+            } else {
+                Toast.makeText(
+                    context,
+                    "Please select a reason for canceling",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
+        btnNo.setOnClickListener {
+            alertDialog.dismiss()
+        }
+
+        alertDialog.window?.attributes?.windowAnimations = R.style.DialogAnimation
+        alertDialog.show()
+    }
+
     companion object {
         @JvmStatic
         fun newInstance(email: String) =
