@@ -58,14 +58,28 @@ class ActivityFragmentClient : Fragment() {
         val view = inflater.inflate(R.layout.fragment_activity_client, container, false)
 
         recyclerView = view.findViewById(R.id.recyclerView)
-        adapter = BookingClientAdapter(bookings, ::fetchUserData, ::cancelBooking){ bookingId ->
-            // Navigate to BookingDetailsFragment with the bookingId and isClient flag
-            val bookingDetailsFragment = BookingDetailsFragment.newInstance(bookingId, isClient = true)
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.frame_layout, bookingDetailsFragment)
-                .addToBackStack(null)
-                .commit()
-        }
+        // Replace the existing adapter initialization in onCreateView with this:
+        adapter = BookingClientAdapter(
+            bookings = bookings,
+            fetchUserData = ::fetchUserData,
+            onCancelBooking = ::cancelBooking,
+            onItemClickListener = { bookingId ->
+                // Navigate to BookingDetailsFragment with the bookingId and isClient flag
+                val bookingDetailsFragment = BookingDetailsFragment.newInstance(bookingId, isClient = true)
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.frame_layout, bookingDetailsFragment)
+                    .addToBackStack(null)
+                    .commit()
+            },
+            onItemLongClickListener = { bookingId, booking ->
+                // Navigate to OngoingFragmentClient
+                val ongoingFragment = OngoingFragmentClient.newInstance(bookingId, booking.providerEmail)
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.frame_layout, ongoingFragment)
+                    .addToBackStack(null)
+                    .commit()
+            }
+        )
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = adapter
         emptyView = view.findViewById(R.id.emptyView)

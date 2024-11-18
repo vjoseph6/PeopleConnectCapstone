@@ -88,14 +88,33 @@ class ActivityFragmentSProvider : Fragment(){
         }
 
         recyclerView = view.findViewById(R.id.recyclerView)
-        adapter = BookingSProviderAdapter(bookings, ::fetchUserData, ::acceptBooking, ::cancelBooking) { bookingId ->
-            // Navigate to BookingDetailsFragment with the bookingId only
-            val bookingDetailsFragment = BookingDetailsFragment.newInstance(bookingId)
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.frame_layout, bookingDetailsFragment)
-                .addToBackStack(null)
-                .commit()
-        }
+        // Replace the existing adapter initialization in onCreateView with this:
+        adapter = BookingSProviderAdapter(
+            bookings = bookings,
+            fetchUserData = ::fetchUserData,
+            onAcceptBooking = ::acceptBooking,
+            onCancelBooking = ::cancelBooking,
+            onItemClickListener = { bookingId ->
+                // Existing code remains the same
+                val bookingDetailsFragment = BookingDetailsFragment.newInstance(bookingId, isClient = false)
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.frame_layout, bookingDetailsFragment)
+                    .addToBackStack(null)
+                    .commit()
+            },
+            onItemLongClickListener = { bookingId, booking ->
+                // Updated navigation to OngoingFragmentSProvider with correct parameters
+                val ongoingFragment = OngoingFragmentSProvider.newInstance(
+                    bookingId = bookingId,
+                    clientEmail = booking.bookByEmail,
+                    providerEmail = booking.providerEmail  // Add provider's email
+                )
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.frame_layout, ongoingFragment)
+                    .addToBackStack(null)
+                    .commit()
+            }
+        )
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = adapter
         emptyView = view.findViewById(R.id.emptyView)
