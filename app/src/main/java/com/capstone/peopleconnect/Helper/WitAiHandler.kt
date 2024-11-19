@@ -2,6 +2,7 @@ package com.capstone.peopleconnect.Helper
 
 import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import com.capstone.peopleconnect.Client.ClientMainActivity
 import com.capstone.peopleconnect.R
 import okhttp3.*
@@ -64,8 +65,17 @@ class WitAiHandler(private val context: Context) {
             Log.d("RESPONSE", "$response")
             val entities = jsonResponse.optJSONObject("entities")
             
-            // Extract target instead of intent
+            // Extract target and check for multiple targets
             val targetArray = entities?.optJSONArray("target:target")
+            if (targetArray != null && targetArray.length() > 1) {
+                // Multiple targets found - show error
+                Log.e("WitAiHandler", "Multiple targets detected: ${targetArray.length()} targets")
+                (context as? ClientMainActivity)?.runOnUiThread {
+                    callback.onError("Multiple actions detected. Please specify one action at a time.")
+                }
+                return
+            }
+            
             val target = targetArray?.optJSONObject(0)?.optString("value") ?: "Target not found"
             Log.d("Target", "Target: $target")
 
