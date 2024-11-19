@@ -14,10 +14,11 @@ import com.capstone.peopleconnect.R
 import com.squareup.picasso.Picasso
 
 class BookingClientAdapter(
-    private var bookings: List<Pair<String, Bookings>>,  // Now a Pair of key and booking
+    private var bookings: List<Pair<String, Bookings>>,
     private val fetchUserData: (String, (User) -> Unit) -> Unit,
     private val onCancelBooking: (String) -> Unit,
-    private val onItemClickListener: (String) -> Unit
+    private val onItemClickListener: (String) -> Unit,
+    private val onItemLongClickListener: (String, Bookings) -> Unit  // Add this new parameter
 ) : RecyclerView.Adapter<BookingClientAdapter.ViewHolder>() {
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -28,9 +29,29 @@ class BookingClientAdapter(
         val serviceTextView: TextView = itemView.findViewById(R.id.serviceOffered)
 
         init {
+            // Existing click listener
             itemView.setOnClickListener {
-                val bookingKey = bookings[adapterPosition].first
-                onItemClickListener(bookingKey)
+                val position = adapterPosition
+                if (position != RecyclerView.NO_POSITION) {
+                    val bookingKey = bookings[position].first
+                    onItemClickListener(bookingKey)
+                }
+            }
+
+            // Add long click listener
+            itemView.setOnLongClickListener {
+                val position = adapterPosition
+                if (position != RecyclerView.NO_POSITION) {
+                    val (bookingKey, booking) = bookings[position]
+                    if (booking.bookingStatus == "Accepted") {
+                        onItemLongClickListener(bookingKey, booking)
+                        true
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                }
             }
         }
 

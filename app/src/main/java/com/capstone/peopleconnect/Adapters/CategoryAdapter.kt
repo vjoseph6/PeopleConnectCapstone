@@ -24,10 +24,17 @@ class CategoryAdapter(
     override fun onBindViewHolder(holder: CategoryViewHolder, position: Int) {
         val category = categories[position]
         holder.tvName.text = category.name
-        Picasso.get()
-            .load(category.image)
-            .error(R.drawable.profile) // Default error image
-            .into(holder.tvImage)
+
+        // Add null/empty check for image URL
+        if (!category.image.isNullOrEmpty()) {
+            Picasso.get()
+                .load(category.image)
+                .error(R.drawable.profile)
+                .into(holder.tvImage)
+        } else {
+            // Load default image if URL is null or empty
+            holder.tvImage.setImageResource(R.drawable.profile)
+        }
 
         // Set a click listener for each category item
         holder.itemView.setOnClickListener {

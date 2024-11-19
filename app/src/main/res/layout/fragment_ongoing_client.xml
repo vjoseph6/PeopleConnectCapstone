@@ -66,7 +66,6 @@
                     app:layout_constraintEnd_toEndOf="parent"
                     android:scaleType="centerCrop" />
 
-                <!-- Client Name TextView -->
                 <TextView
                     android:id="@+id/sprovider_name"
                     android:layout_width="wrap_content"
@@ -163,7 +162,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:src="@drawable/client_well_done_ongoing"
+                    android:src="@drawable/client_location_ongoing"
                     app:layout_constraintTop_toBottomOf="@id/progress_status_bar"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"

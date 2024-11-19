@@ -15,11 +15,12 @@ import com.capstone.peopleconnect.R
 import com.squareup.picasso.Picasso
 
 class BookingSProviderAdapter(
-    private var bookings: List<Pair<String, Bookings>>,  // Use Pair to hold the Firebase key and Booking
+    private var bookings: List<Pair<String, Bookings>>,
     private val fetchUserData: (String, (User) -> Unit) -> Unit,
     private val onAcceptBooking: (String) -> Unit,
     private val onCancelBooking: (String) -> Unit,
-    private val onItemClickListener: (String) -> Unit // Add this parameter
+    private val onItemClickListener: (String) -> Unit,
+    private val onItemLongClickListener: (String, Bookings) -> Unit  // Add this new parameter
 ) : RecyclerView.Adapter<BookingSProviderAdapter.ViewHolder>() {
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -31,9 +32,29 @@ class BookingSProviderAdapter(
         val serviceTextView: TextView = itemView.findViewById(R.id.tvService)
 
         init {
+            // Existing click listener
             itemView.setOnClickListener {
-                val bookingKey = bookings[adapterPosition].first
-                onItemClickListener(bookingKey)
+                val position = adapterPosition
+                if (position != RecyclerView.NO_POSITION) {
+                    val bookingKey = bookings[position].first
+                    onItemClickListener(bookingKey)
+                }
+            }
+
+            // Add long click listener
+            itemView.setOnLongClickListener {
+                val position = adapterPosition
+                if (position != RecyclerView.NO_POSITION) {
+                    val (bookingKey, booking) = bookings[position]
+                    if (booking.bookingStatus == "Accepted") {
+                        onItemLongClickListener(bookingKey, booking)
+                        true
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                }
             }
         }
 

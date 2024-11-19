@@ -602,33 +602,65 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         val validImageUris = imageUris.filterNotNull()
 
         uploadImagesToFirebase(userEmail, validImageUris, bookingId) { imageUrls ->
-            if (imageUrls.isNotEmpty()) {
-                val booking = Bookings(
-                    bookingId = bookingId,
-                    bookByEmail = userEmail,
-                    providerEmail = providerEmail,
-                    bookingStatus = "Pending",
-                    serviceOffered = serviceOffered,
-                    bookingStartTime = startTimeEditText.text.toString(),
-                    bookingEndTime = endTimeEditText.text.toString(),
-                    bookingDescription = descEditText.text.toString(),
-                    bookingDay = dateEditText.text.toString(),
-                    bookingLocation = locationEditText.text.toString(),
-                    bookingAmount = payment.originalAmount,
-                    bookingCommissionAmount = payment.commissionAmount,
-                    bookingTotalAmount = payment.paymentAmount,
-                    bookingPaymentMethod = payment.paymentMethod,
-                    bookingPaymentId = payment.paymentId,
-                    bookingCancelClient = "",
-                    bookingCancelProvider = "",
-                    bookingUploadImages = imageUrls
-                )
+            val booking = Bookings(
+                bookingId = bookingId,
+                bookByEmail = userEmail,
+                providerEmail = providerEmail,
+                bookingStatus = "Pending",
+                serviceOffered = serviceOffered,
+                bookingStartTime = startTimeEditText.text.toString(),
+                bookingEndTime = endTimeEditText.text.toString(),
+                bookingDescription = descEditText.text.toString(),
+                bookingDay = dateEditText.text.toString(),
+                bookingLocation = locationEditText.text.toString(),
+                bookingAmount = payment.originalAmount,
+                bookingCommissionAmount = payment.commissionAmount,
+                bookingTotalAmount = payment.paymentAmount,
+                bookingPaymentMethod = payment.paymentMethod,
+                bookingPaymentId = payment.paymentId,
+                bookingCancelClient = "",
+                bookingCancelProvider = "",
+                bookingUploadImages = imageUrls
+            )
 
-                saveBookingToDatabase(bookingId, booking)
-            } else {
-                Log.e("SaveBooking", "Image upload failed.")
-                Toast.makeText(requireContext(), "Image upload failed. Please try again.", Toast.LENGTH_SHORT).show()
-                dismissLoadingDialog()
+            // Establish chat connection regardless of image upload status
+            val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+            val databaseRef = FirebaseDatabase.getInstance().getReference("chat_connections")
+
+            if (currentUserId != null) {
+                FirebaseDatabase.getInstance().getReference("users")
+                    .orderByChild("email")
+                    .equalTo(providerEmail)
+                    .addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            val providerId = snapshot.children.firstOrNull()?.child("userId")?.getValue(String::class.java)
+                            if (providerId != null) {
+                                databaseRef.child(currentUserId).child(providerId).setValue(true)
+                                databaseRef.child(providerId).child(currentUserId).setValue(true)
+                            }
+
+                            // Save booking after establishing chat connection
+                            if (imageUrls.isNotEmpty() || validImageUris.isEmpty()) {
+                                saveBookingToDatabase(bookingId, booking)
+                            } else {
+                                Log.e("SaveBooking", "Image upload failed.")
+                                Toast.makeText(requireContext(), "Image upload failed. Please try again.", Toast.LENGTH_SHORT).show()
+                                dismissLoadingDialog()
+                            }
+                        }
+
+                        override fun onCancelled(error: DatabaseError) {
+                            Log.e("Booking", "Failed to establish chat connection", error.toException())
+                            // Still save the booking even if chat connection fails
+                            if (imageUrls.isNotEmpty() || validImageUris.isEmpty()) {
+                                saveBookingToDatabase(bookingId, booking)
+                            } else {
+                                Log.e("SaveBooking", "Image upload failed.")
+                                Toast.makeText(requireContext(), "Image upload failed. Please try again.", Toast.LENGTH_SHORT).show()
+                                dismissLoadingDialog()
+                            }
+                        }
+                    })
             }
         }
     }
