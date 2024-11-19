@@ -95,7 +95,17 @@ class MessageFragmentSProvider : Fragment() {
 
         chatConnectionsListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                fetchUsersFromFirebase() // Refresh the list when connections change
+                val connectedClientIds = snapshot.children.mapNotNull {
+                    if (it.getValue(Boolean::class.java) == true) it.key else null
+                }
+
+                if (connectedClientIds.isEmpty()) {
+                    hideLoading()
+                    showEmptyState("No active clients")
+                    return
+                }
+
+                fetchUserDetails(connectedClientIds)
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -197,7 +207,7 @@ class MessageFragmentSProvider : Fragment() {
                                 hideLoading()
 
                                 if (newChatUserList.isEmpty()) {
-                                    showEmptyState("No active clients available")
+                                    showEmptyState("No active clients")
                                 }
 
                             } catch (e: Exception) {
@@ -239,7 +249,52 @@ class MessageFragmentSProvider : Fragment() {
 
     private fun handleError(message: String, error: Throwable? = null) {
         hideLoading()
-        error?.let { Log.e("MessageFragment", message, it) }
+        error?.let {
+            Log.e("MessageFragment", message, it)
+            // Add chat connection recovery logic
+            if (message.contains("chat_connections")) {
+                val currentUserId = getCurrentUserId()
+                if (currentUserId != null) {
+                    FirebaseDatabase.getInstance()
+                        .getReference("bookings")
+                        .orderByChild("providerEmail")
+                        .equalTo(auth.currentUser?.email)
+                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(snapshot: DataSnapshot) {
+                                snapshot.children.forEach { bookingSnapshot ->
+                                    val clientEmail = bookingSnapshot.child("bookByEmail").getValue(String::class.java)
+                                    val status = bookingSnapshot.child("bookingStatus").getValue(String::class.java)
+
+                                    if (clientEmail != null && (status == "Pending" || status == "Accepted")) {
+                                        // Get client's userId and reestablish connection
+                                        FirebaseDatabase.getInstance().getReference("users")
+                                            .orderByChild("email")
+                                            .equalTo(clientEmail)
+                                            .addListenerForSingleValueEvent(object : ValueEventListener {
+                                                override fun onDataChange(userSnapshot: DataSnapshot) {
+                                                    val clientId = userSnapshot.children.firstOrNull()
+                                                        ?.child("userId")?.getValue(String::class.java)
+                                                    if (clientId != null) {
+                                                        val databaseRef = FirebaseDatabase.getInstance()
+                                                            .getReference("chat_connections")
+                                                        databaseRef.child(currentUserId).child(clientId).setValue(true)
+                                                        databaseRef.child(clientId).child(currentUserId).setValue(true)
+                                                    }
+                                                }
+                                                override fun onCancelled(dbError: DatabaseError) {
+                                                    Log.e("MessageFragment", "Failed to get client ID", dbError.toException())
+                                                }
+                                            })
+                                    }
+                                }
+                            }
+                            override fun onCancelled(databaseError: DatabaseError) {
+                                Log.e("MessageFragment", "Failed to check bookings", databaseError.toException())
+                            }
+                        })
+                }
+            }
+        }
 
         if (retryCount < maxRetries && !isRetrying) {
             retryCount++

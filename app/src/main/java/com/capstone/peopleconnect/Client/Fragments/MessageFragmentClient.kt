@@ -29,7 +29,6 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.GenericTypeIndicator
 import com.google.firebase.database.ValueEventListener
-import io.getstream.chat.android.client.ChatClient
 
 class MessageFragmentClient : Fragment() {
 
@@ -46,13 +45,10 @@ class MessageFragmentClient : Fragment() {
     private lateinit var emptyStateText: TextView
     private var chatConnectionsListener: ValueEventListener? = null
     private lateinit var chatConnectionsRef: DatabaseReference
-    private lateinit var chatClient: ChatClient
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         auth = FirebaseAuth.getInstance()  // Initialize FirebaseAuth here
-        // Initialize ChatClient
-        chatClient = ChatClient.instance()
     }
 
 
@@ -112,7 +108,17 @@ class MessageFragmentClient : Fragment() {
 
         chatConnectionsListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                fetchUsersFromFirebase() // Refresh the list when connections change
+                val connectedProviderIds = snapshot.children.mapNotNull {
+                    if (it.getValue(Boolean::class.java) == true) it.key else null
+                }
+
+                if (connectedProviderIds.isEmpty()) {
+                    hideLoading()
+                    showEmptyState("No active service providers")
+                    return
+                }
+
+                fetchUserDetails(connectedProviderIds)
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -201,7 +207,7 @@ class MessageFragmentClient : Fragment() {
                                 hideLoading()
 
                                 if (newChatUserList.isEmpty()) {
-                                    showEmptyState("No active service providers available")
+                                    showEmptyState("No active service providers")
                                 }
 
                             } catch (e: Exception) {
@@ -243,7 +249,52 @@ class MessageFragmentClient : Fragment() {
 
     private fun handleError(message: String, error: Throwable? = null) {
         hideLoading()
-        error?.let { Log.e("MessageFragment", message, it) }
+        error?.let {
+            Log.e("MessageFragment", message, it)
+            // Add chat connection recovery logic
+            if (message.contains("chat_connections")) {
+                val currentUserId = getCurrentUserId()
+                if (currentUserId != null) {
+                    FirebaseDatabase.getInstance()
+                        .getReference("bookings")
+                        .orderByChild("bookByEmail")
+                        .equalTo(auth.currentUser?.email)
+                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(snapshot: DataSnapshot) {
+                                snapshot.children.forEach { bookingSnapshot ->
+                                    val providerEmail = bookingSnapshot.child("providerEmail").getValue(String::class.java)
+                                    val status = bookingSnapshot.child("bookingStatus").getValue(String::class.java)
+
+                                    if (providerEmail != null && (status == "Pending" || status == "Accepted")) {
+                                        // Get provider's userId and reestablish connection
+                                        FirebaseDatabase.getInstance().getReference("users")
+                                            .orderByChild("email")
+                                            .equalTo(providerEmail)
+                                            .addListenerForSingleValueEvent(object : ValueEventListener {
+                                                override fun onDataChange(userSnapshot: DataSnapshot) {
+                                                    val providerId = userSnapshot.children.firstOrNull()
+                                                        ?.child("userId")?.getValue(String::class.java)
+                                                    if (providerId != null) {
+                                                        val databaseRef = FirebaseDatabase.getInstance()
+                                                            .getReference("chat_connections")
+                                                        databaseRef.child(currentUserId).child(providerId).setValue(true)
+                                                        databaseRef.child(providerId).child(currentUserId).setValue(true)
+                                                    }
+                                                }
+                                                override fun onCancelled(dbError: DatabaseError) {
+                                                    Log.e("MessageFragment", "Failed to get provider ID", dbError.toException())
+                                                }
+                                            })
+                                    }
+                                }
+                            }
+                            override fun onCancelled(databaseError: DatabaseError) {
+                                Log.e("MessageFragment", "Failed to check bookings", databaseError.toException())
+                            }
+                        })
+                }
+            }
+        }
 
         if (retryCount < maxRetries && !isRetrying) {
             retryCount++
