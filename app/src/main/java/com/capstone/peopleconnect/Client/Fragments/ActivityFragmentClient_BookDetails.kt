@@ -45,6 +45,8 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.storage.FirebaseStorage
 import com.squareup.picasso.Picasso
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Locale
 import java.util.UUID
@@ -129,12 +131,10 @@ class ActivityFragmentClient_BookDetails : Fragment() {
             .into(btnAddImages)
         locationEditText = view.findViewById(R.id.etSelectLocation)
 
+        // Set initial values from arguments
         dateEditText.setText(bookDay?.ifEmpty { "" } ?: "")
-        // Set the start time and calculate the hour rate
-        startTimeEditText.setText(startTime?.ifEmpty { "" } ?: "").also {  calculateHourRate() }
-
-        endTimeEditText.setText(endTime?.ifEmpty { "" } ?: "").also { calculateHourRate() }
-
+        startTimeEditText.setText(startTime?.ifEmpty { "" } ?: "")
+        endTimeEditText.setText(endTime?.ifEmpty { "" } ?: "")
 
         //save booking
         bookNow = view.findViewById(R.id.btnBookNow)
@@ -179,26 +179,74 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         // Date and time pickers
         dateIcon.setOnClickListener {
             showDatePicker { year, month, dayOfMonth ->
-                val selectedDate = "$year-${month + 1}-$dayOfMonth"
-                dateEditText.setText(selectedDate)
+                val calendar = Calendar.getInstance().apply {
+                    set(year, month, dayOfMonth)
+                }
+                val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                val formattedDate = dateFormat.format(calendar.time)
+                dateEditText.setText(formattedDate)
+                bookDay = formattedDate // Update the stored bookDay
+                
+                // Clear times when date changes
+                startTimeEditText.text.clear()
+                endTimeEditText.text.clear()
+                startTimeCalendar = null
+                endTimeCalendar = null
             }
         }
 
-
         startIcon.setOnClickListener {
-            showStartDateTimePicker { startTime ->
-                startTimeEditText.setText(SimpleDateFormat("hh:mm a", Locale.getDefault()).format(startTime.time))
-                startTimeCalendar = startTime // Store the full Calendar object
-                calculateHourRate() // Pass both start and end Calendar objects
+            if (dateEditText.text.isEmpty()) {
+                Toast.makeText(context, "Please select a date first", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            showStartDateTimePicker { calendar ->
+                val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+                startTimeEditText.setText(timeFormat.format(calendar.time))
+                startTimeCalendar = calendar
+                startTime = timeFormat.format(calendar.time) // Update stored startTime
+                
+                // Clear end time if it's now invalid
+                if (endTimeCalendar != null && endTimeCalendar!!.before(startTimeCalendar)) {
+                    endTimeEditText.text.clear()
+                    endTimeCalendar = null
+                    endTime = null
+                }
+                calculateHourRate()
             }
         }
 
         endIcon.setOnClickListener {
-            showEndDateTimePicker { endTime ->
-                endTimeEditText.setText(SimpleDateFormat("hh:mm a", Locale.getDefault()).format(endTime.time))
-                endTimeCalendar = endTime // Store the full Calendar object
-                calculateHourRate() // Pass both start and end Calendar objects
+            if (startTimeEditText.text.isEmpty()) {
+                Toast.makeText(context, "Please select start time first", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
             }
+            showEndDateTimePicker { calendar ->
+                val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+                endTimeEditText.setText(timeFormat.format(calendar.time))
+                endTimeCalendar = calendar
+                endTime = timeFormat.format(calendar.time) // Update stored endTime
+                calculateHourRate()
+            }
+        }
+
+        // Make EditTexts non-editable but clickable
+        dateEditText.apply {
+            isFocusable = false
+            isClickable = true
+            setOnClickListener { dateIcon.performClick() }
+        }
+
+        startTimeEditText.apply {
+            isFocusable = false
+            isClickable = true
+            setOnClickListener { startIcon.performClick() }
+        }
+
+        endTimeEditText.apply {
+            isFocusable = false
+            isClickable = true
+            setOnClickListener { endIcon.performClick() }
         }
 
         return view
@@ -207,41 +255,136 @@ class ActivityFragmentClient_BookDetails : Fragment() {
 
     private fun showDatePicker(onDateSet: (Int, Int, Int) -> Unit) {
         val calendar = Calendar.getInstance()
-        val datePickerDialog = DatePickerDialog(requireContext(), { _, year, month, dayOfMonth ->
-            onDateSet(year, month, dayOfMonth)
-        }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH))
+        
+        // Use existing bookDay if available, otherwise use current date
+        if (!bookDay.isNullOrEmpty()) {
+            try {
+                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                val localDate = LocalDate.parse(bookDay, formatter)
+                calendar.set(localDate.year, localDate.monthValue - 1, localDate.dayOfMonth)
+            } catch (e: Exception) {
+                Log.e("DatePicker", "Error parsing bookDay: $bookDay", e)
+            }
+        }
 
-        // Set the minimum date to today
-        datePickerDialog.datePicker.minDate = calendar.timeInMillis
-
-        datePickerDialog.show()
+        DatePickerDialog(
+            requireContext(),
+            { _, year, month, dayOfMonth -> 
+                onDateSet(year, month, dayOfMonth)
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        ).apply {
+            datePicker.minDate = System.currentTimeMillis() - 1000
+            show()
+        }
     }
 
-    private fun showTimePicker(year: Int, month: Int, dayOfMonth: Int, onTimeSet: (Int, Int) -> Unit) {
-        val calendar = Calendar.getInstance()
-        val timePickerDialog = TimePickerDialog(requireContext(), { _, hourOfDay, minute ->
-            // Create a Calendar object for the selected time
-            val selectedTime = Calendar.getInstance().apply {
-                set(year, month, dayOfMonth, hourOfDay, minute)
+    private fun showStartDateTimePicker(onDateTimeSet: (Calendar) -> Unit) {
+        showDatePicker { year, month, dayOfMonth ->
+            // If startTime is provided, parse it for initial time
+            var initialHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+            var initialMinute = Calendar.getInstance().get(Calendar.MINUTE)
+
+            if (!startTime.isNullOrEmpty()) {
+                try {
+                    val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+                    val parsedTime = timeFormat.parse(startTime)
+                    val timeCalendar = Calendar.getInstance().apply { time = parsedTime }
+                    initialHour = timeCalendar.get(Calendar.HOUR_OF_DAY)
+                    initialMinute = timeCalendar.get(Calendar.MINUTE)
+                } catch (e: Exception) {
+                    Log.e("TimePicker", "Error parsing startTime: $startTime", e)
+                }
             }
 
-            // Check if the selected time is before the current time on the same day
-            val currentTime = Calendar.getInstance()
-            if (selectedTime.get(Calendar.YEAR) == currentTime.get(Calendar.YEAR) &&
-                selectedTime.get(Calendar.DAY_OF_YEAR) == currentTime.get(Calendar.DAY_OF_YEAR) &&
-                selectedTime.before(currentTime)) {
-                Toast.makeText(requireContext(), "Selected time cannot be in the past.", Toast.LENGTH_SHORT).show()
-            } else {
-                onTimeSet(hourOfDay, minute) // Call the onTimeSet callback if the time is valid
+            showTimePicker(year, month, dayOfMonth, initialHour, initialMinute) { hour, minute ->
+                startTimeCalendar = Calendar.getInstance().apply {
+                    set(year, month, dayOfMonth, hour, minute)
+                }
+                onDateTimeSet(startTimeCalendar!!)
             }
-        }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), false)
-
-        // Restrict time selection if the selected date is today
-        if (year == Calendar.getInstance().get(Calendar.YEAR) &&
-            month == Calendar.getInstance().get(Calendar.MONTH) &&
-            dayOfMonth == Calendar.getInstance().get(Calendar.DAY_OF_MONTH)) {
-            timePickerDialog.updateTime(Calendar.getInstance().get(Calendar.HOUR_OF_DAY), Calendar.getInstance().get(Calendar.MINUTE))
         }
+    }
+
+    private fun showEndDateTimePicker(onDateTimeSet: (Calendar) -> Unit) {
+        showDatePicker { year, month, dayOfMonth ->
+            var initialHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+            var initialMinute = Calendar.getInstance().get(Calendar.MINUTE)
+
+            if (!endTime.isNullOrEmpty()) {
+                try {
+                    val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+                    val parsedTime = timeFormat.parse(endTime)
+                    val timeCalendar = Calendar.getInstance().apply { time = parsedTime }
+                    initialHour = timeCalendar.get(Calendar.HOUR_OF_DAY)
+                    initialMinute = timeCalendar.get(Calendar.MINUTE)
+                } catch (e: Exception) {
+                    Log.e("TimePicker", "Error parsing endTime: $endTime", e)
+                }
+            }
+
+            showTimePicker(year, month, dayOfMonth, initialHour, initialMinute) { hour, minute ->
+                val endTimeCalendar = Calendar.getInstance().apply {
+                    set(year, month, dayOfMonth, hour, minute)
+                }
+
+                // Handle cross-day bookings
+                if (startTimeCalendar != null) {
+                    if (endTimeCalendar.before(startTimeCalendar)) {
+                        // If end time is before start time, assume it's next day
+                        endTimeCalendar.add(Calendar.DAY_OF_MONTH, 1)
+                    }
+                    
+                    // Calculate duration in hours
+                    val durationInHours = (endTimeCalendar.timeInMillis - startTimeCalendar!!.timeInMillis) / (1000 * 60 * 60)
+                    
+                    // Validate duration (optional)
+                    if (durationInHours > 24) {
+                        Toast.makeText(requireContext(), "Booking duration cannot exceed 24 hours", Toast.LENGTH_SHORT).show()
+                        return@showTimePicker
+                    }
+                    
+                    onDateTimeSet(endTimeCalendar)
+                } else {
+                    Toast.makeText(requireContext(), "Please select a start time first", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun showTimePicker(
+        year: Int,
+        month: Int,
+        dayOfMonth: Int,
+        initialHour: Int,
+        initialMinute: Int,
+        onTimeSet: (Int, Int) -> Unit
+    ) {
+        val timePickerDialog = TimePickerDialog(
+            requireContext(),
+            { _, hourOfDay, minute ->
+                val selectedTime = Calendar.getInstance().apply {
+                    set(year, month, dayOfMonth, hourOfDay, minute)
+                }
+
+                // Only validate against current time if it's today
+                val currentTime = Calendar.getInstance()
+                if (year == currentTime.get(Calendar.YEAR) &&
+                    month == currentTime.get(Calendar.MONTH) &&
+                    dayOfMonth == currentTime.get(Calendar.DAY_OF_MONTH) &&
+                    selectedTime.before(currentTime)
+                ) {
+                    Toast.makeText(requireContext(), "Selected time cannot be in the past.", Toast.LENGTH_SHORT).show()
+                } else {
+                    onTimeSet(hourOfDay, minute)
+                }
+            },
+            initialHour,
+            initialMinute,
+            false
+        )
 
         timePickerDialog.show()
     }
@@ -757,39 +900,6 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         })
     }
 
-
-    private fun showStartDateTimePicker(onDateTimeSet: (Calendar) -> Unit) {
-        showDatePicker { year, month, dayOfMonth ->
-            showTimePicker(year, month, dayOfMonth) { hour, minute ->
-                startTimeCalendar = Calendar.getInstance().apply {
-                    set(year, month, dayOfMonth, hour, minute)
-                }
-                onDateTimeSet(startTimeCalendar!!)
-            }
-        }
-    }
-
-    // Show End Date and Time Picker
-    private fun showEndDateTimePicker(onDateTimeSet: (Calendar) -> Unit) {
-        showDatePicker { year, month, dayOfMonth ->
-            showTimePicker(year, month, dayOfMonth) { hour, minute ->
-                val endTimeCalendar = Calendar.getInstance().apply {
-                    set(year, month, dayOfMonth, hour, minute)
-                }
-
-                // Validate against the start time
-                if (startTimeCalendar != null) {
-                    if (endTimeCalendar.before(startTimeCalendar)) {
-                        Toast.makeText(requireContext(), "End time cannot be earlier than start time", Toast.LENGTH_SHORT).show()
-                    } else {
-                        onDateTimeSet(endTimeCalendar)
-                    }
-                } else {
-                    Toast.makeText(requireContext(), "Please select a start time first", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    }
 
     companion object {
         @JvmStatic
