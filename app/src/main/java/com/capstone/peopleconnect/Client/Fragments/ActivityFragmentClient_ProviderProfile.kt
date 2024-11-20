@@ -231,7 +231,7 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
             // Handle image click, show in full screen dialog
             val fullScreenDialog = Dialog(requireContext())
             fullScreenDialog.setContentView(R.layout.dialog_fullscreen_image)
-            val fullScreenImageView = fullScreenDialog.findViewById<ImageView>(R.id.fullscreen_image)
+            val fullScreenImageView = fullScreenDialog.findViewById<ImageView>(R.id.fullscreenImageView)
 
             // Load the image into the full-screen view using Picasso
             Picasso.get().load(imageUrl).into(fullScreenImageView)

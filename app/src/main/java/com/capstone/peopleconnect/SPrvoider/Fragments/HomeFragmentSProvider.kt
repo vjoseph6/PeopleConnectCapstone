@@ -1,6 +1,5 @@
 package com.capstone.peopleconnect.SPrvoider.Fragments
 
-import HomeBookingsAdapter
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -14,16 +13,18 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.capstone.peopleconnect.Classes.Bookings
-import com.capstone.peopleconnect.Classes.User
+import com.bumptech.glide.Glide
+import com.capstone.peopleconnect.Adapters.ClientPostAdapter
+import com.capstone.peopleconnect.Classes.Post
+import com.capstone.peopleconnect.Client.Fragments.PostDetailsFragment
 import com.capstone.peopleconnect.R
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
@@ -33,14 +34,17 @@ class HomeFragmentSProvider : Fragment() {
 
     private var email: String? = null
     private var nameTextView: TextView? = null
-    private lateinit var rvInterests: RecyclerView
-    private val bookingList = mutableListOf<Bookings>()
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var emptyView: View
+    private lateinit var database: DatabaseReference
+    private lateinit var adapter: ClientPostAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
             email = it.getString("EMAIL")
         }
+        database = FirebaseDatabase.getInstance().reference
     }
 
     override fun onCreateView(
@@ -59,52 +63,42 @@ class HomeFragmentSProvider : Fragment() {
 
 
         // Initialize RecyclerView
-        rvInterests = view.findViewById(R.id.rvInterests)
-        rvInterests.layoutManager = LinearLayoutManager(requireContext())
-        val bookingAdapter = HomeBookingsAdapter(bookingList, FirebaseDatabase.getInstance())
-        rvInterests.adapter = bookingAdapter
+        recyclerView = view.findViewById(R.id.rvInterests)
+        emptyView = view.findViewById(R.id.emptyView)
+        
+        setupRecyclerView()
 
         val currentEmail = email ?: return
-        val bookingsRef = FirebaseDatabase.getInstance().getReference("bookings")
-
-        // Fetch bookings for the current provider
-        bookingsRef.orderByChild("providerEmail").equalTo(currentEmail)
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    bookingList.clear()
-                    for (bookingSnapshot in snapshot.children) {
-                        val booking = bookingSnapshot.getValue(Bookings::class.java)
-                        booking?.let { bookingList.add(it) }
-                    }
-                    bookingAdapter.notifyDataSetChanged()
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Toast.makeText(requireContext(), "Failed to load bookings", Toast.LENGTH_SHORT).show()
-                }
-            })
-
-        fetchUserData(currentEmail) { userName, profileImageUrl ->
-            bookingAdapter.setProfileImageUrl(profileImageUrl)  // Set profile image URL in adapter
-            bookingAdapter.setUserName(userName)                // Set user name in adapter
-        }
-
-
-        // Set up icons and click listeners
         setupIconClickListeners(view)
+        fetchUserData(currentEmail)
+        retrieveUserSkills(currentEmail)
     }
 
+    private fun setupRecyclerView() {
+        adapter = ClientPostAdapter(
+            onPostClick = { post ->
+                val postDetailsFragment = PostDetailsFragment.newInstance(post, true)
+                requireActivity().supportFragmentManager.beginTransaction()
+                    .replace(R.id.frame_layout, postDetailsFragment)
+                    .addToBackStack(null)
+                    .commit()
+            },
+            isFromProvider = true
+        )
+        
+        recyclerView.apply {
+            layoutManager = LinearLayoutManager(context)
+            adapter = this@HomeFragmentSProvider.adapter
+        }
+    }
 
-    private fun fetchUserData(providerEmail: String, callback: (String?, String?) -> Unit) {
+    private fun fetchUserData(providerEmail: String) {
         val userReference = FirebaseDatabase.getInstance().getReference("users")
         userReference.orderByChild("email").equalTo(providerEmail)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     for (userSnapshot in snapshot.children) {
-                        val userName = userSnapshot.child("name").value as? String
-                        val profileImageUrl = userSnapshot.child("profileImageUrl").value as? String
                         nameTextView?.text = userSnapshot.child("firstName").value as? String
-                        callback(userName, profileImageUrl) // Pass name and profile image URL
                     }
                 }
 
@@ -157,6 +151,88 @@ class HomeFragmentSProvider : Fragment() {
 
         bottomSheetDialog.show()
     }
+
+    private fun retrieveUserSkills(email: String) {
+        val skillsReference = database.child("skills").orderByChild("user").equalTo(email)
+
+        skillsReference.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val userSkills = mutableSetOf<String>()
+
+                for (skillSnapshot in snapshot.children) {
+                    val skillItemsSnapshot = skillSnapshot.child("skillItems")
+                    for (skillItem in skillItemsSnapshot.children) {
+                        val skillName = skillItem.child("name").getValue(String::class.java)
+                        skillName?.let { userSkills.add(it) }
+                    }
+                }
+
+                if (userSkills.isEmpty()) {
+                    recyclerView.visibility = View.GONE
+                    emptyView.visibility = View.VISIBLE
+                } else {
+                    retrieveMatchingPosts(userSkills)
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(context, "Failed to load skills", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    private fun retrieveMatchingPosts(userSkills: Set<String>) {
+        val postsReference = database.child("posts")
+        val currentEmail = email // Get the current user's email
+        
+        postsReference.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val matchingPosts = mutableListOf<Post>()
+
+                for (postSnapshot in snapshot.children) {
+                    val post = postSnapshot.getValue(Post::class.java)
+
+                    if (post != null && 
+                        post.client && 
+                        userSkills.contains(post.categoryName) &&
+                        post.email != currentEmail) { // Added this condition
+                        matchingPosts.add(post)
+                    }
+                }
+
+                if (matchingPosts.isEmpty()) {
+                    showEmptyView()
+                } else {
+                    recyclerView.visibility = View.VISIBLE
+                    emptyView.visibility = View.GONE
+                    adapter.updatePosts(matchingPosts)
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(context, "Failed to load posts", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    private fun showEmptyView() {
+        recyclerView.visibility = View.GONE
+        emptyView.visibility = View.VISIBLE
+        
+        // Add animation to the empty view image
+        val emptyImage = emptyView.findViewById<ImageView>(R.id.image)
+        Glide.with(requireContext())
+            .load(R.drawable.nothing) // Your empty state image
+            .into(emptyImage)
+
+        // Optional: Add some subtle animation
+        emptyImage.animate()
+            .alpha(1f)
+            .translationY(0f)
+            .setDuration(300)
+            .start()
+    }
+
     companion object {
 
         @JvmStatic

@@ -175,6 +175,35 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/postMenuLayout_client"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="12dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginStart="12dp"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:id="@+id/ivPostIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/post_icon"
+                app:tint="@color/green"
+                android:layout_marginEnd="16dp"/>
+
+            <TextView
+                android:id="@+id/tvPost"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Manage Post"
+                android:textColor="@color/black"
+                android:textSize="12sp"
+                android:fontFamily="@font/regular_poppins"/>
+        </LinearLayout>
+
+
+        <LinearLayout
             android:id="@+id/logoutMenuLayout_client"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
