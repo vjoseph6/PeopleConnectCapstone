@@ -368,7 +368,7 @@ class ActivityFragmentSProvider : Fragment(){
                 override fun onDataChange(snapshot: DataSnapshot) {
                     for (userSnapshot in snapshot.children) {
                         val user = userSnapshot.getValue(User::class.java)
-                        user?.let { callback(it) }  // Pass user data back to the adapter
+                        user?.let { callback(it) }
                     }
                 }
 
