@@ -20,7 +20,7 @@ class BookingSProviderAdapter(
     private val onAcceptBooking: (String) -> Unit,
     private val onCancelBooking: (String) -> Unit,
     private val onItemClickListener: (String) -> Unit,
-    private val onItemLongClickListener: (String, Bookings) -> Unit  // Add this new parameter
+    private val onItemLongClickListener: (String, Bookings) -> Unit
 ) : RecyclerView.Adapter<BookingSProviderAdapter.ViewHolder>() {
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -69,7 +69,7 @@ class BookingSProviderAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val (bookingKey, booking) = bookings[position]  // Get the booking and its Firebase key
         // Fetch user data based on provider email
-        fetchUserData(booking.providerEmail) { user ->
+        fetchUserData(booking.bookByEmail) { user ->
             holder.nameTextView.text = user.name
             // Load the profile image using Picasso or Glide
             Picasso.get().load(user.profileImageUrl).into(holder.profileImageView)
