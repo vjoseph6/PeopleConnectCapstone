@@ -80,7 +80,7 @@
             android:layout_height="wrap_content"
             android:textColor="@color/black"
             android:fontFamily="@font/bold_poppins"
-            android:text="My Skills"
+            android:text="My Service"
             android:textSize="30sp"
             android:layout_marginTop="40dp"
             android:layout_marginBottom="10dp"

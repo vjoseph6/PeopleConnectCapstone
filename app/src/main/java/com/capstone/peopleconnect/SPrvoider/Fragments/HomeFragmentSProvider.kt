@@ -1,6 +1,7 @@
 package com.capstone.peopleconnect.SPrvoider.Fragments
 
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -32,6 +33,7 @@ import java.util.TimeZone
 
 class HomeFragmentSProvider : Fragment() {
 
+    private val TAG = "HomeFragmentSProvider"
     private var email: String? = null
     private var nameTextView: TextView? = null
     private lateinit var recyclerView: RecyclerView
@@ -59,13 +61,13 @@ class HomeFragmentSProvider : Fragment() {
 
         updateDateText(view)
 
-         nameTextView = view.findViewById(R.id.tvName)
+        nameTextView = view.findViewById(R.id.tvName)
 
 
         // Initialize RecyclerView
         recyclerView = view.findViewById(R.id.rvInterests)
         emptyView = view.findViewById(R.id.emptyView)
-        
+
         setupRecyclerView()
 
         val currentEmail = email ?: return
@@ -85,7 +87,7 @@ class HomeFragmentSProvider : Fragment() {
             },
             isFromProvider = true
         )
-        
+
         recyclerView.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = this@HomeFragmentSProvider.adapter
@@ -184,7 +186,7 @@ class HomeFragmentSProvider : Fragment() {
     private fun retrieveMatchingPosts(userSkills: Set<String>) {
         val postsReference = database.child("posts")
         val currentEmail = email // Get the current user's email
-        
+
         postsReference.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val matchingPosts = mutableListOf<Post>()
@@ -192,8 +194,8 @@ class HomeFragmentSProvider : Fragment() {
                 for (postSnapshot in snapshot.children) {
                     val post = postSnapshot.getValue(Post::class.java)
 
-                    if (post != null && 
-                        post.client && 
+                    if (post != null &&
+                        post.client &&
                         userSkills.contains(post.categoryName) &&
                         post.email != currentEmail) { // Added this condition
                         matchingPosts.add(post)
@@ -216,9 +218,14 @@ class HomeFragmentSProvider : Fragment() {
     }
 
     private fun showEmptyView() {
+        if (!isAdded) {
+            Log.w(TAG, "Fragment not attached to context, skipping showEmptyView")
+            return
+        }
+
         recyclerView.visibility = View.GONE
         emptyView.visibility = View.VISIBLE
-        
+
         // Add animation to the empty view image
         val emptyImage = emptyView.findViewById<ImageView>(R.id.image)
         Glide.with(requireContext())
