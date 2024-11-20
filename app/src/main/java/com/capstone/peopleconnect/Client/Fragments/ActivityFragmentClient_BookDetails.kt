@@ -793,7 +793,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         dialog.setContentView(R.layout.dialog_fullscreen_image)
 
         // Get the full-screen ImageView
-        val fullscreenImageView: ImageView = dialog.findViewById(R.id.fullscreen_image)
+        val fullscreenImageView: ImageView = dialog.findViewById(R.id.fullscreenImageView)
 
         // Set the image from the clicked ImageView
         fullscreenImageView.setImageDrawable(imageView.drawable)

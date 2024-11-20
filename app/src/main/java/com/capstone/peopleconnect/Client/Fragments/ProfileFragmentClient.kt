@@ -119,6 +119,15 @@ class ProfileFragmentClient : Fragment() {
                 .commit()
         }
 
+        // Security icons
+        val postIcons: LinearLayout = view.findViewById(R.id.postMenuLayout_client)
+        postIcons.setOnClickListener {
+            val securityFragment = ManagePostFragment.newInstance(email = email)
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, securityFragment)
+                .addToBackStack(null)
+                .commit()
+        }
 
         // Security icons
         val securityIcons: LinearLayout = view.findViewById(R.id.securityMenuLayout_client)

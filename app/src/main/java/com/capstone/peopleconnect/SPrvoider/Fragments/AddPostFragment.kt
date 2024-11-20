@@ -166,7 +166,7 @@ class AddPostFragment : Fragment() {
             postId = postId,
             postDescription = postDesc, // Get the actual description from your EditText
             email = email,
-            categoryName = categoryName,
+            categoryName = categoryName.toString(),
             postImages = imageUrls,
             postStatus = "Pending"
         )
@@ -251,7 +251,7 @@ class AddPostFragment : Fragment() {
         val dialog = Dialog(requireContext(), android.R.style.Theme_Black_NoTitleBar_Fullscreen)
         dialog.setContentView(R.layout.dialog_fullscreen_image)
 
-        val fullscreenImage: ImageView = dialog.findViewById(R.id.fullscreen_image)
+        val fullscreenImage: ImageView = dialog.findViewById(R.id.fullscreenImageView)
         Glide.with(this).load(uri).into(fullscreenImage)
 
         dialog.show()
@@ -300,6 +300,7 @@ class AddPostFragment : Fragment() {
     }
 
     companion object {
+
         private const val REQUEST_IMAGE_PICK = 1002
         private const val REQUEST_IMAGE_REPLACE = 2
         private var imageReplaceIndex: Int? = null
