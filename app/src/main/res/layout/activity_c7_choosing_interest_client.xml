@@ -9,64 +9,76 @@
 
   <androidx.constraintlayout.widget.ConstraintLayout
       android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:padding="16dp">
+      android:layout_height="wrap_content">
 
-    <!-- Top Bar -->
-    <TextView
-        android:id="@+id/tvDate"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:fontFamily="@font/regular_poppins"
-        android:text="Thursday, July 18 2024"
-        android:textSize="12sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <!-- Green Header Section -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/headerLayout"
+        android:layout_width="match_parent"
+        android:layout_height="155dp"
+        android:background="@drawable/wave_header_background"
+        android:padding="16dp"
+        app:layout_constraintTop_toTopOf="parent">
 
-    <!-- Welcome Message -->
-    <TextView
-        android:id="@+id/tvWelcome"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Welcome Joseph"
-        android:fontFamily="@font/bold_poppins"
-        android:textColor="@color/black"
-        android:textSize="24sp"
-        android:layout_marginTop="16dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvDate" />
+      <!-- Top Bar -->
+      <TextView
+          android:id="@+id/tvDate"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:fontFamily="@font/regular_poppins"
+          android:text="Thursday, July 18 2024"
+          android:textSize="16sp"
+          android:textColor="@color/white"
+          app:layout_constraintStart_toStartOf="parent"
+          app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:id="@+id/tvSubtext"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Have a nice day !"
-        android:fontFamily="@font/regular_poppins"
-        android:textSize="16sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvWelcome" />
+      <!-- Welcome Message -->
+      <TextView
+          android:id="@+id/tvWelcome"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:text="Welcome Joseph"
+          android:fontFamily="@font/bold_poppins"
+          android:textColor="@color/white"
+          android:textSize="26sp"
+          android:layout_marginTop="16dp"
+          app:layout_constraintStart_toStartOf="parent"
+          app:layout_constraintTop_toBottomOf="@id/tvDate" />
 
-    <!-- Popular Services -->
+      <TextView
+          android:id="@+id/tvSubtext"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:text="Have a nice day !"
+          android:fontFamily="@font/semibold_poppins"
+          android:textSize="16sp"
+          android:textColor="@color/white"
+          app:layout_constraintStart_toStartOf="parent"
+          app:layout_constraintTop_toBottomOf="@id/tvWelcome" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Service Categories -->
     <TextView
         android:id="@+id/tvPopularServices"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Service Categories"
-        android:textColor="@color/black"
+        android:textColor="@color/green"
         android:textSize="20sp"
-        android:fontFamily="@font/semibold_poppins"
+        android:fontFamily="@font/bold_poppins"
         android:layout_marginTop="16dp"
+        android:layout_marginStart="16dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvSubtext" />
+        app:layout_constraintTop_toBottomOf="@id/headerLayout" />
 
-    <!-- Mao ni list item sa popular services:
-         tools:listitem="@layout/client_item_popular_services"
-         -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvPopularServices"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvPopularServices"
@@ -81,19 +93,21 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Choose your interest"
-        android:fontFamily="@font/semibold_poppins"
+        android:fontFamily="@font/bold_poppins"
         android:textSize="20sp"
-        android:textColor="@color/black"
+        android:textColor="@color/green"
         android:layout_marginTop="16dp"
+        android:layout_marginStart="16dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/rvPopularServices" />
-
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvInterests"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvChooseInterest"
@@ -111,10 +125,11 @@
         android:textAllCaps="false"
         android:fontFamily="@font/regular_poppins"
         android:background="@drawable/btn_rounded_corner_client"
+        android:layout_margin="16dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/rvInterests"
-        android:layout_marginTop="16dp" />
+        app:layout_constraintBottom_toBottomOf="parent"/>
 
   </androidx.constraintlayout.widget.ConstraintLayout>
 
