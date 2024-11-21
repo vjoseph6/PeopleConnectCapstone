@@ -1,5 +1,6 @@
 package com.capstone.peopleconnect.Client.Fragments
 
+import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -27,6 +28,7 @@ class OngoingFragmentClient : Fragment() {
     private lateinit var binding: FragmentOngoingClientBinding
     private var bookingId: String? = null
     private var providerEmail: String? = null
+    private var email: String? = null  // Add this property
     private var currentState = BookingProgress.STATE_PENDING
     private var progressListener: ValueEventListener? = null
 
@@ -36,6 +38,7 @@ class OngoingFragmentClient : Fragment() {
         arguments?.let {
             bookingId = it.getString(ARG_BOOKING_ID)
             providerEmail = it.getString(ARG_PROVIDER_EMAIL)
+            email = it.getString(ARG_CLIENT_EMAIL)  // Add this line
         }
     }
 
@@ -60,7 +63,6 @@ class OngoingFragmentClient : Fragment() {
             }
         }
 
-
         // Setup back button
         binding.btnBackClient.setOnClickListener {
             parentFragmentManager.popBackStack()
@@ -74,6 +76,8 @@ class OngoingFragmentClient : Fragment() {
         // Setup progress listener
         bookingId?.let { id ->
             setupProgressListener(id)
+            // Add booking status check
+            checkBookingStatus()
         }
 
         // Modify the existing click listener for the View Message button
@@ -109,7 +113,36 @@ class OngoingFragmentClient : Fragment() {
                     })
             }
         }
+    }
 
+    private fun checkBookingStatus() {
+        bookingId?.let { id ->
+            val bookingRef = FirebaseDatabase.getInstance().getReference("bookings/$id")
+            bookingRef.child("bookingStatus").addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val status = snapshot.getValue(String::class.java)
+                    if (status == "Complete") {
+                        // Check if the fragment is still attached to avoid crashes
+                        if (!isAdded) return
+
+                        // Navigate to rating if not already rated
+                        val rateFragment = RateFragmentClient.newInstance(
+                            bookingId = id,
+                            providerEmail = providerEmail ?: "",
+                            clientEmail = email ?: ""
+                        )
+                        parentFragmentManager.beginTransaction()
+                            .replace(R.id.frame_layout, rateFragment)
+                            .addToBackStack(null)
+                            .commit()
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("OngoingFragmentClient", "Error checking booking status", error.toException())
+                }
+            })
+        }
     }
 
     private fun setupProgressListener(bookingId: String) {
@@ -129,7 +162,10 @@ class OngoingFragmentClient : Fragment() {
                         if (it.state != currentState) {
                             currentState = it.state
                             updateUI(currentState)
-                            validateStateTransition(currentState)
+                            // Add this explicit check for awaiting confirmation
+                            if (currentState == BookingProgress.STATE_AWAITING_CONFIRMATION) {
+                                showCompletionConfirmationDialog()
+                            }
                         }
                     }
                 } catch (e: Exception) {
@@ -138,7 +174,7 @@ class OngoingFragmentClient : Fragment() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                if (!isAdded) return  // Check if fragment is still attached
+                if (!isAdded) return
                 Log.e("OngoingFragmentClient", "Error loading progress", error.toException())
             }
         }
@@ -159,11 +195,63 @@ class OngoingFragmentClient : Fragment() {
             BookingProgress.STATE_WORKING -> {
                 binding.btnViewMessage.text = "View Message"
             }
+            "AWAITING_CLIENT_CONFIRMATION" -> {
+                showCompletionConfirmationDialog()
+            }
             BookingProgress.STATE_COMPLETE -> {
                 binding.btnViewMessage.text = "Well Done"
             }
         }
     }
+
+    private fun showCompletionConfirmationDialog() {
+        val builder = AlertDialog.Builder(requireContext())
+        builder.setTitle("Work Completion")
+            .setMessage("Has the work been completed?")
+            .setPositiveButton("Yes") { _, _ ->
+                bookingId?.let { id ->
+                    // Update booking progress
+                    val progress = BookingProgress(
+                        state = BookingProgress.STATE_COMPLETE,
+                        bookingId = id,
+                        providerEmail = providerEmail ?: "",
+                        clientEmail = email ?: "",
+                        timestamp = System.currentTimeMillis()
+                    )
+                    DatabaseHelper.updateBookingProgress(id, progress).addOnSuccessListener {
+                        // Update booking status in main bookings table
+                        val bookingRef = FirebaseDatabase.getInstance().getReference("bookings/$id")
+                        bookingRef.child("bookingStatus").setValue("Complete").addOnSuccessListener {
+                            // Navigate to rating screen with all required parameters
+                            val rateFragment = RateFragmentClient.newInstance(
+                                bookingId = id,
+                                providerEmail = providerEmail ?: "",
+                                clientEmail = email ?: ""
+                            )
+                            parentFragmentManager.beginTransaction()
+                                .replace(R.id.frame_layout, rateFragment)
+                                .addToBackStack(null)
+                                .commit()
+                        }
+                    }
+                }
+            }
+            .setNegativeButton("No") { _, _ ->
+                bookingId?.let { id ->
+                    val progress = BookingProgress(
+                        state = BookingProgress.STATE_WORKING,
+                        bookingId = id,
+                        providerEmail = providerEmail ?: "",
+                        clientEmail = email ?: "",
+                        timestamp = System.currentTimeMillis()
+                    )
+                    DatabaseHelper.updateBookingProgress(id, progress)
+                }
+            }
+            .setCancelable(false)
+            .show()
+    }
+
     private fun updateUI(state: String) {
         val context = requireContext()
         val greenColor = ContextCompat.getColor(context, R.color.green)
@@ -235,13 +323,15 @@ class OngoingFragmentClient : Fragment() {
     companion object {
         private const val ARG_BOOKING_ID = "booking_id"
         private const val ARG_PROVIDER_EMAIL = "provider_email"
+        private const val ARG_CLIENT_EMAIL = "client_email"
 
         @JvmStatic
-        fun newInstance(bookingId: String, providerEmail: String) =
+        fun newInstance(bookingId: String, providerEmail: String, clientEmail: String) =
             OngoingFragmentClient().apply {
                 arguments = Bundle().apply {
                     putString(ARG_BOOKING_ID, bookingId)
                     putString(ARG_PROVIDER_EMAIL, providerEmail)
+                    putString(ARG_CLIENT_EMAIL, clientEmail)
                 }
             }
     }

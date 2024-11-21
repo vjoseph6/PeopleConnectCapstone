@@ -12,5 +12,8 @@ data class BookingProgress(
         const val STATE_ARRIVE = "ARRIVE"
         const val STATE_WORKING = "WORKING"
         const val STATE_COMPLETE = "COMPLETE"
+        // Add the new state constant
+        const val STATE_AWAITING_CONFIRMATION = "AWAITING_CLIENT_CONFIRMATION"
     }
+
 }

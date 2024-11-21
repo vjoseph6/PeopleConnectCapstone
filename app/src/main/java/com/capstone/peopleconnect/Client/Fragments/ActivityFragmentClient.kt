@@ -74,7 +74,11 @@ class ActivityFragmentClient : Fragment() {
             },
             onItemLongClickListener = { bookingId, booking ->
                 // Navigate to OngoingFragmentClient
-                val ongoingFragment = OngoingFragmentClient.newInstance(bookingId, booking.providerEmail)
+                val ongoingFragment = OngoingFragmentClient.newInstance(
+                    bookingId = bookingId,
+                    providerEmail = booking.providerEmail,
+                    clientEmail = booking.bookByEmail  // Add this parameter
+                )
                 parentFragmentManager.beginTransaction()
                     .replace(R.id.frame_layout, ongoingFragment)
                     .addToBackStack(null)
@@ -181,8 +185,8 @@ class ActivityFragmentClient : Fragment() {
     // Filters bookings based on status
     private fun filterBookings(statusFilter: String) {
         val filteredBookings = when (statusFilter) {
-            "Booking" -> allBookings.filter { it.second.bookingStatus != "Canceled" && it.second.bookingStatus != "Completed" }
-            "Successful" -> allBookings.filter { it.second.bookingStatus == "Completed" }
+            "Booking" -> allBookings.filter { it.second.bookingStatus != "Canceled" && it.second.bookingStatus != "Complete" }
+            "Successful" -> allBookings.filter { it.second.bookingStatus == "Complete" }
             "Failed" -> allBookings.filter { it.second.bookingStatus == "Failed" }
             else -> allBookings
         }

@@ -105,8 +105,39 @@ class OngoingFragmentSProvider : Fragment() {
         // Setup progress listener
         bookingId?.let { id ->
             setupProgressListener(id)
+            checkBookingStatus()  // Add this line
         }
 
+    }
+
+    private fun checkBookingStatus() {
+        bookingId?.let { id ->
+            val bookingRef = FirebaseDatabase.getInstance().getReference("bookings/$id")
+            bookingRef.child("bookingStatus").addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val status = snapshot.getValue(String::class.java)
+                    if (status == "Complete" && !isUpdating) {
+                        // Check if fragment is still attached
+                        if (!isAdded) return
+
+                        // Navigate to rating screen
+                        val rateFragment = RateFragmentSProvider.newInstance(
+                            bookingId = id,
+                            clientEmail = clientEmail ?: "",
+                            providerEmail = providerEmail ?: ""
+                        )
+                        parentFragmentManager.beginTransaction()
+                            .replace(R.id.frame_layout, rateFragment)
+                            .addToBackStack(null)
+                            .commit()
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("OngoingFragmentSProvider", "Error checking booking status", error.toException())
+                }
+            })
+        }
     }
 
     private fun setupProgressListener(bookingId: String) {
@@ -159,6 +190,10 @@ class OngoingFragmentSProvider : Fragment() {
                 binding.btnSwipe.isEnabled = true
                 binding.btnSwipe.text = "Swipe to Complete"
             }
+            "AWAITING_CLIENT_CONFIRMATION" -> {
+                binding.btnSwipe.isEnabled = false
+                binding.btnSwipe.text = "Waiting for client confirmation..."
+            }
             BookingProgress.STATE_COMPLETE -> {
                 binding.btnSwipe.isEnabled = false
                 binding.btnSwipe.text = "Completed"
@@ -170,7 +205,6 @@ class OngoingFragmentSProvider : Fragment() {
     private fun handleProgressUpdate() {
         if (isUpdating || currentState == BookingProgress.STATE_COMPLETE) return
         if (NetworkHelper.isNetworkAvailable.value != true) {
-            // Show network error
             binding.btnSwipe.text = "No Internet Connection"
             return
         }
@@ -182,7 +216,7 @@ class OngoingFragmentSProvider : Fragment() {
             val nextState = when (currentState) {
                 BookingProgress.STATE_PENDING -> BookingProgress.STATE_ARRIVE
                 BookingProgress.STATE_ARRIVE -> BookingProgress.STATE_WORKING
-                BookingProgress.STATE_WORKING -> BookingProgress.STATE_COMPLETE
+                BookingProgress.STATE_WORKING -> BookingProgress.STATE_AWAITING_CONFIRMATION
                 else -> return
             }
 
@@ -199,9 +233,24 @@ class OngoingFragmentSProvider : Fragment() {
                     .addOnCompleteListener { task ->
                         isUpdating = false
                         if (task.isSuccessful) {
-                            if (nextState != BookingProgress.STATE_COMPLETE) {
+                            if (nextState == BookingProgress.STATE_AWAITING_CONFIRMATION) {
+                                binding.btnSwipe.isEnabled = false
+                                binding.btnSwipe.text = "Waiting for client confirmation..."
+                            } else if (nextState == BookingProgress.STATE_COMPLETE) {
+                                // Navigate to rating screen when booking is completed
+                                val rateFragment = RateFragmentSProvider.newInstance(
+                                    bookingId = id,
+                                    clientEmail = clientEmail ?: "",
+                                    providerEmail = providerEmail ?: ""
+                                )
+                                parentFragmentManager.beginTransaction()
+                                    .replace(R.id.frame_layout, rateFragment)
+                                    .addToBackStack(null)
+                                    .commit()
+                            } else {
                                 binding.btnSwipe.isEnabled = true
                             }
+                            updateUI(nextState)
                         } else {
                             binding.btnSwipe.isEnabled = true
                             Log.e("OngoingFragmentSProvider", "Error updating progress", task.exception)
@@ -218,8 +267,9 @@ class OngoingFragmentSProvider : Fragment() {
     }
 
 
+
+
     private fun updateUI(state: String) {
-        // Add loading indicator during state transitions
         binding.btnSwipe.text = if (isUpdating) {
             "Updating..."
         } else {
@@ -227,9 +277,11 @@ class OngoingFragmentSProvider : Fragment() {
                 BookingProgress.STATE_PENDING -> "Swipe to Arrive"
                 BookingProgress.STATE_ARRIVE -> "Swipe to Start Work"
                 BookingProgress.STATE_WORKING -> "Swipe to Complete"
+                "AWAITING_CLIENT_CONFIRMATION" -> "Waiting for client confirmation..."
                 else -> "Completed"
             }
         }
+
 
         val context = requireContext()
         val blueColor = ContextCompat.getColor(context, R.color.blue)

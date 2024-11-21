@@ -172,8 +172,8 @@ class ActivityFragmentSProvider : Fragment(){
     private fun filterBookings(statusFilter: String) {
         // Filter based on the booking status from the second element of the pair (the Booking object)
         val filteredBookings = when (statusFilter) {
-            "Booking" -> allBookings.filter { it.second.bookingStatus != "Canceled" && it.second.bookingStatus != "Completed" }
-            "Successful" -> allBookings.filter { it.second.bookingStatus == "Completed" }
+            "Booking" -> allBookings.filter { it.second.bookingStatus != "Canceled" && it.second.bookingStatus != "Complete" }
+            "Successful" -> allBookings.filter { it.second.bookingStatus == "Complete" }
             "Failed" -> allBookings.filter { it.second.bookingStatus == "Canceled" }
             else -> allBookings
         }

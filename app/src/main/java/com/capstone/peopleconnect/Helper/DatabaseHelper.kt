@@ -32,7 +32,8 @@ object DatabaseHelper {
             BookingProgress.STATE_PENDING,
             BookingProgress.STATE_ARRIVE,
             BookingProgress.STATE_WORKING,
-            BookingProgress.STATE_COMPLETE -> true
+            BookingProgress.STATE_COMPLETE,
+            BookingProgress.STATE_AWAITING_CONFIRMATION -> true  // Add this line
             else -> false
         }
     }
@@ -41,20 +42,7 @@ object DatabaseHelper {
         return bookingProgressRef.child(bookingId)
     }
 
-    fun observeBookingProgress(bookingId: String, onProgressUpdate: (BookingProgress) -> Unit) {
-        bookingProgressRef.child(bookingId)
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    snapshot.getValue(BookingProgress::class.java)?.let { progress ->
-                        onProgressUpdate(progress)
-                    }
-                }
 
-                override fun onCancelled(error: DatabaseError) {
-                    Log.e("DatabaseHelper", "Error observing booking progress", error.toException())
-                }
-            })
-    }
 
 
 }
