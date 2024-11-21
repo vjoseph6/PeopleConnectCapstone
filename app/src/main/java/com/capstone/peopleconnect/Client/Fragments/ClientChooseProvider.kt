@@ -35,6 +35,7 @@ class ClientChooseProvider : Fragment() {
     private lateinit var previousBookingsRecyclerView: RecyclerView
     private lateinit var previousBookingsTitle: TextView
     private lateinit var previousBookingsSubTitle: TextView
+    private var providerEmail: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -112,11 +113,12 @@ class ClientChooseProvider : Fragment() {
         val fragment = ActivityFragmentClient_ProviderProfile().apply {
             arguments = Bundle().apply {
                 putString("NAME", provider.userName)
+                Log.d("NAME SA CLIENT", provider.userName.toString())
                 putString("PROFILE_IMAGE_URL", provider.imageUrl)
                 putFloat("RATING", provider.rating ?: 0f)
                 putInt("NO_OF_BOOKINGS", provider.noOfBookings ?: 0)
                 putString("DESCRIPTION", provider.description)
-                putString("RATE", (provider.skillRate ?: 0).toString())
+                putString("PROVIDER_EMAIL", providerEmail) // Use the stored providerEmail
                 putString("SERVICE_OFFERED", subCategoryName)
                 putString("bookDay", bookDay)
                 putString("startTime", startTime)
@@ -131,11 +133,11 @@ class ClientChooseProvider : Fragment() {
             .commit()
     }
 
+
     private fun retrieveProviders() {
         providerList.clear()
         previouslyBookedProviders.clear()
-        
-        // First, get previous bookings that are completed
+
         val bookingsRef = FirebaseDatabase.getInstance().getReference("bookings")
         bookingsRef.orderByChild("bookByEmail").equalTo(email)
             .addValueEventListener(object : ValueEventListener {
@@ -145,29 +147,21 @@ class ClientChooseProvider : Fragment() {
                     for (bookingSnapshot in snapshot.children) {
                         val serviceOffered = bookingSnapshot.child("serviceOffered").getValue(String::class.java)
                         val bookingStatus = bookingSnapshot.child("bookingStatus").getValue(String::class.java)
-                        
-                        Log.d("Booking", "Service: $serviceOffered, Status: $bookingStatus")
-                        
-                        // Only consider completed bookings with matching service
+
                         if (serviceOffered == subCategoryName && bookingStatus == "Completed") {
-                            val providerEmail = bookingSnapshot.child("providerEmail").getValue(String::class.java)
+                            // Store the providerEmail at class level
+                            providerEmail = bookingSnapshot.child("providerEmail").getValue(String::class.java)
                             val bookingDate = bookingSnapshot.child("bookingDay").getValue(String::class.java)
-                            
-                            Log.d("Booking", "Found match - Provider: $providerEmail, Date: $bookingDate")
-                            
+
                             if (providerEmail != null && bookingDate != null) {
-                                // Keep the most recent booking date
-                                if (!previouslyBookedEmails.containsKey(providerEmail) || 
+                                if (!previouslyBookedEmails.containsKey(providerEmail) ||
                                     bookingDate > previouslyBookedEmails[providerEmail]!!) {
-                                    previouslyBookedEmails[providerEmail] = bookingDate
+                                    previouslyBookedEmails[providerEmail!!] = bookingDate
                                 }
                             }
                         }
                     }
 
-                    Log.d("Booking", "Previously booked providers: ${previouslyBookedEmails.keys}")
-                    
-                    // Now retrieve all providers
                     retrieveAllProviders(previouslyBookedEmails)
                 }
 
@@ -176,6 +170,7 @@ class ClientChooseProvider : Fragment() {
                 }
             })
     }
+
 
     private fun retrieveAllProviders(previouslyBookedEmails: Map<String, String>) {
         val skillsRef = FirebaseDatabase.getInstance().getReference("skills")

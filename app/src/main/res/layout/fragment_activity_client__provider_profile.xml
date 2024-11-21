@@ -145,7 +145,7 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/servicesTitle"
-                tools:listitem="@layout/category_fragment_list" />
+                tools:listitem="@layout/item_provider_service" />
 
             <!-- Service & Experience Section -->
             <TextView

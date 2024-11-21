@@ -58,4 +58,3 @@ class CategoryAdapter(
         notifyDataSetChanged()  // Notify the adapter that the data has changed
     }
 }
-
