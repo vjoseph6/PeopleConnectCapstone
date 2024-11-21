@@ -81,7 +81,6 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
             val bookingFragment = ActivityFragmentClient_BookDetails().apply {
                 arguments = Bundle().apply {
                     putString("NAME", providerName)
-                    Log.d("NAME SA CLIENT", providerName)
                     putString("SERVICE_OFFERED", serviceOffered)
                     putString("bookDay", bookDay)
                     putString("startTime", startTime)
@@ -222,7 +221,6 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
         val recyclerView = view?.findViewById<RecyclerView>(R.id.worksRecyclerView)
         recyclerView?.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         recyclerView?.adapter = SkillsPostsAdapter(postImages) { imageUrl ->
-            // Handle image click, show in full screen dialog
             val fullScreenDialog = Dialog(requireContext())
             fullScreenDialog.setContentView(R.layout.dialog_fullscreen_image)
             val fullScreenImageView = fullScreenDialog.findViewById<ImageView>(R.id.fullscreenImageView)

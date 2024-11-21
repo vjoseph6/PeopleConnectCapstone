@@ -82,6 +82,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
     private var bookDay: String? = null
     private var startTime: String? = null
     private var endTime: String? = null
+    private var providerEmailFetched: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -308,47 +309,39 @@ class ActivityFragmentClient_BookDetails : Fragment() {
     }
 
     private fun showEndDateTimePicker(onDateTimeSet: (Calendar) -> Unit) {
+        if (startTimeCalendar == null) {
+            Toast.makeText(requireContext(), "Please select start time first", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         showDatePicker { year, month, dayOfMonth ->
-            var initialHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-            var initialMinute = Calendar.getInstance().get(Calendar.MINUTE)
-
-            if (!endTime.isNullOrEmpty()) {
-                try {
-                    val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
-                    val parsedTime = timeFormat.parse(endTime)
-                    val timeCalendar = Calendar.getInstance().apply { time = parsedTime }
-                    initialHour = timeCalendar.get(Calendar.HOUR_OF_DAY)
-                    initialMinute = timeCalendar.get(Calendar.MINUTE)
-                } catch (e: Exception) {
-                    Log.e("TimePicker", "Error parsing endTime: $endTime", e)
-                }
-            }
-
-            showTimePicker(year, month, dayOfMonth, initialHour, initialMinute) { hour, minute ->
-                val endTimeCalendar = Calendar.getInstance().apply {
+            showTimePicker(year, month, dayOfMonth,
+                Calendar.getInstance().get(Calendar.HOUR_OF_DAY),
+                Calendar.getInstance().get(Calendar.MINUTE)
+            ) { hour, minute ->
+                val selectedEndCalendar = Calendar.getInstance().apply {
                     set(year, month, dayOfMonth, hour, minute)
                 }
 
-                // Handle cross-day bookings
-                if (startTimeCalendar != null) {
-                    if (endTimeCalendar.before(startTimeCalendar)) {
-                        // If end time is before start time, assume it's next day
-                        endTimeCalendar.add(Calendar.DAY_OF_MONTH, 1)
-                    }
-
-                    // Calculate duration in hours
-                    val durationInHours = (endTimeCalendar.timeInMillis - startTimeCalendar!!.timeInMillis) / (1000 * 60 * 60)
-
-                    // Validate duration (optional)
-                    if (durationInHours > 24) {
-                        Toast.makeText(requireContext(), "Booking duration cannot exceed 24 hours", Toast.LENGTH_SHORT).show()
-                        return@showTimePicker
-                    }
-
-                    onDateTimeSet(endTimeCalendar)
-                } else {
-                    Toast.makeText(requireContext(), "Please select a start time first", Toast.LENGTH_SHORT).show()
+                // Check if the selected end time is exactly the same as start time
+                if (selectedEndCalendar.get(Calendar.YEAR) == startTimeCalendar!!.get(Calendar.YEAR) &&
+                    selectedEndCalendar.get(Calendar.MONTH) == startTimeCalendar!!.get(Calendar.MONTH) &&
+                    selectedEndCalendar.get(Calendar.DAY_OF_MONTH) == startTimeCalendar!!.get(Calendar.DAY_OF_MONTH) &&
+                    selectedEndCalendar.get(Calendar.HOUR_OF_DAY) == startTimeCalendar!!.get(Calendar.HOUR_OF_DAY) &&
+                    selectedEndCalendar.get(Calendar.MINUTE) == startTimeCalendar!!.get(Calendar.MINUTE)) {
+                        
+                    Toast.makeText(requireContext(), "End time cannot be the same as start time", Toast.LENGTH_SHORT).show()
+                    return@showTimePicker
                 }
+
+                // If end time is before start time
+                if (selectedEndCalendar.before(startTimeCalendar)) {
+                    Toast.makeText(requireContext(), "End time must be after start time", Toast.LENGTH_SHORT).show()
+                    return@showTimePicker
+                }
+
+                endTimeCalendar = selectedEndCalendar
+                onDateTimeSet(endTimeCalendar!!)
             }
         }
     }
@@ -392,7 +385,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         val userEmail = auth.currentUser?.email ?: ""
         val serviceOffered = arguments?.getString("SERVICE_OFFERED") ?: ""
         val currency = "php"
-        val providerEmail = arguments?.getString("EMAIL") ?: ""
+        val providerEmail = providerEmailFetched
         val bookingStartTime = startTimeEditText.text.toString()
         val bookingEndTime = endTimeEditText.text.toString()
         val bookingDay = dateEditText.text.toString()
@@ -555,17 +548,15 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         showLoadingDialog()
 
         userEmail = auth.currentUser?.email ?: ""
-        val providerEmail = arguments?.getString("EMAIL") ?: ""
         val bookingReference = FirebaseDatabase.getInstance().getReference("bookings")
         val paymentReference = FirebaseDatabase.getInstance().getReference("payments")
         val bookingId = bookingReference.push().key ?: return
 
-        // Create payment object using the Payments class
         val payment = Payments(
             paymentId = paymentId,
             paymentMethod = paymentMethod,
             bookBy = userEmail.toString(),
-            providerEmail = providerEmail,
+            providerEmail = providerEmailFetched,
             paymentAmount = totalAmount,
             paymentDate = paymentDate,
             bookingId = bookingId,
@@ -582,7 +573,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
                     bookingId,
                     payment,
                     userEmail.toString(),
-                    providerEmail
+                    providerEmailFetched
                 )
             }
             .addOnFailureListener { e ->
@@ -958,10 +949,10 @@ class ActivityFragmentClient_BookDetails : Fragment() {
                     Log.d("SkillRate", "Users snapshot exists: ${snapshot.exists()}")
                     if (snapshot.exists()) {
                         for (userSnapshot in snapshot.children) {
-                            val providerEmail = userSnapshot.child("email").getValue(String::class.java)
-                            Log.d("SkillRate", "Found provider email: $providerEmail")
-                            if (providerEmail != null) {
-                                fetchSkillRateWithEmail(providerEmail, currentService)
+                            providerEmailFetched = userSnapshot.child("email").getValue(String::class.java) ?: ""
+                            Log.d("SkillRate", "Found provider email: $providerEmailFetched")
+                            if (providerEmailFetched.isNotEmpty()) {
+                                fetchSkillRateWithEmail(providerEmailFetched, currentService)
                             }
                         }
                     }
