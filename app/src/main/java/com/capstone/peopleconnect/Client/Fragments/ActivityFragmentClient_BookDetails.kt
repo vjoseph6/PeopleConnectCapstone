@@ -20,13 +20,11 @@ import android.view.Window
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
-import android.widget.DatePicker
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.TimePicker
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
@@ -50,6 +48,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Calendar
 import java.util.Locale
 import java.util.UUID
+import kotlin.math.ceil
 
 
 class ActivityFragmentClient_BookDetails : Fragment() {
@@ -66,7 +65,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
     private lateinit var bookNow: Button
     private lateinit var locationEditText: EditText
     private lateinit var databaseReference: DatabaseReference
-    private lateinit var rate: String
+    private  var rate: String = "0"
     private var startTimeCalendar: Calendar? = null
     private var endTimeCalendar: Calendar? = null
     private lateinit var descEditText: EditText
@@ -164,15 +163,15 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         }
 
 
-        // Set rate
-        rate = arguments?.getString("SKILL_RATE") ?: "0"
-        val rateTextView = view.findViewById<TextView>(R.id.etRate)
-        rateTextView.text = rate
+        val rateTextView = view.findViewById<EditText>(R.id.etRate)
 
         // Set default hour rate
         val hourRateEditText = view.findViewById<EditText>(R.id.etHourRate)
         hourRateEditText.setText("1")
         hourRateEditText.addTextChangedListener(createRateTextWatcher(rateTextView))
+        
+        fetchSkillRate()
+
 
 
 
@@ -186,7 +185,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
                 val formattedDate = dateFormat.format(calendar.time)
                 dateEditText.setText(formattedDate)
                 bookDay = formattedDate // Update the stored bookDay
-                
+
                 // Clear times when date changes
                 startTimeEditText.text.clear()
                 endTimeEditText.text.clear()
@@ -205,7 +204,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
                 startTimeEditText.setText(timeFormat.format(calendar.time))
                 startTimeCalendar = calendar
                 startTime = timeFormat.format(calendar.time) // Update stored startTime
-                
+
                 // Clear end time if it's now invalid
                 if (endTimeCalendar != null && endTimeCalendar!!.before(startTimeCalendar)) {
                     endTimeEditText.text.clear()
@@ -255,7 +254,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
 
     private fun showDatePicker(onDateSet: (Int, Int, Int) -> Unit) {
         val calendar = Calendar.getInstance()
-        
+
         // Use existing bookDay if available, otherwise use current date
         if (!bookDay.isNullOrEmpty()) {
             try {
@@ -269,7 +268,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
 
         DatePickerDialog(
             requireContext(),
-            { _, year, month, dayOfMonth -> 
+            { _, year, month, dayOfMonth ->
                 onDateSet(year, month, dayOfMonth)
             },
             calendar.get(Calendar.YEAR),
@@ -336,16 +335,16 @@ class ActivityFragmentClient_BookDetails : Fragment() {
                         // If end time is before start time, assume it's next day
                         endTimeCalendar.add(Calendar.DAY_OF_MONTH, 1)
                     }
-                    
+
                     // Calculate duration in hours
                     val durationInHours = (endTimeCalendar.timeInMillis - startTimeCalendar!!.timeInMillis) / (1000 * 60 * 60)
-                    
+
                     // Validate duration (optional)
                     if (durationInHours > 24) {
                         Toast.makeText(requireContext(), "Booking duration cannot exceed 24 hours", Toast.LENGTH_SHORT).show()
                         return@showTimePicker
                     }
-                    
+
                     onDateTimeSet(endTimeCalendar)
                 } else {
                     Toast.makeText(requireContext(), "Please select a start time first", Toast.LENGTH_SHORT).show()
@@ -888,30 +887,45 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         }
     }
 
+    private fun updateRateDisplay() {
+        val rateEditText = view?.findViewById<EditText>(R.id.etRate)
+        val hourRateEditText = view?.findViewById<EditText>(R.id.etHourRate)
+
+        val hours = hourRateEditText?.text?.toString()?.toIntOrNull() ?: 1
+        val baseRate = rate.toIntOrNull() ?: 0
+        val total = hours * baseRate
+
+        Log.d("RateCalculation", "Hours: $hours, BaseRate: $baseRate, Total: $total")
+        
+        // Update the total rate display with whole number
+        rateEditText?.setText(total.toString())
+    }
+
+
+
 
 
     private fun calculateHourRate() {
-        // Ensure both start and end times are not null
         if (startTimeCalendar != null && endTimeCalendar != null) {
-            // If the end time is before the start time, assume it's the next day
-            if (endTimeCalendar!!.before(startTimeCalendar)) {
-                // Add one day to the end time
-                endTimeCalendar!!.add(Calendar.DAY_OF_MONTH, 1)
+            var endCalendar = endTimeCalendar!!.clone() as Calendar
+            
+            // If end time is before start time, assume it's next day
+            if (endCalendar.before(startTimeCalendar)) {
+                endCalendar.add(Calendar.DAY_OF_MONTH, 1)
             }
 
-            // Calculate the difference in milliseconds and convert to minutes
-            val differenceInMillis = endTimeCalendar!!.timeInMillis - startTimeCalendar!!.timeInMillis
+            // Calculate time difference
+            val differenceInMillis = endCalendar.timeInMillis - startTimeCalendar!!.timeInMillis
             val differenceInMinutes = (differenceInMillis / (1000 * 60)).toInt()
 
-            // Calculate hours, rounding up if necessary
-            val hours = if (differenceInMinutes % 60 == 0) {
-                differenceInMinutes / 60
-            } else {
-                differenceInMinutes / 60 + 1
-            }
+            // Calculate hours, rounding up for partial hours
+            val hours = ceil(differenceInMinutes / 60.0).toInt()
 
-            // Set the calculated hours to the EditText
+            // Update hour rate display
             view?.findViewById<EditText>(R.id.etHourRate)?.setText(hours.toString())
+
+            // Update the total rate based on hours and base rate
+            updateRateDisplay()
         }
     }
 
@@ -932,7 +946,75 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         })
     }
 
+    private fun fetchSkillRate() {
+        val providerName = arguments?.getString("NAME") ?: ""
+        val currentService = arguments?.getString("SERVICE_OFFERED") ?: ""
+        Log.d("SkillRate", "Fetching skill rate for provider: $providerName, service: $currentService")
 
+        val usersRef = FirebaseDatabase.getInstance().getReference("users")
+        usersRef.orderByChild("name").equalTo(providerName)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    Log.d("SkillRate", "Users snapshot exists: ${snapshot.exists()}")
+                    if (snapshot.exists()) {
+                        for (userSnapshot in snapshot.children) {
+                            val providerEmail = userSnapshot.child("email").getValue(String::class.java)
+                            Log.d("SkillRate", "Found provider email: $providerEmail")
+                            if (providerEmail != null) {
+                                fetchSkillRateWithEmail(providerEmail, currentService)
+                            }
+                        }
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("SkillRate", "Error fetching provider email: ${error.message}")
+                }
+            })
+    }
+
+    private fun fetchSkillRateWithEmail(providerEmail: String, currentService: String) {
+        val skillsRef = FirebaseDatabase.getInstance().getReference("skills")
+
+        skillsRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                for (skillSetSnapshot in snapshot.children) {
+                    val userEmail = skillSetSnapshot.child("user").getValue(String::class.java)
+                    Log.d("SkillRate", "Checking user email: $userEmail vs $providerEmail")
+
+                    if (userEmail == providerEmail) {
+                        val skillItems = skillSetSnapshot.child("skillItems")
+                        
+                        for (skillItem in skillItems.children) {
+                            val name = skillItem.child("name").getValue(String::class.java)
+                            val skillRate = skillItem.child("skillRate").getValue(Float::class.java)
+                            Log.d("SkillRate", "Checking skill: $name with rate: $skillRate")
+
+                            if (name == currentService) {
+                                // Convert to whole number and ensure it's not null
+                                val wholeRate = skillRate?.toInt() ?: 0
+                                rate = wholeRate.toString()
+                                
+                                Log.d("SkillRate", "Setting rate to: $rate")
+                                
+                                // Ensure we're on the main thread when updating UI
+                                activity?.runOnUiThread {
+                                    view?.findViewById<EditText>(R.id.etRate)?.setText(rate)
+                                    calculateHourRate()
+                                    updateRateDisplay()
+                                }
+                                break
+                            }
+                        }
+                    }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("SkillRate", "Error fetching skill rate: ${error.message}")
+            }
+        })
+    }
     companion object {
         @JvmStatic
         fun newInstance(bookDay: String, startTime: String, endTime: String) = ActivityFragmentClient_BookDetails().apply {

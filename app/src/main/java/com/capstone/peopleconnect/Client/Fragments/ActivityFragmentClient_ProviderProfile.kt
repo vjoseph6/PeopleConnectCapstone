@@ -12,18 +12,14 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
-import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.capstone.peopleconnect.Adapters.CategoryAdapter
+import com.capstone.peopleconnect.Adapters.ProviderServicesAdapter
 import com.capstone.peopleconnect.Classes.Category
-import com.capstone.peopleconnect.Classes.SkillItem
 import com.capstone.peopleconnect.R
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.squareup.picasso.Picasso
@@ -41,6 +37,8 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
     private var bookDay: String? = null
     private var startTime: String? = null
     private var endTime: String? = null
+    private var serviceOffered: String = ""
+    private lateinit var servicesAdapter: ProviderServicesAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,7 +70,7 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
         val noOfBookings = arguments?.getString("NO_OF_BOOKINGS") ?: "0"
         val description = arguments?.getString("DESCRIPTION") ?: ""
         val skillRate = arguments?.getString("RATE") ?: ""
-        val serviceOffered = arguments?.getString("SERVICE_OFFERED") ?: ""
+        serviceOffered = arguments?.getString("SERVICE_OFFERED") ?: ""
         bookDay = arguments?.getString("bookDay") ?: ""
         startTime = arguments?.getString("startTime") ?: ""
         endTime = arguments?.getString("endTime") ?: ""
@@ -82,8 +80,8 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
         bookNowButton.setOnClickListener {
             val bookingFragment = ActivityFragmentClient_BookDetails().apply {
                 arguments = Bundle().apply {
-                    putString("EMAIL", email)
-                    putString("SKILL_RATE", skillRate)
+                    putString("NAME", providerName)
+                    Log.d("NAME SA CLIENT", providerName)
                     putString("SERVICE_OFFERED", serviceOffered)
                     putString("bookDay", bookDay)
                     putString("startTime", startTime)
@@ -99,12 +97,7 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
 
 
         recyclerView = view.findViewById(R.id.servicesRecyclerView)
-        categoryAdapter = CategoryAdapter(mutableListOf()) { category ->
-            // Handle category click
-        }
-        recyclerView.adapter = categoryAdapter
-        recyclerView.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
-
+        setupRecyclerView()
 
         fetchUser(providerName)
 
@@ -178,7 +171,8 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
                                 fetchedItems++
                                 // Update the adapter only after all items have been fetched
                                 if (fetchedItems == totalItems) {
-                                    categoryAdapter.updateCategories(categories)
+                                    servicesAdapter.updateServices(categories)
+                                    servicesAdapter.updateSelectedService(serviceOffered)
                                 }
                             }
                         }
@@ -274,6 +268,21 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
                 callback("") // Pass an empty string if there's an error
             }
         })
+    }
+
+    private fun setupRecyclerView() {
+        servicesAdapter = ProviderServicesAdapter(
+            services = mutableListOf(),
+            selectedService = serviceOffered
+        ) { newService ->
+            serviceOffered = newService
+            servicesAdapter.updateSelectedService(newService)
+        }
+
+        recyclerView.apply {
+            layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+            adapter = servicesAdapter
+        }
     }
 
     companion object {
