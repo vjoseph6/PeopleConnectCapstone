@@ -79,7 +79,11 @@ class HomeFragmentSProvider : Fragment() {
     private fun setupRecyclerView() {
         adapter = ClientPostAdapter(
             onPostClick = { post ->
-                val postDetailsFragment = PostDetailsFragment.newInstance(post, true)
+                val postDetailsFragment = PostDetailsFragment.newInstance(
+                    post = post,
+                    isFromProvider = true,
+                    providerEmail = email
+                )
                 requireActivity().supportFragmentManager.beginTransaction()
                     .replace(R.id.frame_layout, postDetailsFragment)
                     .addToBackStack(null)

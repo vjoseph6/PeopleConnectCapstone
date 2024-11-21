@@ -164,7 +164,7 @@ class AddPostFragment : Fragment() {
         // Create an instance of the Post data class
         val post = Post(
             postId = postId,
-            postDescription = postDesc, // Get the actual description from your EditText
+            postDescription = postDesc,
             email = email,
             categoryName = categoryName.toString(),
             postImages = imageUrls,
