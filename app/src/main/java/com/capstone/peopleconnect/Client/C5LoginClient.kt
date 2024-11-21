@@ -215,8 +215,8 @@ class C5LoginClient : AppCompatActivity() {
                     // Sign in successful, navigate to the next screen
                     checkUserRoles(email)
                 } else {
-                    // Sign in failed, handle the error
                     handleSignInError(task.exception)
+
                 }
             }
     }
@@ -293,10 +293,17 @@ class C5LoginClient : AppCompatActivity() {
 
     private fun handleSignInError(exception: Exception?) {
         val exceptionMessage = exception?.localizedMessage
-        Log.e("SignInError", "Failed to sign in: $exceptionMessage")
         when (exception) {
             is FirebaseAuthInvalidUserException -> {
-                Toast.makeText(this, "No account found with this email.", Toast.LENGTH_SHORT).show()
+                if (exception.message?.contains("The user account has been disabled by an administrator") == true) {
+                    Toast.makeText(
+                        this,
+                        "Your account has been disabled by the admin.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                } else {
+                    Toast.makeText(this, "No account found with this email.", Toast.LENGTH_SHORT).show()
+                }
             }
             is FirebaseAuthInvalidCredentialsException -> {
                 Toast.makeText(this, "Invalid email or password.", Toast.LENGTH_SHORT).show()
@@ -306,6 +313,8 @@ class C5LoginClient : AppCompatActivity() {
             }
         }
     }
+
+
 
 
     private fun saveCurrentUser(email: String, firstName: String, address: String, profileImageUrl: String) {
