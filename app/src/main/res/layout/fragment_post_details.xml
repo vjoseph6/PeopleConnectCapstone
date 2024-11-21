@@ -46,6 +46,20 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
+            <TextView
+                android:id="@+id/btnViewApplicants"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="View Applicants"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:visibility="gone"
+                android:layout_marginEnd="16dp"
+                android:fontFamily="@font/medium_poppins"
+                android:drawablePadding="4dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"/>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
