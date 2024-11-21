@@ -24,7 +24,7 @@
             android:fontFamily="@font/semibold_poppins"
             android:text="Profile"
             android:textColor="@color/white"
-            android:textSize="16sp" />
+            android:textSize="26sp" />
 
         <!-- Profile Image -->
         <com.google.android.material.imageview.ShapeableImageView

@@ -97,6 +97,8 @@ class ActivityFragmentClient : Fragment() {
         val tvSuccessful = view.findViewById<TextView>(R.id.tvSuccessful_Present)
         val tvFailed = view.findViewById<TextView>(R.id.tvFailed_Present)
 
+        tvBooking.paintFlags = tvBooking.paintFlags or android.graphics.Paint.UNDERLINE_TEXT_FLAG
+
         // Set click listeners for each tab
         tvBooking.setOnClickListener {
             currentFilter = "Booking"  // Update current filter
@@ -205,9 +207,21 @@ class ActivityFragmentClient : Fragment() {
 
     // Highlights the selected tab
     private fun highlightSelectedTab(selectedTab: TextView, vararg otherTabs: TextView) {
-        selectedTab.setTextColor(ContextCompat.getColor(requireContext(), R.color.green))
-        otherTabs.forEach { it.setTextColor(ContextCompat.getColor(requireContext(), R.color.black)) }
+        // Set color and underline for selected tab
+        if (selectedTab.text == "Failed") {
+            selectedTab.setTextColor(ContextCompat.getColor(requireContext(), R.color.red))
+        } else {
+            selectedTab.setTextColor(ContextCompat.getColor(requireContext(), R.color.green))
+        }
+        selectedTab.paintFlags = selectedTab.paintFlags or android.graphics.Paint.UNDERLINE_TEXT_FLAG
+
+        // Remove color and underline from other tabs
+        otherTabs.forEach {
+            it.setTextColor(ContextCompat.getColor(requireContext(), R.color.black))
+            it.paintFlags = it.paintFlags and android.graphics.Paint.UNDERLINE_TEXT_FLAG.inv()
+        }
     }
+
 
     // Fetch bookings for the client
     private fun fetchBookingsForClient(clientEmail: String) {
