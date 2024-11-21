@@ -32,6 +32,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import android.os.Handler
+import androidx.core.content.res.ResourcesCompat
 
 
 class ActivityFragmentClient : Fragment() {
@@ -97,7 +98,10 @@ class ActivityFragmentClient : Fragment() {
         val tvSuccessful = view.findViewById<TextView>(R.id.tvSuccessful_Present)
         val tvFailed = view.findViewById<TextView>(R.id.tvFailed_Present)
 
-        tvBooking.paintFlags = tvBooking.paintFlags or android.graphics.Paint.UNDERLINE_TEXT_FLAG
+        // Instead, set the initial state using the custom underline:
+        tvBooking.background = ContextCompat.getDrawable(requireContext(), R.drawable.custom_underline)
+        tvBooking.setTextColor(ContextCompat.getColor(requireContext(), R.color.green))
+        tvBooking.typeface = ResourcesCompat.getFont(requireContext(), R.font.bold_poppins)
 
         // Set click listeners for each tab
         tvBooking.setOnClickListener {
@@ -206,19 +210,27 @@ class ActivityFragmentClient : Fragment() {
     }
 
     // Highlights the selected tab
-    private fun highlightSelectedTab(selectedTab: TextView, vararg otherTabs: TextView) {
-        // Set color and underline for selected tab
-        if (selectedTab.text == "Failed") {
-            selectedTab.setTextColor(ContextCompat.getColor(requireContext(), R.color.red))
-        } else {
-            selectedTab.setTextColor(ContextCompat.getColor(requireContext(), R.color.green))
+    private fun highlightSelectedTab(selectedTab: TextView, vararg unselectedTabs: TextView) {
+        // Set selected tab style
+        when (selectedTab.text.toString()) {
+            "Failed" -> {
+                selectedTab.setTextColor(ContextCompat.getColor(requireContext(), R.color.red))
+                selectedTab.background = ContextCompat.getDrawable(requireContext(), R.drawable.custom_underline_red)
+            }
+            else -> {
+                selectedTab.setTextColor(ContextCompat.getColor(requireContext(), R.color.green))
+                selectedTab.background = ContextCompat.getDrawable(requireContext(), R.drawable.custom_underline)
+            }
         }
-        selectedTab.paintFlags = selectedTab.paintFlags or android.graphics.Paint.UNDERLINE_TEXT_FLAG
+        selectedTab.typeface = ResourcesCompat.getFont(requireContext(), R.font.bold_poppins)
+        selectedTab.paintFlags = selectedTab.paintFlags and android.graphics.Paint.UNDERLINE_TEXT_FLAG.inv()
 
-        // Remove color and underline from other tabs
-        otherTabs.forEach {
-            it.setTextColor(ContextCompat.getColor(requireContext(), R.color.black))
-            it.paintFlags = it.paintFlags and android.graphics.Paint.UNDERLINE_TEXT_FLAG.inv()
+        // Set unselected tabs style
+        unselectedTabs.forEach { tab ->
+            tab.setTextColor(ContextCompat.getColor(requireContext(), R.color.black))
+            tab.typeface = ResourcesCompat.getFont(requireContext(), R.font.bold_poppins)
+            tab.background = null
+            tab.paintFlags = tab.paintFlags and android.graphics.Paint.UNDERLINE_TEXT_FLAG.inv()
         }
     }
 

@@ -1,5 +1,6 @@
 package com.capstone.peopleconnect.Client.Fragments
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -7,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.capstone.peopleconnect.Classes.User
 import com.capstone.peopleconnect.R
@@ -19,6 +21,7 @@ import com.squareup.picasso.Picasso
 import com.capstone.peopleconnect.Classes.BookingProgress
 import com.capstone.peopleconnect.Helper.DatabaseHelper
 import com.capstone.peopleconnect.Helper.NetworkHelper
+import com.capstone.peopleconnect.Message.chat.ChatActivity
 
 class OngoingFragmentClient : Fragment() {
     private lateinit var binding: FragmentOngoingClientBinding
@@ -71,6 +74,40 @@ class OngoingFragmentClient : Fragment() {
         // Setup progress listener
         bookingId?.let { id ->
             setupProgressListener(id)
+        }
+
+        // Modify the existing click listener for the View Message button
+        binding.btnViewMessage.setOnClickListener {
+            // Check if the button text is "Well Done"
+            if (binding.btnViewMessage.text.toString() == "Well Done") {
+                // Do nothing or show a toast if you want to inform the user
+                Toast.makeText(requireContext(), "Service completed", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            // Existing chat navigation logic
+            providerEmail?.let { email ->
+                val usersRef = FirebaseDatabase.getInstance().getReference("users")
+                usersRef.orderByChild("email").equalTo(email)
+                    .addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            val providerData = snapshot.children.firstOrNull()
+                            val providerId = providerData?.child("userId")?.getValue(String::class.java)
+                            val providerName = providerData?.child("name")?.getValue(String::class.java)
+
+                            if (providerId != null && providerName != null) {
+                                val intent = Intent(requireContext(), ChatActivity::class.java)
+                                intent.putExtra("userId", providerId)
+                                intent.putExtra("name", providerName)
+                                startActivity(intent)
+                            }
+                        }
+
+                        override fun onCancelled(error: DatabaseError) {
+                            Log.e("OngoingFragment", "Error fetching provider details", error.toException())
+                        }
+                    })
+            }
         }
 
     }

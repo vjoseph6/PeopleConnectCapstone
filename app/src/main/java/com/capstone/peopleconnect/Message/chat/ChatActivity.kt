@@ -80,11 +80,15 @@ class ChatActivity : AppCompatActivity() {
         selectedUserId = intent.getStringExtra("userId") ?: ""
         selectedUserName = intent.getStringExtra("name").orEmpty()
 
-        // Validate user information before proceeding
         if (currentUserId.isEmpty() || selectedUserId.isEmpty() || selectedUserName.isEmpty()) {
-            Toast.makeText(this, "User data is missing", Toast.LENGTH_SHORT).show()
-            Log.e("ChatActivity", "Missing required user data")
-            finish() // Exit the activity if data is missing
+            Log.e("ChatActivity", """
+                Missing required data:
+                - currentUserId: $currentUserId
+                - selectedUserId: $selectedUserId
+                - selectedUserName: $selectedUserName
+            """.trimIndent())
+            Toast.makeText(this, "Unable to start chat: Missing user information", Toast.LENGTH_SHORT).show()
+            finish()
             return
         }
 
