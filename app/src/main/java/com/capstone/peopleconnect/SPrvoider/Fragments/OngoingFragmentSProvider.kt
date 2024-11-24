@@ -8,6 +8,8 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.TextView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.capstone.peopleconnect.Classes.BookingProgress
@@ -34,6 +36,12 @@ class OngoingFragmentSProvider : Fragment() {
     private val SWIPE_THRESHOLD = 200f  // Minimum distance for swipe
     private var isUpdating = false
     private var progressListener: ValueEventListener? = null
+    private var swipeThumb: ImageView? = null
+    private var swipeText: TextView? = null
+    private var swipeProgress: View? = null
+    private var swipeBackground: ConstraintLayout? = null
+    private var initialTouchX = 0f
+    private val swipeThreshold = 0.7f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,41 +64,98 @@ class OngoingFragmentSProvider : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+
+        // Initialize swipe button views
+        swipeThumb = binding.btnSwipe.root.findViewById(R.id.swipe_thumb)
+        swipeText = binding.btnSwipe.root.findViewById(R.id.swipe_text)
+        swipeProgress = binding.btnSwipe.root.findViewById(R.id.swipe_progress)
+        swipeBackground = binding.btnSwipe.root.findViewById(R.id.swipe_button_background)
+
+
         // Add network monitoring
         NetworkHelper.startNetworkMonitoring(requireContext())
         NetworkHelper.isNetworkAvailable.observe(viewLifecycleOwner) { isAvailable ->
-            binding.btnSwipe.isEnabled = isAvailable && currentState != BookingProgress.STATE_COMPLETE
+            swipeBackground?.isEnabled = isAvailable && currentState != BookingProgress.STATE_COMPLETE
             if (!isAvailable) {
-                binding.btnSwipe.text = "No Internet Connection"
+                swipeText?.text = "No Internet Connection"
             } else {
                 validateStateTransition(currentState)
             }
         }
 
-        // Initialize swipe button state
-        binding.btnSwipe.isEnabled = currentState != BookingProgress.STATE_COMPLETE
 
-        // Replace the existing button click listener with touch listener
-        binding.btnSwipe.setOnTouchListener { view, event ->
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    if (!isUpdating && currentState != BookingProgress.STATE_COMPLETE) {
-                        initialX = event.x
+        swipeBackground?.isEnabled = currentState != BookingProgress.STATE_COMPLETE
+
+        swipeThumb?.setOnTouchListener { view, event ->
+            if (!isUpdating && currentState != BookingProgress.STATE_COMPLETE && swipeBackground?.isEnabled == true) {
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        initialTouchX = event.rawX
+                        initialX = view.x
+                        swipeProgress?.visibility = View.VISIBLE
+                        view.animate()
+                            .scaleX(0.95f)
+                            .scaleY(0.95f)
+                            .setDuration(100)
+                            .start()
                         true
-                    } else false
-                }
-                MotionEvent.ACTION_UP -> {
-                    if (!isUpdating && currentState != BookingProgress.STATE_COMPLETE) {
-                        val deltaX = event.x - initialX
-                        if (abs(deltaX) > SWIPE_THRESHOLD) {
-                            handleProgressUpdate()
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        val moved = event.rawX - initialTouchX
+                        val maxSlide = (swipeBackground?.width ?: 0) - view.width
+                        val newX = (initialX + moved).coerceIn(0f, maxSlide.toFloat())
+                        view.x = newX
+
+                        // Update progress width with animation
+                        swipeProgress?.animate()
+                            ?.alpha(0.8f)
+                            ?.setDuration(0)
+                            ?.withStartAction {
+                                swipeProgress?.layoutParams?.width = newX.toInt() + view.width
+                                swipeProgress?.requestLayout()
+                            }
+                            ?.start()
+
+                        // Update text alpha based on progress with smooth transition
+                        val slidePercentage = newX / maxSlide
+                        swipeText?.animate()
+                            ?.alpha(1 - slidePercentage)
+                            ?.setDuration(0)
+                            ?.start()
+                        true
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        view.animate()
+                            .scaleX(1f)
+                            .scaleY(1f)
+                            .setDuration(100)
+                            .start()
+
+                        val maxSlide = (swipeBackground?.width ?: 0) - view.width
+                        val slidePercentage = view.x / maxSlide
+
+                        if (slidePercentage > swipeThreshold) {
+                            // Complete the swipe animation with spring effect
+                            view.animate()
+                                .x(maxSlide.toFloat())
+                                .setDuration(200)
+                                .withEndAction {
+                                    handleProgressUpdate()
+                                    resetSwipeButton()
+                                }
+                                .setInterpolator(android.view.animation.OvershootInterpolator(0.8f))
+                                .start()
+                        } else {
+                            // Reset with spring effect
+                            resetSwipeButton()
                         }
                         true
-                    } else false
+                    }
+                    else -> false
                 }
-                else -> false
-            }
+            } else false
         }
+
 
         // Setup back button
         binding.btnBackClient.setOnClickListener {
@@ -179,38 +244,109 @@ class OngoingFragmentSProvider : Fragment() {
     private fun validateStateTransition(state: String) {
         when (state) {
             BookingProgress.STATE_PENDING -> {
-                binding.btnSwipe.isEnabled = true
-                binding.btnSwipe.text = "Swipe to Arrive"
+                swipeBackground?.isEnabled = true
+                swipeText?.animate()
+                    ?.alpha(0f)
+                    ?.setDuration(150)
+                    ?.withEndAction {
+                        swipeText?.text = "Swipe to Arrive"
+                        swipeText?.animate()
+                            ?.alpha(1f)
+                            ?.setDuration(150)
+                            ?.start()
+                    }?.start()
             }
             BookingProgress.STATE_ARRIVE -> {
-                binding.btnSwipe.isEnabled = true
-                binding.btnSwipe.text = "Swipe to Start Work"
+                swipeBackground?.isEnabled = true
+                swipeText?.animate()
+                    ?.alpha(0f)
+                    ?.setDuration(150)
+                    ?.withEndAction {
+                        swipeText?.text = "Swipe to Start Work"
+                        swipeText?.animate()
+                            ?.alpha(1f)
+                            ?.setDuration(150)
+                            ?.start()
+                    }?.start()
             }
             BookingProgress.STATE_WORKING -> {
-                binding.btnSwipe.isEnabled = true
-                binding.btnSwipe.text = "Swipe to Complete"
+                swipeBackground?.isEnabled = true
+                swipeText?.animate()
+                    ?.alpha(0f)
+                    ?.setDuration(150)
+                    ?.withEndAction {
+                        swipeText?.text = "Swipe to Complete"
+                        swipeText?.animate()
+                            ?.alpha(1f)
+                            ?.setDuration(150)
+                            ?.start()
+                    }?.start()
             }
             "AWAITING_CLIENT_CONFIRMATION" -> {
-                binding.btnSwipe.isEnabled = false
-                binding.btnSwipe.text = "Waiting for client confirmation..."
+                swipeBackground?.isEnabled = false
+                swipeText?.animate()
+                    ?.alpha(0f)
+                    ?.setDuration(150)
+                    ?.withEndAction {
+                        swipeText?.text = "Waiting for client confirmation..."
+                        swipeText?.animate()
+                            ?.alpha(1f)
+                            ?.setDuration(150)
+                            ?.start()
+                    }?.start()
             }
             BookingProgress.STATE_COMPLETE -> {
-                binding.btnSwipe.isEnabled = false
-                binding.btnSwipe.text = "Completed"
+                swipeBackground?.isEnabled = false
+                swipeText?.animate()
+                    ?.alpha(0f)
+                    ?.setDuration(150)
+                    ?.withEndAction {
+                        swipeText?.text = "Completed"
+                        swipeText?.animate()
+                            ?.alpha(1f)
+                            ?.setDuration(150)
+                            ?.start()
+                        swipeBackground?.animate()
+                            ?.alpha(0.7f)
+                            ?.setDuration(200)
+                            ?.start()
+                    }?.start()
             }
         }
+    }
+    private fun resetSwipeButton() {
+        swipeThumb?.animate()
+            ?.x(0f)
+            ?.setDuration(200)
+            ?.setInterpolator(android.view.animation.OvershootInterpolator(0.8f))
+            ?.withEndAction {
+                swipeText?.animate()
+                    ?.alpha(1f)
+                    ?.setDuration(150)
+                    ?.start()
+                swipeProgress?.animate()
+                    ?.alpha(0f)
+                    ?.setDuration(150)
+                    ?.withEndAction {
+                        swipeProgress?.visibility = View.INVISIBLE
+                        swipeProgress?.layoutParams?.width = 0
+                        swipeProgress?.requestLayout()
+                    }
+                    ?.start()
+            }
+            ?.start()
     }
 
 
     private fun handleProgressUpdate() {
         if (isUpdating || currentState == BookingProgress.STATE_COMPLETE) return
         if (NetworkHelper.isNetworkAvailable.value != true) {
-            binding.btnSwipe.text = "No Internet Connection"
+            swipeText?.text = "No Internet Connection"
             return
         }
 
         bookingId?.let { id ->
-            binding.btnSwipe.isEnabled = false
+            swipeBackground?.isEnabled = false
             isUpdating = true
 
             val nextState = when (currentState) {
@@ -233,35 +369,42 @@ class OngoingFragmentSProvider : Fragment() {
                     .addOnCompleteListener { task ->
                         isUpdating = false
                         if (task.isSuccessful) {
-                            if (nextState == BookingProgress.STATE_AWAITING_CONFIRMATION) {
-                                binding.btnSwipe.isEnabled = false
-                                binding.btnSwipe.text = "Waiting for client confirmation..."
-                            } else if (nextState == BookingProgress.STATE_COMPLETE) {
-                                // Navigate to rating screen when booking is completed
-                                val rateFragment = RateFragmentSProvider.newInstance(
-                                    bookingId = id,
-                                    clientEmail = clientEmail ?: "",
-                                    providerEmail = providerEmail ?: ""
-                                )
-                                parentFragmentManager.beginTransaction()
-                                    .replace(R.id.frame_layout, rateFragment)
-                                    .addToBackStack(null)
-                                    .commit()
-                            } else {
-                                binding.btnSwipe.isEnabled = true
+                            when (nextState) {
+                                BookingProgress.STATE_AWAITING_CONFIRMATION -> {
+                                    swipeBackground?.isEnabled = false
+                                    swipeText?.text = "Waiting for client confirmation..."
+                                }
+                                BookingProgress.STATE_COMPLETE -> {
+                                    // Navigate to rating screen when booking is completed
+                                    val rateFragment = RateFragmentSProvider.newInstance(
+                                        bookingId = id,
+                                        clientEmail = clientEmail ?: "",
+                                        providerEmail = providerEmail ?: ""
+                                    )
+                                    parentFragmentManager.beginTransaction()
+                                        .replace(R.id.frame_layout, rateFragment)
+                                        .addToBackStack(null)
+                                        .commit()
+                                }
+                                else -> {
+                                    swipeBackground?.isEnabled = true
+                                    resetSwipeButton()
+                                }
                             }
                             updateUI(nextState)
                         } else {
-                            binding.btnSwipe.isEnabled = true
+                            swipeBackground?.isEnabled = true
                             Log.e("OngoingFragmentSProvider", "Error updating progress", task.exception)
                             updateUI(currentState)
+                            resetSwipeButton()
                         }
                     }
             } catch (e: Exception) {
                 isUpdating = false
-                binding.btnSwipe.isEnabled = true
+                swipeBackground?.isEnabled = true
                 Log.e("OngoingFragmentSProvider", "Error updating progress", e)
                 updateUI(currentState)
+                resetSwipeButton()
             }
         }
     }
@@ -270,7 +413,7 @@ class OngoingFragmentSProvider : Fragment() {
 
 
     private fun updateUI(state: String) {
-        binding.btnSwipe.text = if (isUpdating) {
+        swipeText?.text = if (isUpdating) {
             "Updating..."
         } else {
             when (state) {
@@ -322,7 +465,7 @@ class OngoingFragmentSProvider : Fragment() {
                 progressLines.forEach { it.setBackgroundColor(blueColor) }
                 progressIcons.forEach { it.setColorFilter(blueColor) }
                 binding.illustrationImage.setImageResource(R.drawable.sprovider_well_done_ongoing)
-                binding.btnSwipe.apply {
+                swipeBackground?.apply {
                     isEnabled = false
                     alpha = 0.7f
                 }

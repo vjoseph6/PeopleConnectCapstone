@@ -92,7 +92,6 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/sprovider_name" />
 
-                <!-- Progress Status Bar -->
                 <LinearLayout
                     android:id="@+id/progress_status_bar"
                     android:layout_width="match_parent"
@@ -100,7 +99,7 @@
                     android:layout_marginTop="16dp"
                     android:orientation="horizontal"
                     android:gravity="center"
-                    android:padding="16dp"
+                    android:padding="8dp"
                     android:background="@drawable/progress_bar_background"
                     app:layout_constraintTop_toBottomOf="@id/client_rating"
                     app:layout_constraintStart_toStartOf="parent"
@@ -108,50 +107,53 @@
 
                     <!-- Step 1 Icon -->
                     <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
                         android:src="@drawable/final_logo__client__short_2"
                         android:contentDescription="Step 1" />
 
                     <!-- Line between icons -->
                     <View
-                        android:layout_width="70dp"
-                        android:layout_height="3dp"
-                        android:layout_marginHorizontal="4dp"
+                        android:layout_width="0dp"
+                        android:layout_height="2dp"
+                        android:layout_weight="1"
+                        android:layout_marginHorizontal="2dp"
                         android:background="@color/black" />
 
                     <!-- Step 2 Icon -->
                     <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
                         android:src="@drawable/icon_location"
                         android:contentDescription="Step 2" />
 
                     <!-- Line between icons -->
                     <View
-                        android:layout_width="70dp"
-                        android:layout_height="3dp"
-                        android:layout_marginHorizontal="4dp"
+                        android:layout_width="0dp"
+                        android:layout_height="2dp"
+                        android:layout_weight="1"
+                        android:layout_marginHorizontal="2dp"
                         android:background="@color/black" />
 
                     <!-- Step 3 Icon -->
                     <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
                         android:src="@drawable/icon_work"
                         android:contentDescription="Step 3" />
 
                     <!-- Line between icons -->
                     <View
-                        android:layout_width="70dp"
-                        android:layout_height="3dp"
-                        android:layout_marginHorizontal="4dp"
+                        android:layout_width="0dp"
+                        android:layout_height="2dp"
+                        android:layout_weight="1"
+                        android:layout_marginHorizontal="2dp"
                         android:background="@color/black" />
 
                     <!-- Step 4 Icon -->
                     <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
                         android:src="@drawable/icon_done"
                         android:contentDescription="Step 4" />
                 </LinearLayout>
