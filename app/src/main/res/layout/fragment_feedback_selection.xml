@@ -16,21 +16,26 @@
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="16dp">
+            android:paddingHorizontal="24dp"
+            android:paddingTop="44dp"
+            android:paddingBottom="20dp">
 
             <ImageButton
                 android:id="@+id/btnBack"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginTop="25dp"
                 android:layout_alignParentStart="true"
                 android:layout_centerVertical="true"
                 android:background="@drawable/back_button_background_client"
-                android:src="@drawable/backbtn2_client_" />
+                android:src="@drawable/backbtn2_client_"
+                android:padding="8dp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
+                android:layout_marginTop="15dp"
                 android:fontFamily="@font/semibold_poppins"
                 android:text="Select Feedback"
                 android:textColor="@color/white"
@@ -41,37 +46,39 @@
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginTop="16dp"
-            app:cardCornerRadius="30dp">
+            app:cardCornerRadius="30dp"
+            android:layout_marginTop="10dp">
 
             <ScrollView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:fillViewport="true">
+                android:fillViewport="true"
+                android:clipToPadding="false">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="24dp">
+                    android:padding="30dp">
 
                     <TextView
                         android:id="@+id/feedbackTitle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="What made it perfect?"
-                        android:textSize="24sp"
+                        android:textSize="26sp"
                         android:textColor="@color/black"
-                        android:fontFamily="@font/semibold_poppins"
+                        android:fontFamily="@font/bold_poppins"
                         android:gravity="center"
-                        android:layout_marginBottom="24dp"/>
+                        android:layout_marginTop="10dp"
+                        android:layout_marginBottom="30dp"/>
 
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/feedbackOptionsRecyclerView"
                         android:layout_width="match_parent"
                         android:layout_height="0dp"
                         android:layout_weight="1"
-                        android:layout_marginBottom="24dp"/>
+                        android:layout_marginBottom="30dp"/>
 
                     <Button
                         android:id="@+id/btnSubmit"
@@ -82,7 +89,8 @@
                         android:textColor="@color/white"
                         android:fontFamily="@font/regular_poppins"
                         android:textAllCaps="false"
-                        android:layout_marginBottom="24dp"/>
+                        android:minHeight="55dp"
+                        android:textSize="16sp"/>
 
                 </LinearLayout>
             </ScrollView>
