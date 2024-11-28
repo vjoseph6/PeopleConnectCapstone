@@ -38,11 +38,12 @@ class NotificationAdapter(
             val iconResource = when (notification.type) {
                 "chat" -> R.drawable.ic_notification
                 "call" -> R.drawable.ic_video_call
+                "booking" -> R.drawable.client_activity  // Use appropriate booking icon
                 else -> R.drawable.client_activity
             }
             iconView.setImageResource(iconResource)
 
-            // Update background color based on read status from Firebase
+            // Update background color based on read status
             updateBackgroundColor(notification.isRead)
 
             // Handle click
@@ -56,9 +57,7 @@ class NotificationAdapter(
 
                     notificationsRef.child("isRead").setValue(true)
                         .addOnSuccessListener {
-                            // Update local state
                             notification.isRead = true
-                            // Update UI
                             updateBackgroundColor(true)
                         }
                 }

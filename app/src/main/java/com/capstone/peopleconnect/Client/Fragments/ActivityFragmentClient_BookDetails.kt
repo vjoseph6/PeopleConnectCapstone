@@ -49,6 +49,7 @@ import java.util.Calendar
 import java.util.Locale
 import java.util.UUID
 import kotlin.math.ceil
+import com.capstone.peopleconnect.Notifications.model.NotificationModel
 
 
 class ActivityFragmentClient_BookDetails : Fragment() {
@@ -170,7 +171,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         val hourRateEditText = view.findViewById<EditText>(R.id.etHourRate)
         hourRateEditText.setText("1")
         hourRateEditText.addTextChangedListener(createRateTextWatcher(rateTextView))
-        
+
         fetchSkillRate()
 
 
@@ -329,7 +330,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
                     selectedEndCalendar.get(Calendar.DAY_OF_MONTH) == startTimeCalendar!!.get(Calendar.DAY_OF_MONTH) &&
                     selectedEndCalendar.get(Calendar.HOUR_OF_DAY) == startTimeCalendar!!.get(Calendar.HOUR_OF_DAY) &&
                     selectedEndCalendar.get(Calendar.MINUTE) == startTimeCalendar!!.get(Calendar.MINUTE)) {
-                        
+
                     Toast.makeText(requireContext(), "End time cannot be the same as start time", Toast.LENGTH_SHORT).show()
                     return@showTimePicker
                 }
@@ -657,21 +658,76 @@ class ActivityFragmentClient_BookDetails : Fragment() {
 
     private fun saveBookingToDatabase(bookingId: String, booking: Bookings) {
         val bookingReference = FirebaseDatabase.getInstance().getReference("bookings")
-
         bookingReference.child(bookingId).setValue(booking)
             .addOnSuccessListener {
+                // Send notification to provider
+                sendBookingNotificationToProvider(booking)
+
                 dismissLoadingDialog()
                 Toast.makeText(requireContext(), "Booking saved successfully", Toast.LENGTH_SHORT).show()
 
-                val fragmentTransaction = requireActivity().supportFragmentManager.beginTransaction()
-                fragmentTransaction.replace(R.id.frame_layout, ActivityFragmentClient.newInstance(email = userEmail.toString()))
-                fragmentTransaction.addToBackStack(null)
-                fragmentTransaction.commit()
+                // Navigate back to ActivityFragmentClient
+                val activityFragment = ActivityFragmentClient.newInstance(userEmail ?: "")
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.frame_layout, activityFragment)
+                    .commit()
             }
             .addOnFailureListener { e ->
                 dismissLoadingDialog()
-                Toast.makeText(requireContext(), "Failed to save booking: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Failed to save booking", Toast.LENGTH_SHORT).show()
+                Log.e("SaveBooking", "Error saving booking", e)
             }
+    }
+
+
+    private fun sendBookingNotificationToProvider(booking: Bookings) {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        if (currentUser != null) {
+            FirebaseDatabase.getInstance().getReference("users")
+                .child(currentUser.uid)
+                .child("name")
+                .get()
+                .addOnSuccessListener { clientNameSnapshot ->
+                    val clientName = clientNameSnapshot.getValue(String::class.java) ?: "A client"
+
+                    // Find provider's ID using their email
+                    FirebaseDatabase.getInstance().getReference("users")
+                        .orderByChild("email")
+                        .equalTo(booking.providerEmail)
+                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(snapshot: DataSnapshot) {
+                                val providerId = snapshot.children.firstOrNull()?.key
+                                if (providerId != null) {
+                                    // Create booking notification
+                                    val notification = NotificationModel(
+                                        id = FirebaseDatabase.getInstance().reference.push().key ?: return,
+                                        title = "New Booking Request",
+                                        description = "$clientName has requested a booking for ${booking.bookingDay}",
+                                        type = "booking",
+                                        senderId = currentUser.uid,
+                                        senderName = clientName,
+                                        timestamp = System.currentTimeMillis(),
+                                        bookingId = booking.bookingId,  // Make sure this is set
+                                        bookingStatus = "Pending",
+                                        bookingDate = booking.bookingDay,
+                                        bookingTime = booking.bookingStartTime
+                                    )
+
+                                    // Save notification to Firebase
+                                    FirebaseDatabase.getInstance()
+                                        .getReference("notifications")
+                                        .child(providerId)
+                                        .child(notification.id)
+                                        .setValue(notification)
+                                }
+                            }
+
+                            override fun onCancelled(error: DatabaseError) {
+                                Log.e("Notification", "Error finding provider", error.toException())
+                            }
+                        })
+                }
+        }
     }
 
 
@@ -887,7 +943,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         val total = hours * baseRate
 
         Log.d("RateCalculation", "Hours: $hours, BaseRate: $baseRate, Total: $total")
-        
+
         // Update the total rate display with whole number
         rateEditText?.setText(total.toString())
     }
@@ -899,7 +955,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
     private fun calculateHourRate() {
         if (startTimeCalendar != null && endTimeCalendar != null) {
             var endCalendar = endTimeCalendar!!.clone() as Calendar
-            
+
             // If end time is before start time, assume it's next day
             if (endCalendar.before(startTimeCalendar)) {
                 endCalendar.add(Calendar.DAY_OF_MONTH, 1)
@@ -975,7 +1031,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
 
                     if (userEmail == providerEmail) {
                         val skillItems = skillSetSnapshot.child("skillItems")
-                        
+
                         for (skillItem in skillItems.children) {
                             val name = skillItem.child("name").getValue(String::class.java)
                             val skillRate = skillItem.child("skillRate").getValue(Float::class.java)
@@ -985,9 +1041,9 @@ class ActivityFragmentClient_BookDetails : Fragment() {
                                 // Convert to whole number and ensure it's not null
                                 val wholeRate = skillRate?.toInt() ?: 0
                                 rate = wholeRate.toString()
-                                
+
                                 Log.d("SkillRate", "Setting rate to: $rate")
-                                
+
                                 // Ensure we're on the main thread when updating UI
                                 activity?.runOnUiThread {
                                     view?.findViewById<EditText>(R.id.etRate)?.setText(rate)

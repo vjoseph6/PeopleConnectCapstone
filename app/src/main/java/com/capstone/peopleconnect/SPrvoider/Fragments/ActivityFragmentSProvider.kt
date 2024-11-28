@@ -1,6 +1,7 @@
 package com.capstone.peopleconnect.SPrvoider.Fragments
 
 import android.app.AlertDialog
+import com.capstone.peopleconnect.Notifications.model.NotificationModel
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -288,41 +289,70 @@ class ActivityFragmentSProvider : Fragment(){
 
 
     private fun acceptBooking(bookingKey: String) {
-        val bookingsRef = FirebaseDatabase.getInstance().getReference("bookings")
+        val databaseReference = FirebaseDatabase.getInstance().getReference("bookings/$bookingKey")
 
-        bookingsRef.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                // Iterate through the children to find the matching bookingKey
-                for (bookingSnapshot in snapshot.children) {
-                    val currentKey = bookingSnapshot.key
+        // Get booking details first
+        databaseReference.get().addOnSuccessListener { snapshot ->
+            val booking = snapshot.getValue(Bookings::class.java)
+            if (booking != null) {
+                databaseReference.child("bookingStatus").setValue("Accepted")
+                    .addOnSuccessListener {
+                        // Send notification to client
+                        FirebaseAuth.getInstance().currentUser?.let { currentUser ->
+                            FirebaseDatabase.getInstance().getReference("users")
+                                .child(currentUser.uid)
+                                .child("name")
+                                .get()
+                                .addOnSuccessListener { providerNameSnapshot ->
+                                    val providerName = providerNameSnapshot.getValue(String::class.java) ?: "Service Provider"
 
-                    // Check if the current key matches the bookingKey passed
-                    if (currentKey == bookingKey) {
-                        val booking = bookingSnapshot.getValue(Bookings::class.java)
-                        if (booking != null) {
-                            // Prepare the updates for the booking
-                            val updates = mapOf("bookingStatus" to "Accepted")
+                                    // Find client's ID using their email
+                                    FirebaseDatabase.getInstance().getReference("users")
+                                        .orderByChild("email")
+                                        .equalTo(booking.bookByEmail)
+                                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                                            override fun onDataChange(snapshot: DataSnapshot) {
+                                                val clientId = snapshot.children.firstOrNull()?.key
+                                                if (clientId != null) {
+                                                    // Create acceptance notification
+                                                    val notification = NotificationModel(
+                                                        id = FirebaseDatabase.getInstance().reference.push().key ?: return,
+                                                        title = "Booking Accepted",
+                                                        description = "$providerName has accepted your booking for ${booking.bookingDay}",
+                                                        type = "booking",
+                                                        senderId = currentUser.uid,
+                                                        senderName = providerName,
+                                                        timestamp = System.currentTimeMillis(),
+                                                        bookingId = bookingKey,
+                                                        bookingStatus = "Accepted",
+                                                        bookingDate = booking.bookingDay,
+                                                        bookingTime = booking.bookingStartTime
+                                                    )
 
-                            // Update the booking status
-                            bookingSnapshot.ref.updateChildren(updates).addOnCompleteListener { task ->
-                                if (task.isSuccessful) {
-                                    Toast.makeText(context, "Booking accepted successfully", Toast.LENGTH_SHORT).show()
-                                    updateServiceStatus(booking.providerEmail, booking.serviceOffered) // Pass providerEmail and serviceOffered
-                                } else {
-                                    Toast.makeText(context, "Failed to accept booking", Toast.LENGTH_SHORT).show()
+                                                    // Save notification
+                                                    FirebaseDatabase.getInstance()
+                                                        .getReference("notifications")
+                                                        .child(clientId)
+                                                        .child(notification.id)
+                                                        .setValue(notification)
+                                                }
+                                            }
+
+                                            override fun onCancelled(error: DatabaseError) {
+                                                Log.e("Notification", "Error finding client", error.toException())
+                                            }
+                                        })
                                 }
-                            }
                         }
-                        return
+                        Toast.makeText(context, "Booking accepted successfully", Toast.LENGTH_SHORT).show()
+                        email?.let { fetchBookingsForProvider(it) }
+                        updateServiceStatus(booking.providerEmail, booking.serviceOffered) // Pass providerEmail and serviceOffered
                     }
-                }
-                Toast.makeText(context, "Booking not found", Toast.LENGTH_SHORT).show()
+                    .addOnFailureListener {
+                        Toast.makeText(context, "Failed to accept booking", Toast.LENGTH_SHORT).show()
+                    }
             }
-
-            override fun onCancelled(error: DatabaseError) {
-                Log.e("Firebase", "Error loading bookings", error.toException())
-            }
-        })
+        }
     }
 
 
@@ -363,62 +393,99 @@ class ActivityFragmentSProvider : Fragment(){
 
 
     private fun cancelBooking(bookingKey: String) {
-        // Inflate the custom layout
         val dialogView = layoutInflater.inflate(R.layout.dialog_cancel_booking_sprovider, null)
-
-        // Create an AlertDialog
         val builder = AlertDialog.Builder(requireContext())
             .setView(dialogView)
-            .setCancelable(true) // Allows the dialog to be canceled when tapping outside
+            .setCancelable(true)
 
-        // Create the AlertDialog
         val alertDialog = builder.create()
-
-        // Get references to the buttons and RadioGroup in the custom layout
         val btnYes: Button = dialogView.findViewById(R.id.btnYes)
         val btnNo: TextView = dialogView.findViewById(R.id.btnNo)
         val radioGroup: RadioGroup = dialogView.findViewById(R.id.optionsRadioGroup)
 
-        // Set onClickListener for the Yes button
         btnYes.setOnClickListener {
-            // Get the selected radio button ID
             val selectedOptionId = radioGroup.checkedRadioButtonId
-
-            if (selectedOptionId != -1) { // Check if an option is selected
-                // Find the selected radio button and get its text
+            if (selectedOptionId != -1) {
                 val selectedRadioButton: RadioButton = dialogView.findViewById(selectedOptionId)
                 val cancellationReason = selectedRadioButton.text.toString()
 
                 val databaseReference = FirebaseDatabase.getInstance().getReference("bookings/$bookingKey")
 
-                // Add the cancellation reason and update the booking status
-                val updates = mapOf(
-                    "bookingCancelProvider" to cancellationReason,
-                    "bookingStatus" to "Canceled"
-                )
+                // Get booking details first
+                databaseReference.get().addOnSuccessListener { snapshot ->
+                    val booking = snapshot.getValue(Bookings::class.java)
+                    if (booking != null) {
+                        val updates = mapOf(
+                            "bookingCancelProvider" to cancellationReason,
+                            "bookingStatus" to "Canceled"
+                        )
 
-                databaseReference.updateChildren(updates).addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        Toast.makeText(context, "Booking canceled successfully", Toast.LENGTH_SHORT)
-                            .show()
-                        // Optionally, refresh the list of bookings after cancellation
-                        email?.let { fetchBookingsForProvider(it) }
-                    } else {
-                        Toast.makeText(context, "Failed to cancel booking", Toast.LENGTH_SHORT)
-                            .show()
+                        databaseReference.updateChildren(updates).addOnSuccessListener {
+                            // Send notification to client
+                            FirebaseAuth.getInstance().currentUser?.let { currentUser ->
+                                FirebaseDatabase.getInstance().getReference("users")
+                                    .child(currentUser.uid)
+                                    .child("name")
+                                    .get()
+                                    .addOnSuccessListener { providerNameSnapshot ->
+                                        val providerName = providerNameSnapshot.getValue(String::class.java) ?: "Service Provider"
+
+                                        // Find client's ID using their email
+                                        FirebaseDatabase.getInstance().getReference("users")
+                                            .orderByChild("email")
+                                            .equalTo(booking.bookByEmail)
+                                            .addListenerForSingleValueEvent(object : ValueEventListener {
+                                                override fun onDataChange(snapshot: DataSnapshot) {
+                                                    val clientId = snapshot.children.firstOrNull()?.key
+                                                    if (clientId != null) {
+                                                        // Create cancellation notification
+                                                        val notification = NotificationModel(
+                                                            id = FirebaseDatabase.getInstance().reference.push().key ?: return,
+                                                            title = "Booking Cancelled by Provider",
+                                                            description = "$providerName has cancelled your booking for ${booking.bookingDay}",
+                                                            type = "booking",
+                                                            senderId = currentUser.uid,
+                                                            senderName = providerName,
+                                                            timestamp = System.currentTimeMillis(),
+                                                            bookingId = bookingKey,
+                                                            bookingStatus = "Cancelled",
+                                                            bookingDate = booking.bookingDay,
+                                                            bookingTime = booking.bookingStartTime,
+                                                            cancellationReason = cancellationReason
+                                                        )
+
+                                                        // Save notification
+                                                        FirebaseDatabase.getInstance()
+                                                            .getReference("notifications")
+                                                            .child(clientId)
+                                                            .child(notification.id)
+                                                            .setValue(notification)
+                                                    }
+                                                }
+
+                                                override fun onCancelled(error: DatabaseError) {
+                                                    Log.e("Notification", "Error finding client", error.toException())
+                                                }
+                                            })
+                                    }
+                            }
+
+                            Toast.makeText(context, "Booking canceled successfully", Toast.LENGTH_SHORT).show()
+                            email?.let { fetchBookingsForProvider(it) }
+                        }
                     }
                 }
+                alertDialog.dismiss()
+            } else {
+                Toast.makeText(context, "Please select a reason for canceling", Toast.LENGTH_SHORT).show()
             }
-
-            alertDialog.dismiss() // Dismiss the dialog
         }
 
-        // Set onClickListener for the No button
         btnNo.setOnClickListener {
-            alertDialog.dismiss() // Just dismiss the dialog if no is clicked
+            alertDialog.dismiss()
         }
 
-        alertDialog.window?.attributes?.windowAnimations = R.style.DialogAnimation // Apply animations
+        alertDialog.window?.attributes?.windowAnimations = R.style.DialogAnimation
         alertDialog.show()
     }
 
