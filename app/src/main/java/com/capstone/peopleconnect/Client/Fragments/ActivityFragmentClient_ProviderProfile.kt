@@ -69,7 +69,6 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
         val rating = arguments?.getFloat("RATING") ?: 0f
         val noOfBookings = arguments?.getString("NO_OF_BOOKINGS") ?: "0"
         val description = arguments?.getString("DESCRIPTION") ?: ""
-        val skillRate = arguments?.getString("RATE") ?: ""
         serviceOffered = arguments?.getString("SERVICE_OFFERED") ?: ""
         bookDay = arguments?.getString("bookDay") ?: ""
         startTime = arguments?.getString("startTime") ?: ""
@@ -112,6 +111,12 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
             profileImageView.setImageResource(R.drawable.profile)
         }
 
+        // Check for the tag and adjust UI accordingly
+        val tag = arguments?.getString("TAG")
+        if (tag == "fromApplicants") {
+            bookNowButton.visibility = View.GONE
+        }
+
         return view
     }
 
@@ -125,9 +130,11 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
                         Log.d(TAG, "User data exists for: $providerName")
                         for (userSnapshot in snapshot.children) {
                             email = userSnapshot.child("email").getValue(String::class.java).toString()
+                            val profileImageUrl = userSnapshot.child("profileImageUrl").getValue(String::class.java).toString()
+                            Picasso.get().load(profileImageUrl).into(profileImageView)
                             Log.d(TAG, "Retrieved email: $email")
                             if (email != null) {
-                                fetchSkills(email)  // Call fetchSkills with the user's email
+                                fetchSkills(email)
                                 fetchWorks(email)
                             }
                         }
@@ -158,7 +165,18 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
                         val skillItemsSnapshot = skillSnapshot.child("skillItems")
                         for (itemSnapshot in skillItemsSnapshot.children) {
                             val name = itemSnapshot.child("name").getValue(String::class.java) ?: ""
-                            Log.d(TAG, "Retrieved skill name: $name")
+                            val description = itemSnapshot.child("description").getValue(String::class.java) ?: ""
+
+                            // Log the current skill name and description
+                            Log.d(TAG, "Checking skill: $name with description: $description")
+
+                            // Check if the selected service matches the skill name
+                            if (serviceOffered == name) {
+                                providerDescription.text = description // Update the provider description
+                                Log.d(TAG, "Match found! Service offered: $serviceOffered matches skill: $name. Description set to: $description")
+                            } else {
+                                Log.d(TAG, "No match. Service offered: $serviceOffered does not match skill: $name")
+                            }
 
                             // Fetch the image URL using the name
                             fetchImage(name) { imageUrl ->
@@ -275,6 +293,9 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
         ) { newService ->
             serviceOffered = newService
             servicesAdapter.updateSelectedService(newService)
+
+            // Re-fetch skills to update the description based on the selected service
+            fetchSkills(email) // Pass the email to fetchSkills
         }
 
         recyclerView.apply {
@@ -288,20 +309,23 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
         private const val ARG_PROFILE_IMAGE_URL = "PROFILE_IMAGE_URL"
         private const val ARG_RATING = "RATING"
         private const val ARG_NO_OF_BOOKINGS = "NO_OF_BOOKINGS"
+        private const val ARG_TAG = "TAG"
 
         @JvmStatic
         fun newInstance(
             name: String,
-            profileImageUrl: String,
-            rating: Float,
-            noOfBookings: String
+            profileImageUrl: String = "",
+            rating: Float = 0f,
+            noOfBookings: String = "0",
+            tag: String? = null
         ) =
             ActivityFragmentClient_ProviderProfile().apply {
                 arguments = Bundle().apply {
-                    putString(ARG_NAME, name)
-                    putString(ARG_PROFILE_IMAGE_URL, profileImageUrl)
-                    putFloat(ARG_RATING, rating)
-                    putString(ARG_NO_OF_BOOKINGS, noOfBookings)
+                    name.let {  putString(ARG_NAME, name) }
+                    profileImageUrl.let {  putString(ARG_PROFILE_IMAGE_URL, profileImageUrl)}
+                    rating .let { putFloat(ARG_RATING, rating)}
+                    noOfBookings.let { putString(ARG_NO_OF_BOOKINGS, noOfBookings)}
+                    tag?.let { putString(ARG_TAG, it) }
                 }
             }
     }
