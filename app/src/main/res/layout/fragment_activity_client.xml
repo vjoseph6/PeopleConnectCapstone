@@ -48,7 +48,6 @@
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
                         android:layout_marginStart="10dp"
-                        android:layout_marginEnd="20dp"
                         android:orientation="horizontal"
                         android:paddingStart="10dp">
 
@@ -74,6 +73,18 @@
                             android:layout_height="35dp"
                             android:contentDescription="Notification Icon"
                             android:src="@drawable/client_notification" />
+
+                        <TextView
+                            android:id="@+id/notificationBadge"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_gravity="end|top"
+                            android:background="@drawable/notification_badge_background"
+                            android:gravity="center"
+                            android:textColor="@android:color/white"
+                            android:textSize="12sp"
+                            android:visibility="gone"
+                            android:fontFamily="@font/regular_poppins"/>
                     </LinearLayout>
                 </RelativeLayout>
             </androidx.appcompat.widget.Toolbar>

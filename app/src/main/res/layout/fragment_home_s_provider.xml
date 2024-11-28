@@ -65,6 +65,19 @@
                     android:layout_height="35dp"
                     android:src="@drawable/client_notification"
                     android:contentDescription="Notification Icon" />
+
+                <TextView
+                    android:id="@+id/notificationBadge_sprovider"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="end|top"
+                    android:background="@drawable/notification_badge_background"
+                    android:gravity="center"
+                    android:textColor="@android:color/white"
+                    android:textSize="12sp"
+                    android:visibility="gone"
+                    android:fontFamily="@font/regular_poppins"/>
+
             </LinearLayout>
 
             <!-- Hello Message -->

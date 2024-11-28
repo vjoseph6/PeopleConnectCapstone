@@ -1,12 +1,10 @@
 package com.capstone.peopleconnect.Message
 
 import android.app.Application
-// Notification-related imports (commented out)
-/*
+// Notification-related imports (uncommented out)
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
-*/
 import android.os.Build
 import android.util.Log
 import com.capstone.peopleconnect.R
@@ -27,10 +25,10 @@ class MyApplication : Application() {
         super.onCreate()
 
         // Notification channel creation (commented out)
-        /*
+
         // Create notification channel for Android O and above
         createNotificationChannel()
-        */
+
 
         // Enable background sync and user presence
         val backgroundSyncEnabled = true
@@ -57,8 +55,7 @@ class MyApplication : Application() {
             .withPlugins(statePluginFactory, offlinePluginFactory)
             .build()
 
-        // FCM token registration (commented out)
-        /*
+        // FCM token registration (uncommented out)
         // Add FCM token registration
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
             if (!task.isSuccessful) {
@@ -88,11 +85,10 @@ class MyApplication : Application() {
                 Log.d("FCM", "Token registered: $token")
             }
         }
-        */
+
     }
 
-    // Notification channel creation function (commented out)
-    /*
+    // Notification channel creation function (uncommented out)
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channelId = "chat_messages"
@@ -113,5 +109,4 @@ class MyApplication : Application() {
             Log.d("Notifications", "Chat notification channel created")
         }
     }
-    */
 }

@@ -16,6 +16,7 @@ import com.android.volley.Request
 import com.android.volley.Response
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
+import com.capstone.peopleconnect.Notifications.model.NotificationModel
 //import com.capstone.peopleconnect.Notifications.model.NotificationModel
 import com.capstone.peopleconnect.R
 import com.google.firebase.auth.FirebaseAuth
@@ -31,6 +32,11 @@ import io.getstream.result.Result
 import org.json.JSONObject
 import com.google.firebase.messaging.FirebaseMessaging
 import io.getstream.chat.android.ui.feature.messages.list.MessageListView
+import com.android.volley.DefaultRetryPolicy
+import com.android.volley.TimeoutError
+import com.android.volley.NoConnectionError
+import java.nio.charset.Charset
+import com.android.volley.RetryPolicy
 
 
 class ChatActivity : AppCompatActivity() {
@@ -44,12 +50,13 @@ class ChatActivity : AppCompatActivity() {
     private var selectedUserId: String = ""
     private var selectedUserName: String = ""
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_chat)
 
         // Please do not delete this, as this code is the connection for the notification. It's just missing something, which is why it isn't functioning yet.
-        /* Notification-related code commented out
+
         // Add this to test notifications when the activity starts
         testPushNotification()
 
@@ -62,7 +69,7 @@ class ChatActivity : AppCompatActivity() {
                 handleCallNotification(channelId, callId)
             }
         }
-        */
+
 
         Log.d("ChatActivity", "onCreate called")
 
@@ -117,30 +124,29 @@ class ChatActivity : AppCompatActivity() {
 
 
 // Please do not delete this, as this code is the connection for the notification. It's just missing something, which is why it isn't functioning yet.
-//    private fun handleCallNotification(channelId: String, callId: String) {
-//        loadMessageListFragment(channelId)
-//
-//        // Show a toast to inform the user they can join the call
-//        Toast.makeText(
-//            this,
-//            "Click on the call message to join the video call",
-//            Toast.LENGTH_LONG
-//        ).show()
-//    }
+    private fun handleCallNotification(channelId: String, callId: String) {
+        loadMessageListFragment(channelId)
+
+        // Show a toast to inform the user they can join the call
+        Toast.makeText(
+            this,
+            "Click on the call message to join the video call",
+            Toast.LENGTH_LONG
+        ).show()
+    }
 
     //  Please do not delete this, as this code is the connection for the notification. It's just missing something, which is why it isn't functioning yet.
     // Add this function to test push notifications
-//    private fun testPushNotification() {
-//        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-//            if (task.isSuccessful) {
-//                val token = task.result
-//                Log.d("PushTest", "FCM Token: $token")
-//            } else {
-//                Log.e("PushTest", "Failed to get FCM token", task.exception)
-//            }
-//        }
-//    }
-
+    private fun testPushNotification() {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val token = task.result
+                Log.d("PushTest", "FCM Token: $token")
+            } else {
+                Log.e("PushTest", "Failed to get FCM token", task.exception)
+            }
+        }
+    }
 
 
     private fun startVideoCall() {
@@ -170,14 +176,14 @@ class ChatActivity : AppCompatActivity() {
             if (result.isSuccess) {
                 //  Please do not delete this, as this code is the connection for the notification. It's just missing something, which is why it isn't functioning yet.
                 // Send notification with the call icon
-//                sendNotificationData(
-//                    userId = selectedUserId,
-//                    title = "📞 Video Call Invitation",  // Show call icon in notification
-//                    message = "Tap to join the video call",
-//                    type = "call",
-//                    channelId = channelId,
-//                    callLink = callLink
-//                )
+                sendNotificationData(
+                    userId = selectedUserId,
+                    title = "📞 Video Call Invitation",  // Show call icon in notification
+                    message = "Tap to join the video call",
+                    type = "call",
+                    channelId = channelId,
+                    callLink = callLink
+                )
                 Log.d("VideoCall", "Message and notification sent successfully")
             } else {
                 Log.e("VideoCall", "Error sending message: ${result.errorOrNull()?.message}")
@@ -188,84 +194,119 @@ class ChatActivity : AppCompatActivity() {
 
     //  Please do not delete this, as this code is the connection for the notification. It's just missing something, which is why it isn't functioning yet.
 
-//    // Update the sendNotificationData function to include callLink
-//    private fun sendNotificationData(
-//        userId: String,
-//        title: String,
-//        message: String,
-//        type: String,
-//        channelId: String? = null,
-//        callLink: String? = null
-//    ) {
-//        val database = FirebaseDatabase.getInstance()
-//        val notificationsRef = database.reference.child("notifications").child(userId)
-//
-//        val notification = NotificationModel(
-//            id = database.reference.push().key ?: return,
-//            title = title,
-//            description = message,
-//            type = type,
-//            senderId = currentUserId,
-//            senderName = currentUser?.displayName ?: "Unknown",
-//            timestamp = System.currentTimeMillis(),
-//            isRead = false,
-//            channelId = channelId,
-//            callLink = callLink  // Add this field to your NotificationModel
-//        )
-//
-//        notificationsRef.child(notification.id).setValue(notification)
-//            .addOnSuccessListener {
-//                Log.d("Notification", "Notification data saved successfully")
-//            }
-//            .addOnFailureListener { e ->
-//                Log.e("Notification", "Error saving notification data", e)
-//            }
-//    }
+    // Update the sendNotificationData function to include callLink
+    private fun sendNotificationData(
+        userId: String,
+        title: String,
+        message: String,
+        type: String,
+        channelId: String? = null,
+        callLink: String? = null
+    ) {
+        val database = FirebaseDatabase.getInstance()
+        val notificationsRef = database.reference.child("notifications").child(userId)
+
+        val notification = NotificationModel(
+            id = database.reference.push().key ?: return,
+            title = title,
+            description = message,
+            type = type,
+            senderId = currentUserId,
+            senderName = currentUser?.displayName ?: "Unknown",
+            timestamp = System.currentTimeMillis(),
+            isRead = false,
+            channelId = channelId,
+            callLink = callLink  // Add this field to your NotificationModel
+        )
+
+        notificationsRef.child(notification.id).setValue(notification)
+            .addOnSuccessListener {
+                Log.d("Notification", "Notification data saved successfully")
+            }
+            .addOnFailureListener { e ->
+                Log.e("Notification", "Error saving notification data", e)
+            }
+    }
 
 
 
 
     private fun requestTokenFromBackend(userId: String) {
-        chatLoadingSpinner.visibility = View.VISIBLE // Show spinner at the start
+        chatLoadingSpinner.visibility = View.VISIBLE
 
         val url = "https://peopleconnect-chat-backend.vercel.app/"
 
         val requestBody = JSONObject().apply {
             put("userId", userId)
         }
-        Log.d("TokenRequest", "Request payload: $requestBody")
+        Log.d("TokenRequest", "Requesting token for userId: $userId")
+
+        // Create a custom retry policy
+        val retryPolicy: RetryPolicy = DefaultRetryPolicy(
+            30000, // Timeout in milliseconds
+            3,     // Max retries
+            DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+        )
 
         val requestQueue = Volley.newRequestQueue(this)
 
         val jsonObjectRequest = object : JsonObjectRequest(
             Request.Method.POST, url, requestBody,
             Response.Listener { response ->
-                chatLoadingSpinner.visibility = View.GONE // Hide spinner on success
-                token = response.optString("token")
-                if (token.isNotEmpty()) {
-                    Log.d("TokenRequest", "Token received successfully: $token")
-                    connectCurrentUserToStreamChat()
-                } else {
-                    Log.e("TokenRequest", "Token is empty in the response.")
-                    Toast.makeText(this, "Failed to retrieve token. Please try again.", Toast.LENGTH_SHORT).show()
+                chatLoadingSpinner.visibility = View.GONE
+                try {
+                    token = response.optString("token")
+                    if (token.isNotEmpty()) {
+                        Log.d("TokenRequest", "Token received successfully")
+                        connectCurrentUserToStreamChat()
+                    } else {
+                        handleError("Token is empty in the response")
+                    }
+                } catch (e: Exception) {
+                    handleError("Error processing response: ${e.message}")
                 }
             },
             Response.ErrorListener { error ->
-                chatLoadingSpinner.visibility = View.GONE // Hide spinner on error
-                val networkResponse = error.networkResponse
-                val statusCode = networkResponse?.statusCode ?: "Unknown"
-                val errorData = networkResponse?.data?.let { String(it) } ?: "No response data"
-                Log.e("TokenRequest", "Error fetching token: HTTP Status $statusCode. Response: $errorData")
-                Toast.makeText(this, "Failed to fetch token. Please try again.", Toast.LENGTH_SHORT).show()
+                chatLoadingSpinner.visibility = View.GONE
+
+                val errorMessage = when (error) {
+                    is TimeoutError -> "Request timed out. Please check your internet connection."
+                    is NoConnectionError -> "No internet connection available."
+                    else -> {
+                        val networkResponse = error.networkResponse
+                        val statusCode = networkResponse?.statusCode ?: -1
+                        val errorData = networkResponse?.data?.let {
+                            String(it, Charset.defaultCharset())
+                        } ?: "Unknown error"
+
+                        when (statusCode) {
+                            500 -> "Server error. Please try again later. (Error 500)"
+                            404 -> "Server endpoint not found. (Error 404)"
+                            401 -> "Authentication failed. Please log in again."
+                            else -> "Error: $errorData (Status: $statusCode)"
+                        }
+                    }
+                }
+
+                handleError(errorMessage)
+                Log.e("TokenRequest", "Error details: $errorMessage", error)
             }
         ) {
             override fun getHeaders(): Map<String, String> {
-                return mapOf("Content-Type" to "application/json")
+                return mapOf(
+                    "Content-Type" to "application/json",
+                    "Accept" to "application/json"
+                )
             }
         }
 
+        // Set the retry policy
+        jsonObjectRequest.retryPolicy = retryPolicy
+
+        // Add request to queue
         requestQueue.add(jsonObjectRequest)
     }
+
 
     private fun upsertSelectedUser() {
         chatLoadingSpinner.visibility = View.VISIBLE // Show spinner at the start
@@ -402,5 +443,29 @@ class ChatActivity : AppCompatActivity() {
                 .commit()
             Log.d("MessageListFragment", "Message list fragment loaded with message click listener")
         }
+    }
+
+    private fun handleError(message: String) {
+        Log.e("TokenRequest", message)
+        runOnUiThread {
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+            // Optionally add a retry button
+            showRetryDialog()
+        }
+    }
+
+    private fun showRetryDialog() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Connection Error")
+            .setMessage("Failed to connect to the server. Would you like to retry?")
+            .setPositiveButton("Retry") { _, _ ->
+                requestTokenFromBackend(currentUserId)
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+                finish() // Optional: close the activity if the user doesn't want to retry
+            }
+            .setCancelable(false)
+            .show()
     }
 }

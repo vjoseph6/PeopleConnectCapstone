@@ -29,6 +29,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import com.google.firebase.auth.FirebaseAuth
 
 
 class HomeFragmentSProvider : Fragment() {
@@ -40,6 +41,8 @@ class HomeFragmentSProvider : Fragment() {
     private lateinit var emptyView: View
     private lateinit var database: DatabaseReference
     private lateinit var adapter: ClientPostAdapter
+    private lateinit var notificationBadgeSProvider: TextView
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,6 +61,10 @@ class HomeFragmentSProvider : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Add after existing view initialization
+        notificationBadgeSProvider = view.findViewById(R.id.notificationBadge_sprovider)
+        setupNotificationBadge()
 
         updateDateText(view)
 
@@ -95,6 +102,38 @@ class HomeFragmentSProvider : Fragment() {
         recyclerView.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = this@HomeFragmentSProvider.adapter
+        }
+    }
+
+    private fun setupNotificationBadge() {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        currentUser?.let { user ->
+            val notificationsRef = FirebaseDatabase.getInstance()
+                .getReference("notifications")
+                .child(user.uid)
+
+            notificationsRef.addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    var unreadCount = 0
+                    snapshot.children.forEach { notification ->
+                        val isRead = notification.child("isRead").getValue(Boolean::class.java) ?: false
+                        if (!isRead) unreadCount++
+                    }
+
+                    activity?.runOnUiThread {
+                        if (unreadCount > 0) {
+                            notificationBadgeSProvider.visibility = View.VISIBLE
+                            notificationBadgeSProvider.text = if (unreadCount > 99) "99+" else unreadCount.toString()
+                        } else {
+                            notificationBadgeSProvider.visibility = View.GONE
+                        }
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e(TAG, "Failed to read notifications", error.toException())
+                }
+            })
         }
     }
 

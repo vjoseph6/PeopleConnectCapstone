@@ -13,9 +13,9 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CAMERA" />
 
-    <!--        PLEASE AYAW NI E DELETE KAY MAO NI NA CODE ANG CONNECTION PARA NOTIFICATION KWANGAN PALANG NI MAONG WAPA NI FUNCTION-->
-<!--    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />-->
-<!--    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />-->
+    <!-- NOTIFICATION -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
 
 
     <application
@@ -30,22 +30,20 @@
         android:theme="@style/Theme.PeopleConnect"
         tools:targetApi="31">
 
-        <!--        PLEASE AYAW NI E DELETE KAY MAO NI NA CODE ANG CONNECTION PARA NOTIFICATION KWANGAN PALANG NI MAONG WAPA NI FUNCTION-->
-
         <!-- FCM Service is correctly declared here -->
-<!--        <service-->
-<!--            android:name=".Notifications.FCMService"-->
-<!--            android:exported="false">-->
-<!--            <intent-filter>-->
-<!--                <action android:name="com.google.firebase.MESSAGING_EVENT" />-->
-<!--            </intent-filter>-->
-<!--        </service>-->
+        <service
+            android:name=".Notifications.FCMService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
 
-<!--        PLEASE AYAW NI E DELETE KAY MAO NI NA CODE ANG CONNECTION PARA NOTIFICATION KWANGAN PALANG NI MAONG WAPA NI FUNCTION-->
+
         <!-- Add metadata for default notification channel -->
-<!--        <meta-data-->
-<!--            android:name="com.google.firebase.messaging.default_notification_channel_id"-->
-<!--            android:value="chat_messages" />-->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="chat_messages" />
 
         <activity
             android:name=".Helper.ImagePreviewActivity"

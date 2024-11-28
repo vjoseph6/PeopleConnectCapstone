@@ -2,6 +2,7 @@ package com.capstone.peopleconnect.Client.Fragments
 
 
 
+import android.content.ContentValues
 import android.os.Bundle
 import android.os.Handler
 import android.text.Editable
@@ -26,6 +27,7 @@ import com.capstone.peopleconnect.Classes.Category
 import com.capstone.peopleconnect.Helper.ClickData
 import com.capstone.peopleconnect.Helper.RetrofitInstance
 import com.capstone.peopleconnect.R
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -40,6 +42,7 @@ class CategoryFragmentClient : Fragment() {
     private var email: String? = null
     private var categoryList: MutableList<Category> = mutableListOf()
     private var isInSubcategoriesView = false  // Flag to track the state
+    private lateinit var notificationBadge: TextView
 
     // To handle double back press
     private var backPressedOnce = false
@@ -91,6 +94,10 @@ class CategoryFragmentClient : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+
+        // Add after existing view initialization
+        notificationBadge = view.findViewById(R.id.notificationBadge)
+        setupNotificationBadge()
 
         updateDateText(view)
 
@@ -145,6 +152,38 @@ class CategoryFragmentClient : Fragment() {
         
 
 
+    }
+
+    private fun setupNotificationBadge() {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        currentUser?.let { user ->
+            val notificationsRef = FirebaseDatabase.getInstance()
+                .getReference("notifications")
+                .child(user.uid)
+
+            notificationsRef.addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    var unreadCount = 0
+                    snapshot.children.forEach { notification ->
+                        val isRead = notification.child("isRead").getValue(Boolean::class.java) ?: false
+                        if (!isRead) unreadCount++
+                    }
+
+                    activity?.runOnUiThread {
+                        if (unreadCount > 0) {
+                            notificationBadge.visibility = View.VISIBLE
+                            notificationBadge.text = if (unreadCount > 99) "99+" else unreadCount.toString()
+                        } else {
+                            notificationBadge.visibility = View.GONE
+                        }
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e(ContentValues.TAG, "Failed to read notifications", error.toException())
+                }
+            })
+        }
     }
 
     private fun filterCategories(query: String) {

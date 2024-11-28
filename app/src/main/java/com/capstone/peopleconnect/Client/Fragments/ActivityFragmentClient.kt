@@ -1,6 +1,7 @@
 package com.capstone.peopleconnect.Client.Fragments
 
 import android.app.AlertDialog
+import android.content.ContentValues
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -32,7 +33,9 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import android.os.Handler
+import android.util.Log
 import androidx.core.content.res.ResourcesCompat
+import com.google.firebase.auth.FirebaseAuth
 
 
 class ActivityFragmentClient : Fragment() {
@@ -44,6 +47,7 @@ class ActivityFragmentClient : Fragment() {
     private var email: String? = null
     private val allBookings = mutableListOf<Pair<String, Bookings>>()// Store all bookings for filtering
     private var currentFilter: String = "Booking"  // Track the current tab/filter
+    private lateinit var notificationBadge: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -132,6 +136,12 @@ class ActivityFragmentClient : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+
+        // Add after existing view initialization
+        notificationBadge = view.findViewById(R.id.notificationBadge)
+        setupNotificationBadge()
+
+
         updateDateText(view)
 
         // Check if we need to auto-cancel bookings
@@ -180,6 +190,38 @@ class ActivityFragmentClient : Fragment() {
         }
 
 
+    }
+
+    private fun setupNotificationBadge() {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        currentUser?.let { user ->
+            val notificationsRef = FirebaseDatabase.getInstance()
+                .getReference("notifications")
+                .child(user.uid)
+
+            notificationsRef.addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    var unreadCount = 0
+                    snapshot.children.forEach { notification ->
+                        val isRead = notification.child("isRead").getValue(Boolean::class.java) ?: false
+                        if (!isRead) unreadCount++
+                    }
+
+                    activity?.runOnUiThread {
+                        if (unreadCount > 0) {
+                            notificationBadge.visibility = View.VISIBLE
+                            notificationBadge.text = if (unreadCount > 99) "99+" else unreadCount.toString()
+                        } else {
+                            notificationBadge.visibility = View.GONE
+                        }
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e(ContentValues.TAG, "Failed to read notifications", error.toException())
+                }
+            })
+        }
     }
 
     // Filters bookings based on status

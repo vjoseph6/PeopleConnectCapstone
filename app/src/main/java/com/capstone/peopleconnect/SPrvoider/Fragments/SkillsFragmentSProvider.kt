@@ -20,6 +20,7 @@ import com.capstone.peopleconnect.Classes.SkillItem
 import com.capstone.peopleconnect.R
 import com.capstone.peopleconnect.SPrvoider.AddSkillsProviderRate
 import com.capstone.peopleconnect.SPrvoider.AddSkillsSProvider
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 
@@ -37,6 +38,7 @@ class SkillsFragmentSProvider : Fragment() {
     private var profileImage: String? = null
     private lateinit var emptyView: RelativeLayout
     private val TAG = "SkillsFragmentSProvider"
+    private lateinit var notificationBadgeSProvider: TextView
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,10 +57,14 @@ class SkillsFragmentSProvider : Fragment() {
         val view = inflater.inflate(R.layout.fragment_skills_s_provider, container, false)
 
 
+        // Add after existing view initialization
+        notificationBadgeSProvider = view.findViewById(R.id.notificationBadge_sprovider)
+        setupNotificationBadge()
+
         updateDateText(view)
 
         // Notification icons
-        val notificationIcons: LinearLayout = view.findViewById(R.id.notificationLayout)
+        val notificationIcons: ImageView = view.findViewById(R.id.notificationIcons)
         notificationIcons.setOnClickListener {
             val notificationFragment = NotificationFragmentSProvider()
             parentFragmentManager.beginTransaction()
@@ -69,7 +75,7 @@ class SkillsFragmentSProvider : Fragment() {
         }
 
         // Message icons
-        val messageIcons: LinearLayout = view.findViewById(R.id.messageLayout)
+        val messageIcons: ImageView = view.findViewById(R.id.messageIcon)
         messageIcons.setOnClickListener {
             val messageFragment = MessageFragmentSProvider()
             parentFragmentManager.beginTransaction()
@@ -129,6 +135,38 @@ class SkillsFragmentSProvider : Fragment() {
         }
 
         return view
+    }
+
+    private fun setupNotificationBadge() {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        currentUser?.let { user ->
+            val notificationsRef = FirebaseDatabase.getInstance()
+                .getReference("notifications")
+                .child(user.uid)
+
+            notificationsRef.addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    var unreadCount = 0
+                    snapshot.children.forEach { notification ->
+                        val isRead = notification.child("isRead").getValue(Boolean::class.java) ?: false
+                        if (!isRead) unreadCount++
+                    }
+
+                    activity?.runOnUiThread {
+                        if (unreadCount > 0) {
+                            notificationBadgeSProvider.visibility = View.VISIBLE
+                            notificationBadgeSProvider.text = if (unreadCount > 99) "99+" else unreadCount.toString()
+                        } else {
+                            notificationBadgeSProvider.visibility = View.GONE
+                        }
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e(TAG, "Failed to read notifications", error.toException())
+                }
+            })
+        }
     }
 
     private fun updateDateText(view: View) {
