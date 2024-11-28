@@ -4,5 +4,5 @@ data class PostApplication(
     val postId: String = "",
     val providerEmail: String = "",
     val clientEmail: String = "",
-    val status: String = "Pending"
+    var status: String = "Pending"
 ) 

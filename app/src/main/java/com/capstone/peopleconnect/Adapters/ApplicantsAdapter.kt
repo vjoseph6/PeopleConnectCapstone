@@ -11,7 +11,8 @@ import de.hdodenhof.circleimageview.CircleImageView
 
 class ApplicantsAdapter(
     private val onActionClick: (PostApplication, Boolean) -> Unit,
-    private val fetchUserDetails: (String, (String, String) -> Unit) -> Unit
+    private val fetchUserDetails: (String, (String, String) -> Unit) -> Unit,
+    private val onApplicantClick: (String, String) -> Unit
 ) : RecyclerView.Adapter<ApplicantsAdapter.ViewHolder>() {
 
     private var applications = mutableListOf<PostApplication>()
@@ -29,7 +30,14 @@ class ApplicantsAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(applications[position])
+        val application = applications[position]
+        holder.bind(application)
+
+        holder.itemView.setOnClickListener {
+            fetchUserDetails(application.providerEmail) { name, _ ->
+                onApplicantClick(name, "fromApplicants")
+            }
+        }
     }
 
     override fun getItemCount() = applications.size

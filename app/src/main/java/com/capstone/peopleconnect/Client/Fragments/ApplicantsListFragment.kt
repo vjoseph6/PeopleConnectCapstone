@@ -92,11 +92,22 @@ class ApplicantsListFragment : Fragment() {
                             Toast.makeText(context, "Failed to load user details", Toast.LENGTH_SHORT).show()
                         }
                     })
+            },
+            onApplicantClick = { providerName, tag ->
+                navigateToProviderProfile(providerName, tag)
             }
         )
         
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = adapter
+    }
+
+    private fun navigateToProviderProfile(providerName: String, tag: String) {
+        val profileFragment = ActivityFragmentClient_ProviderProfile.newInstance(providerName, tag = tag)
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.frame_layout, profileFragment)
+            .addToBackStack(null)
+            .commit()
     }
 
     private fun loadApplicants() {
@@ -106,12 +117,20 @@ class ApplicantsListFragment : Fragment() {
             .addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val applicants = mutableListOf<PostApplication>()
+                    var hasApproved = false // Track if there's an approved application
 
                     for (applicationSnapshot in snapshot.children) {
                         val application = applicationSnapshot.getValue(PostApplication::class.java)
                         if (application?.status == "Pending") {
                             applicants.add(application)
+                        } else if (application?.status == "Accepted") {
+                            hasApproved = true // Found an approved application
                         }
+                    }
+
+                    // If there's an approved application, set all to rejected
+                    if (hasApproved) {
+                        applicants.forEach { it.status = "Rejected" }
                     }
 
                     updateUI(applicants)
