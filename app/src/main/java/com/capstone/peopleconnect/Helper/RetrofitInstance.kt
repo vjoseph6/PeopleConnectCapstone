@@ -10,6 +10,7 @@ object RetrofitInstance {
             .baseUrl("https://algp-api-server.onrender.com") // Your FastAPI URL
             .addConverterFactory(GsonConverterFactory.create())
             .build()
+        //added the new fast api url here
     }
 
     // Lazy initialization of the API service interface
