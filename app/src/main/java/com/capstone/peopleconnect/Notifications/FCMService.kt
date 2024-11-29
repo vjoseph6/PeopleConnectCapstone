@@ -117,6 +117,50 @@ class FCMService : FirebaseMessagingService() {
         )
     }
 
+    private fun handleBookingNotification(
+        userId: String,
+        title: String,
+        description: String,
+        senderId: String,
+        senderName: String,
+        bookingId: String,
+        bookingStatus: String,
+        bookingDate: String,
+        bookingTime: String,
+        cancellationReason: String? = null
+    ) {
+        val notification = NotificationModel(
+            id = database.reference.push().key ?: return,
+            title = title,
+            description = description,
+            type = "booking",
+            senderId = senderId,
+            senderName = senderName,
+            timestamp = System.currentTimeMillis(),
+            isRead = false,
+            bookingId = bookingId,
+            bookingStatus = bookingStatus,
+            bookingDate = bookingDate,
+            bookingTime = bookingTime,
+            cancellationReason = cancellationReason
+        )
+
+        // Store notification in Firebase
+        database.reference
+            .child("notifications")
+            .child(userId)
+            .child(notification.id)
+            .setValue(notification)
+            .addOnSuccessListener {
+                Log.d("FCMService", "Booking notification stored successfully")
+                // Send system notification
+                sendNotification(title, description, senderId, senderName)
+            }
+            .addOnFailureListener { e ->
+                Log.e("FCMService", "Error storing booking notification", e)
+            }
+    }
+
     private fun createNotification(
         userId: String,
         title: String,

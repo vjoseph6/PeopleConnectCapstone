@@ -8,7 +8,6 @@ object RetrofitInstance {
     private val retrofit by lazy {
         Retrofit.Builder()
             .baseUrl("https://algp-api-server.onrender.com") // Your FastAPI URL
-            .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
 

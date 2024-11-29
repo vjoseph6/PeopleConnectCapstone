@@ -15,6 +15,7 @@ import android.widget.Toast
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.capstone.peopleconnect.BookingDetailsFragment
 import com.capstone.peopleconnect.Message.chat.ChatActivity
 import com.capstone.peopleconnect.Notifications.adapter.NotificationAdapter
 import com.capstone.peopleconnect.Notifications.model.NotificationModel
@@ -151,6 +152,17 @@ class NotificationFragmentClient : Fragment() {
                 } catch (e: Exception) {
                     Log.e("NotificationFragment", "Error opening call link", e)
                     Toast.makeText(context, "Unable to join call", Toast.LENGTH_SHORT).show()
+                }
+            }
+            "booking" -> {
+                // Handle booking notification click
+                notification.bookingId?.let { bookingId ->
+                    // Replace the current fragment with BookingDetailsFragment
+                    val bookingDetailsFragment = BookingDetailsFragment.newInstance(bookingId, true)
+                    parentFragmentManager.beginTransaction()
+                        .replace(R.id.frame_layout, bookingDetailsFragment)
+                        .addToBackStack(null)
+                        .commit()
                 }
             }
         }

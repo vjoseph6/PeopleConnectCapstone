@@ -14,6 +14,7 @@ import android.widget.Toast
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.capstone.peopleconnect.BookingDetailsFragment
 import com.capstone.peopleconnect.Message.chat.ChatActivity
 import com.capstone.peopleconnect.Notifications.adapter.NotificationAdapter
 import com.capstone.peopleconnect.Notifications.model.NotificationModel
@@ -84,71 +85,69 @@ class NotificationFragmentSProvider : Fragment() {
 
                 for (notificationSnapshot in snapshot.children) {
                     try {
-                        // Safely create NotificationModel from snapshot
-                        val id = notificationSnapshot.key ?: ""
-                        val title = notificationSnapshot.child("title").getValue(String::class.java) ?: ""
-                        val description = notificationSnapshot.child("description").getValue(String::class.java) ?: ""
-                        val type = notificationSnapshot.child("type").getValue(String::class.java) ?: ""
-                        val senderId = notificationSnapshot.child("senderId").getValue(String::class.java) ?: ""
-                        val senderName = notificationSnapshot.child("senderName").getValue(String::class.java) ?: ""
-                        val timestamp = notificationSnapshot.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
-                        val isRead = notificationSnapshot.child("isRead").getValue(Boolean::class.java) ?: false
-                        val channelId = notificationSnapshot.child("channelId").getValue(String::class.java)
-                        val callLink = notificationSnapshot.child("callLink").getValue(String::class.java)
+                        // Debug log for raw data
+                        Log.d("NotificationDebug", "Raw notification data: ${notificationSnapshot.value}")
 
+                        // Get bookingId first and log it
+                        val bookingId = notificationSnapshot.child("bookingId").getValue(String::class.java)
+                        Log.d("NotificationDebug", "Extracted bookingId: $bookingId")
+
+                        // Get all fields explicitly from snapshot
                         val notification = NotificationModel(
-                            id = id,
-                            title = title,
-                            description = description,
-                            type = type,
-                            senderId = senderId,
-                            senderName = senderName,
-                            timestamp = timestamp,
-                            isRead = isRead,
-                            channelId = channelId,
-                            callLink = callLink
+                            id = notificationSnapshot.key ?: "",
+                            title = notificationSnapshot.child("title").getValue(String::class.java) ?: "",
+                            description = notificationSnapshot.child("description").getValue(String::class.java) ?: "",
+                            type = notificationSnapshot.child("type").getValue(String::class.java) ?: "",
+                            senderId = notificationSnapshot.child("senderId").getValue(String::class.java) ?: "",
+                            senderName = notificationSnapshot.child("senderName").getValue(String::class.java) ?: "",
+                            timestamp = notificationSnapshot.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis(),
+                            isRead = notificationSnapshot.child("isRead").getValue(Boolean::class.java) ?: false,
+                            bookingId = bookingId,
+                            bookingStatus = notificationSnapshot.child("bookingStatus").getValue(String::class.java),
+                            bookingDate = notificationSnapshot.child("bookingDate").getValue(String::class.java),
+                            bookingTime = notificationSnapshot.child("bookingTime").getValue(String::class.java)
                         )
+
+                        Log.d("NotificationDebug", "Created notification object with bookingId: ${notification.bookingId}")
                         notifications.add(notification)
                     } catch (e: Exception) {
-                        Log.e("NotificationFragment", "Error parsing notification: ${e.message}")
+                        Log.e("NotificationDebug", "Error parsing notification: ${e.message}", e)
                         continue
                     }
                 }
 
+                Log.d("NotificationDebug", "Total notifications loaded: ${notifications.size}")
                 // Sort notifications by timestamp (newest first)
                 notifications.sortByDescending { it.timestamp }
 
                 // Update UI
                 if (notifications.isEmpty()) {
+                    Log.d("NotificationDebug", "No notifications to display")
                     view?.findViewById<TextView>(R.id.no_notifications_text)?.visibility = View.VISIBLE
                     recyclerView.visibility = View.GONE
                 } else {
                     view?.findViewById<TextView>(R.id.no_notifications_text)?.visibility = View.GONE
                     recyclerView.visibility = View.VISIBLE
                     notificationAdapter.updateNotifications(notifications)
+                    Log.d("NotificationDebug", "Updated adapter with ${notifications.size} notifications")
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("NotificationFragment", "Error loading notifications: ${error.message}")
+                Log.e("NotificationDebug", "Error loading notifications: ${error.message}")
             }
         }
 
-        val currentUser = FirebaseAuth.getInstance().currentUser
-        currentUser?.let {
-            notificationsRef = database.reference
-                .child("notifications")
-                .child(it.uid)
-            notificationsRef.addValueEventListener(notificationListener!!)
-        }
+        notificationsRef.addValueEventListener(notificationListener!!)
     }
 
     // Update the handleNotificationClick function
     private fun handleNotificationClick(notification: NotificationModel) {
-        // Mark notification as read
-        notification.id.let { notificationId ->
-            notificationsRef.child(notificationId).child("isRead").setValue(true)
-        }
+        try {
+            // Mark notification as read
+            notification.id.let { notificationId ->
+                notificationsRef.child(notificationId).child("isRead").setValue(true)
+            }
 
         when (notification.type) {
             "chat" -> {
@@ -174,6 +173,24 @@ class NotificationFragmentSProvider : Fragment() {
                     Toast.makeText(context, "Unable to join call", Toast.LENGTH_SHORT).show()
                 }
             }
+            "booking" -> {
+                Log.d("NotificationClick", "Booking ID: ${notification.bookingId}")
+                notification.bookingId?.let { bookingId ->
+                    // Create and navigate to BookingDetailsFragment
+                    val bookingDetailsFragment = BookingDetailsFragment.newInstance(bookingId, false)
+                    requireActivity().supportFragmentManager.beginTransaction()
+                        .replace(R.id.frame_layout, bookingDetailsFragment)
+                        .addToBackStack(null)
+                        .commit()
+                } ?: run {
+                    Log.e("NotificationClick", "Booking ID is null")
+                    Toast.makeText(context, "Booking details not found", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        } catch (e: Exception) {
+            Log.e("NotificationClick", "Error handling notification click", e)
+            Toast.makeText(context, "Error opening booking details", Toast.LENGTH_SHORT).show()
         }
     }
 

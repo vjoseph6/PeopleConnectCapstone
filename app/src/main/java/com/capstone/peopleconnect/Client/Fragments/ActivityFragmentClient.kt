@@ -35,6 +35,7 @@ import java.util.TimeZone
 import android.os.Handler
 import android.util.Log
 import androidx.core.content.res.ResourcesCompat
+import com.capstone.peopleconnect.Notifications.model.NotificationModel
 import com.google.firebase.auth.FirebaseAuth
 
 
@@ -148,11 +149,11 @@ class ActivityFragmentClient : Fragment() {
         arguments?.let { args ->
             val target = args.getString("target")
             val serviceType = args.getString("serviceType")
-            
+
             if (target == "cancel_booking") {
                 val tvBooking = view.findViewById<TextView>(R.id.tvBooking_Present)
                 tvBooking.performClick()
-                
+
                 // Wait for bookings to load
                 Handler().postDelayed({
                     // Check if serviceType is null, empty, or "Service Type not found"
@@ -310,72 +311,101 @@ class ActivityFragmentClient : Fragment() {
     }
 
     private fun cancelBooking(bookingKey: String) {
-        // Inflate the custom layout
         val dialogView = layoutInflater.inflate(R.layout.dialog_cancel_booking, null)
-
-        // Create an AlertDialog
         val builder = AlertDialog.Builder(requireContext())
             .setView(dialogView)
-            .setCancelable(true) // Allows the dialog to be canceled when tapping outside
+            .setCancelable(true)
 
-        // Create the AlertDialog
         val alertDialog = builder.create()
-
-        // Get references to the buttons and RadioGroup in the custom layout
         val btnYes: Button = dialogView.findViewById(R.id.btnYes)
         val btnNo: TextView = dialogView.findViewById(R.id.btnNo)
         val radioGroup: RadioGroup = dialogView.findViewById(R.id.optionsRadioGroup)
 
-        // Set onClickListener for the Yes button
         btnYes.setOnClickListener {
-            // Get the selected radio button ID
             val selectedOptionId = radioGroup.checkedRadioButtonId
-
-            if (selectedOptionId != -1) { // Check if an option is selected
-                // Find the selected radio button and get its text
+            if (selectedOptionId != -1) {
                 val selectedRadioButton: RadioButton = dialogView.findViewById(selectedOptionId)
                 val cancellationReason = selectedRadioButton.text.toString()
 
-                // Proceed with the cancellation
-                val databaseReference = FirebaseDatabase.getInstance().getReference("bookings/$bookingKey")
+                // Get the booking details first
+                FirebaseDatabase.getInstance().getReference("bookings")
+                    .child(bookingKey)
+                    .get()
+                    .addOnSuccessListener { snapshot ->
+                        val booking = snapshot.getValue(Bookings::class.java)
+                        if (booking != null) {
+                            // Update booking status
+                            val updates = mapOf(
+                                "bookingCancelClient" to cancellationReason,
+                                "bookingStatus" to "Canceled"
+                            )
 
-                // Add the cancellation reason to the booking
-                val updates = mapOf(
-                    "bookingCancelClient" to cancellationReason
-                )
+                            snapshot.ref.updateChildren(updates).addOnSuccessListener {
+                                // Send notification to provider
+                                FirebaseAuth.getInstance().currentUser?.let { currentUser ->
+                                    FirebaseDatabase.getInstance().getReference("users")
+                                        .child(currentUser.uid)
+                                        .child("name")
+                                        .get()
+                                        .addOnSuccessListener { clientNameSnapshot ->
+                                            val clientName = clientNameSnapshot.getValue(String::class.java) ?: "A client"
 
-                // Update Firebase with the cancellation reason and remove the booking
-                databaseReference.updateChildren(updates).addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        // Proceed to remove the booking
-                        databaseReference.removeValue().addOnCompleteListener { removeTask ->
-                            if (removeTask.isSuccessful) {
-                                Toast.makeText(context, "Booking canceled successfully", Toast.LENGTH_SHORT).show()
-                                // Optionally, refresh the list of bookings after cancellation
+                                            // Find provider's ID using their email
+                                            FirebaseDatabase.getInstance().getReference("users")
+                                                .orderByChild("email")
+                                                .equalTo(booking.providerEmail)
+                                                .addListenerForSingleValueEvent(object : ValueEventListener {
+                                                    override fun onDataChange(snapshot: DataSnapshot) {
+                                                        val providerId = snapshot.children.firstOrNull()?.key
+                                                        if (providerId != null) {
+                                                            // Create cancellation notification
+                                                            val notification = NotificationModel(
+                                                                id = FirebaseDatabase.getInstance().reference.push().key ?: return,
+                                                                title = "Booking Cancelled",
+                                                                description = "$clientName has cancelled the booking for ${booking.bookingDay}",
+                                                                type = "booking",
+                                                                senderId = currentUser.uid,
+                                                                senderName = clientName,
+                                                                timestamp = System.currentTimeMillis(),
+                                                                bookingId = bookingKey,
+                                                                bookingStatus = "Cancelled",
+                                                                bookingDate = booking.bookingDay,
+                                                                bookingTime = booking.bookingStartTime,
+                                                                cancellationReason = cancellationReason
+                                                            )
+
+                                                            // Save notification
+                                                            FirebaseDatabase.getInstance()
+                                                                .getReference("notifications")
+                                                                .child(providerId)
+                                                                .child(notification.id)
+                                                                .setValue(notification)
+                                                        }
+                                                    }
+
+                                                    override fun onCancelled(error: DatabaseError) {
+                                                        Log.e("Notification", "Error finding provider", error.toException())
+                                                    }
+                                                })
+                                        }
+                                }
+
+                                Toast.makeText(context, "Booking cancelled successfully", Toast.LENGTH_SHORT).show()
                                 email?.let { fetchBookingsForClient(it) }
-                                alertDialog.dismiss()
-                            } else {
-                                Toast.makeText(context, "Failed to cancel booking", Toast.LENGTH_SHORT).show()
                             }
                         }
-                    } else {
-                        Toast.makeText(context, "Failed to update cancellation reason", Toast.LENGTH_SHORT).show()
                     }
-                }
+                alertDialog.dismiss()
             } else {
-                // Show a message if no option is selected
-                Toast.makeText(context, "Please select a reason for canceling", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Please select a reason for cancelling", Toast.LENGTH_SHORT).show()
             }
-
-            alertDialog.dismiss() // Dismiss the dialog
         }
 
-        // Set onClickListener for the No button
         btnNo.setOnClickListener {
-            alertDialog.dismiss() // Just dismiss the dialog if no is clicked
+            alertDialog.dismiss()
         }
 
-        alertDialog.window?.attributes?.windowAnimations = R.style.DialogAnimation // Apply animations
+        alertDialog.window?.attributes?.windowAnimations = R.style.DialogAnimation
         alertDialog.show()
     }
 
@@ -398,10 +428,11 @@ class ActivityFragmentClient : Fragment() {
     }
 
     private fun cancelAllPendingBookings() {
-        val pendingBookings = allBookings.filter { 
-            it.second.bookingStatus != "Canceled" && 
-            it.second.bookingStatus != "Completed" && 
-            it.second.bookingStatus != "Failed"
+        val pendingBookings = allBookings.filter {
+            it.second.bookingStatus != "Canceled" &&
+                    it.second.bookingStatus != "Completed" &&
+                    it.second.bookingStatus != "Failed"
+                    it.second.bookingStatus != "Accepted"
         }
 
         if (pendingBookings.isEmpty()) {
@@ -424,17 +455,18 @@ class ActivityFragmentClient : Fragment() {
     }
 
     private fun cancelBookingsByService(targetServiceType: String) {
-        val pendingBookings = allBookings.filter { 
-            it.second.bookingStatus != "Canceled" && 
-            it.second.bookingStatus != "Completed" && 
-            it.second.bookingStatus != "Failed" &&
-            it.second.serviceOffered == targetServiceType
+        val pendingBookings = allBookings.filter {
+            it.second.bookingStatus != "Canceled" &&
+                    it.second.bookingStatus != "Completed" &&
+                    it.second.bookingStatus != "Failed" &&
+                    it.second.bookingStatus != "Accepted"
+                    it.second.serviceOffered == targetServiceType
         }
 
         if (pendingBookings.isEmpty()) {
             Toast.makeText(
-                context, 
-                "No pending bookings found for $targetServiceType", 
+                context,
+                "No pending bookings found for $targetServiceType",
                 Toast.LENGTH_SHORT
             ).show()
             return
