@@ -432,6 +432,7 @@ class ActivityFragmentClient : Fragment() {
             it.second.bookingStatus != "Canceled" &&
                     it.second.bookingStatus != "Completed" &&
                     it.second.bookingStatus != "Failed"
+                    it.second.bookingStatus != "Accepted"
         }
 
         if (pendingBookings.isEmpty()) {
@@ -458,6 +459,7 @@ class ActivityFragmentClient : Fragment() {
             it.second.bookingStatus != "Canceled" &&
                     it.second.bookingStatus != "Completed" &&
                     it.second.bookingStatus != "Failed" &&
+                    it.second.bookingStatus != "Accepted"
                     it.second.serviceOffered == targetServiceType
         }
 

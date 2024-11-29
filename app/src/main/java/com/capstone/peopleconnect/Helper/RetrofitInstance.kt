@@ -7,8 +7,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 object RetrofitInstance {
     private val retrofit by lazy {
         Retrofit.Builder()
-            .baseUrl("https://algp-api-server.onrender.com/") // Your FastAPI URL
-            .addConverterFactory(GsonConverterFactory.create())
+            .baseUrl("https://algp-api-server.onrender.com") // Your FastAPI URL
             .build()
     }
 
