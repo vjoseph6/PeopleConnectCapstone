@@ -1,5 +1,6 @@
 package com.capstone.peopleconnect.Client.Fragments
 
+import android.app.AlertDialog
 import android.app.Dialog
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -96,8 +97,6 @@ class PostDetailsFragment : Fragment() {
                 }
             }
 
-            // Check if provider has already applied
-            checkExistingApplication(view)
         } else {
             val applyBtn = view.findViewById<Button>(R.id.btnApply)
             applyBtn.visibility = View.GONE
@@ -166,26 +165,24 @@ class PostDetailsFragment : Fragment() {
             return
         }
 
-        // Check if already applied before creating new application
+        val applyButton = view?.findViewById<Button>(R.id.btnApply)
+
         database.child("post_applicants")
             .orderByChild("postId")
             .equalTo(postId)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     var alreadyApplied = false
+                    var applicationKey: String? = null
                     for (applicationSnapshot in snapshot.children) {
                         val application = applicationSnapshot.getValue(PostApplication::class.java)
                         if (application?.providerEmail == providerEmail) {
                             alreadyApplied = true
+                            applicationKey = applicationSnapshot.key
                             break
                         }
                     }
-
-                    if (!alreadyApplied) {
-                        createNewApplication()
-                    } else {
-                        Toast.makeText(context, "You have already applied for this post", Toast.LENGTH_SHORT).show()
-                    }
+                    updateApplyButton(applyButton, alreadyApplied, applicationKey)
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -193,6 +190,70 @@ class PostDetailsFragment : Fragment() {
                 }
             })
     }
+
+    private fun updateApplyButton(applyButton: Button?, alreadyApplied: Boolean, applicationKey: String?) {
+        applyButton?.apply {
+            if (alreadyApplied) {
+                text = "Cancel"
+                setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.red))
+                setOnClickListener {
+                    showCancelDialog(applicationKey)
+                }
+            } else {
+                text = "Apply"
+                setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.blue))
+                setOnClickListener {
+                    createNewApplication()
+                }
+            }
+        }
+    }
+
+    private fun showCancelDialog(applicationKey: String?) {
+        if (applicationKey == null) return
+
+        val dialogView = layoutInflater.inflate(R.layout.sprovider_dialog_logout, null)
+        val dialogBuilder = AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .setCancelable(false)
+
+        val tvLogoutTitle = dialogView.findViewById<TextView>(R.id.tvLogoutTitle)
+        tvLogoutTitle.text = "Are you sure you want to cancel this application?"
+
+        val dialog = dialogBuilder.create()
+
+        // Ensure this is a Button, not a TextView
+        val btnLogout = dialogView.findViewById<Button>(R.id.btnLogout)
+        btnLogout.text = "Yes, cancel application"
+        btnLogout.setTextAppearance(requireContext(), R.style.BlueButtonStyle)  // Apply style correctly
+        tvLogoutTitle.setTextColor(ContextCompat.getColor(requireContext(), R.color.blue))
+
+        val btnCancel = dialogView.findViewById<TextView>(R.id.tvCancel)
+        btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        btnLogout.setOnClickListener {
+            cancelApplication(applicationKey)
+            dialog.dismiss()
+        }
+
+        dialog.show()
+    }
+
+
+
+    private fun cancelApplication(applicationKey: String) {
+        database.child("post_applicants").child(applicationKey).removeValue()
+            .addOnSuccessListener {
+                Toast.makeText(context, "Application canceled", Toast.LENGTH_SHORT).show()
+                applyForPost() // Refresh the button state
+            }
+            .addOnFailureListener {
+                Toast.makeText(context, "Failed to cancel application", Toast.LENGTH_SHORT).show()
+            }
+    }
+
 
     private fun createNewApplication() {
         val application = PostApplication(
@@ -205,42 +266,21 @@ class PostDetailsFragment : Fragment() {
         database.child("post_applicants").push().setValue(application)
             .addOnSuccessListener {
                 Toast.makeText(context, "Application submitted successfully", Toast.LENGTH_SHORT).show()
-                view?.findViewById<Button>(R.id.btnApply)?.apply {
-                    isEnabled = false
-                    text = "Applied"
-                }
+                applyForPost() // Refresh the button state
             }
             .addOnFailureListener {
                 Toast.makeText(context, "Failed to submit application", Toast.LENGTH_SHORT).show()
             }
     }
 
-    private fun checkExistingApplication(view: View) {
-        if (postId == null || providerEmail == null) return
-
-        database.child("post_applicants")
-            .orderByChild("postId")
-            .equalTo(postId)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    for (applicationSnapshot in snapshot.children) {
-                        val application = applicationSnapshot.getValue(PostApplication::class.java)
-                        if (application?.providerEmail == providerEmail) {
-                            // Provider has already applied
-                            view.findViewById<Button>(R.id.btnApply)?.apply {
-                                isEnabled = false
-                                text = "Applied"
-                            }
-                            return
-                        }
-                    }
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Toast.makeText(context, "Failed to check application status", Toast.LENGTH_SHORT).show()
-                }
-            })
+    override fun onResume() {
+        super.onResume()
+        applyForPost() // Update the button state when the fragment becomes active
     }
+
+
+
+
 
     companion object {
         @JvmStatic
