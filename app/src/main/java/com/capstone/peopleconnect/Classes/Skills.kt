@@ -12,6 +12,7 @@ data class SkillItem(
     var description: String = "",
     var skillRate: Int = 0,
     var rating: Float = 0.0f,
-    var noOfBookings: Int = 0
+    var noOfBookings: Int = 0,
+    var totalRating: Float = 0.0f
 )
 
