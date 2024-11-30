@@ -251,14 +251,17 @@ class HomeFragmentClient : Fragment() {
                 for (skillSnapshot in snapshot.children) {
                     val skillItemsSnapshot = skillSnapshot.child("skillItems")
                     for (itemSnapshot in skillItemsSnapshot.children) {
-                        val name = itemSnapshot.child("name").getValue(String::class.java) ?: ""
-                        val description = itemSnapshot.child("description").getValue(String::class.java) ?: ""
-                        val noOfBookings = itemSnapshot.child("noOfBookings").getValue(Int::class.java) ?: 0
-                        val rating = itemSnapshot.child("rating").getValue(Float::class.java) ?: 0f
-                        val skillRate = itemSnapshot.child("skillRate").getValue(Int::class.java) ?: 0 // Retrieve as Int
+                        val visible = itemSnapshot.child("visible").getValue(Boolean::class.java) ?: true // Default to true if not specified
+                        if (visible) { // Only add skill if visible is true
+                            val name = itemSnapshot.child("name").getValue(String::class.java) ?: ""
+                            val description = itemSnapshot.child("description").getValue(String::class.java) ?: ""
+                            val noOfBookings = itemSnapshot.child("noOfBookings").getValue(Int::class.java) ?: 0
+                            val rating = itemSnapshot.child("rating").getValue(Float::class.java) ?: 0f
+                            val skillRate = itemSnapshot.child("skillRate").getValue(Int::class.java) ?: 0 // Retrieve as Int
 
-                        val skill = SkillItem(name, description = description, noOfBookings = noOfBookings, rating = rating, skillRate = skillRate)
-                        skills.add(skill)
+                            val skill = SkillItem(name, description = description, noOfBookings = noOfBookings, rating = rating, skillRate = skillRate)
+                            skills.add(skill)
+                        }
                     }
                 }
 
@@ -287,6 +290,7 @@ class HomeFragmentClient : Fragment() {
             }
         })
     }
+
 
     private fun navigateToProviderProfile(providerEmail: String, selectedSkill: SkillItem, providerName: String?, profileImageUrl: String?) {
         val providerProfileFragment = ActivityFragmentClient_ProviderProfile().apply {

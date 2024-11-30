@@ -166,13 +166,17 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
                         for (itemSnapshot in skillItemsSnapshot.children) {
                             val name = itemSnapshot.child("name").getValue(String::class.java) ?: ""
                             val description = itemSnapshot.child("description").getValue(String::class.java) ?: ""
+                            val noOfBookings = itemSnapshot.child("noOfBookings").getValue(Int::class.java) ?: 0
+                            val rating = itemSnapshot.child("rating").getValue(Float::class.java) ?: 0.0f
 
-                            // Log the current skill name and description
-                            Log.d(TAG, "Checking skill: $name with description: $description")
+                            // Log the current skill details
+                            Log.d(TAG, "Skill details - Name: $name, Description: $description, NoOfBookings: $noOfBookings, Rating: $rating")
 
                             // Check if the selected service matches the skill name
                             if (serviceOffered == name) {
                                 providerDescription.text = description // Update the provider description
+                                providerRatingTextView.text = "★ $rating ($noOfBookings Bookings)"
+
                                 Log.d(TAG, "Match found! Service offered: $serviceOffered matches skill: $name. Description set to: $description")
                             } else {
                                 Log.d(TAG, "No match. Service offered: $serviceOffered does not match skill: $name")
@@ -181,7 +185,10 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
                             // Fetch the image URL using the name
                             fetchImage(name) { imageUrl ->
                                 // Create a new Category object and add it to the list
-                                val category = Category(name = name, image = imageUrl)
+                                val category = Category(
+                                    name = name,
+                                    image = imageUrl,
+                                )
                                 categories.add(category)
                                 Log.d(TAG, "Fetched image URL for $name: $imageUrl")
 
@@ -204,6 +211,7 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
             }
         })
     }
+
 
     private fun fetchWorks(email: String) {
         val postsRef = FirebaseDatabase.getInstance().getReference("posts")

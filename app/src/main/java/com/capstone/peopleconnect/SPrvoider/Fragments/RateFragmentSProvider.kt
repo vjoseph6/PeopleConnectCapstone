@@ -154,6 +154,7 @@ class RateFragmentSProvider : Fragment() {
                         val ratingRef = FirebaseDatabase.getInstance().getReference("ratings").push()
                         ratingRef.setValue(rating).addOnSuccessListener {
                             Toast.makeText(context, "Rating submitted successfully", Toast.LENGTH_SHORT).show()
+                            updateUserRating(clientEmail ?: "")
                             parentFragmentManager.popBackStack()
                         }.addOnFailureListener { e ->
                             Toast.makeText(context, "Failed to submit rating", Toast.LENGTH_SHORT).show()
@@ -166,6 +167,51 @@ class RateFragmentSProvider : Fragment() {
                     }
                 })
         }
+    }
+
+    private fun updateUserRating(raterEmail: String) {
+        val usersRef = FirebaseDatabase.getInstance().getReference("users")
+        usersRef.orderByChild("email").equalTo(raterEmail)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        for (userSnapshot in snapshot.children) {
+                            val user = userSnapshot.getValue(User::class.java)
+                            user?.let {
+                                // Fetch previous values
+                                val previousNoOfBookings = it.userNoOfBookings ?: 0
+                                val previousTotalRating = it.userTotalRating ?: 0.0f
+
+                                // Calculate new values
+                                val newNoOfBookings = previousNoOfBookings + 1
+                                val newTotalRating = previousTotalRating + binding.ratingBar.rating
+                                val newUserRating = newTotalRating / newNoOfBookings // Average rating
+
+                                // Update user rating information
+                                val updates = mapOf(
+                                    "userNoOfBookings" to newNoOfBookings,
+                                    "userTotalRating" to newTotalRating,
+                                    "userRating" to newUserRating
+                                )
+
+                                usersRef.child(userSnapshot.key!!).updateChildren(updates)
+                                    .addOnSuccessListener {
+                                        Log.d("RateFragmentClient", "User rating updated successfully")
+                                    }
+                                    .addOnFailureListener { e ->
+                                        Log.e("RateFragmentClient", "Error updating user rating", e)
+                                    }
+                            }
+                        }
+                    } else {
+                        Log.d("RateFragmentClient", "No user found with email: $raterEmail")
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("RateFragmentClient", "Error fetching user data", error.toException())
+                }
+            })
     }
 
     companion object {
