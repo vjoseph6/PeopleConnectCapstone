@@ -181,7 +181,7 @@ class OngoingFragmentSProvider : Fragment() {
             bookingRef.child("bookingStatus").addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     val status = snapshot.getValue(String::class.java)
-                    if (status == "Complete" && !isUpdating) {
+                    if (status == "Completed" && !isUpdating) {
                         // Check if fragment is still attached
                         if (!isAdded) return
 
@@ -275,7 +275,7 @@ class OngoingFragmentSProvider : Fragment() {
                     ?.alpha(0f)
                     ?.setDuration(150)
                     ?.withEndAction {
-                        swipeText?.text = "Swipe to Complete"
+                        swipeText?.text = "Swipe to Completed"
                         swipeText?.animate()
                             ?.alpha(1f)
                             ?.setDuration(150)
@@ -419,7 +419,7 @@ class OngoingFragmentSProvider : Fragment() {
             when (state) {
                 BookingProgress.STATE_PENDING -> "Swipe to Arrive"
                 BookingProgress.STATE_ARRIVE -> "Swipe to Start Work"
-                BookingProgress.STATE_WORKING -> "Swipe to Complete"
+                BookingProgress.STATE_WORKING -> "Swipe to Completed"
                 "AWAITING_CLIENT_CONFIRMATION" -> "Waiting for client confirmation..."
                 else -> "Completed"
             }

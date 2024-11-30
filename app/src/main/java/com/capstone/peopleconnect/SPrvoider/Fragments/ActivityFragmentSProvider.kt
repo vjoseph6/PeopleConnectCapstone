@@ -47,6 +47,7 @@ class ActivityFragmentSProvider : Fragment(){
     private val bookings = mutableListOf<Pair<String, Bookings>>()  // Store Pair of key and booking
     private var email: String? = null
     private lateinit var notificationBadgeSProvider: TextView
+    private var lastSelectedTab: String = "Booking"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -147,21 +148,41 @@ class ActivityFragmentSProvider : Fragment(){
 
         // Set click listeners for each tab
         tvBooking.setOnClickListener {
+            lastSelectedTab = "Booking"
             currentFilter = "Booking"
             filterBookings(currentFilter)
             highlightSelectedTab(tvBooking, tvSuccessful, tvFailed)
         }
 
         tvSuccessful.setOnClickListener {
+            lastSelectedTab = "Successful"
             currentFilter = "Successful"
             filterBookings(currentFilter)
             highlightSelectedTab(tvSuccessful, tvBooking, tvFailed)
         }
 
         tvFailed.setOnClickListener {
+            lastSelectedTab = "Failed"
             currentFilter = "Failed"
             filterBookings(currentFilter)
             highlightSelectedTab(tvFailed, tvBooking, tvSuccessful)
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Restore the last selected tab state when returning to the fragment
+        view?.let { view ->
+            val tvBooking = view.findViewById<TextView>(R.id.tvBooking_Present)
+            val tvSuccessful = view.findViewById<TextView>(R.id.tvSuccessful_Present)
+            val tvFailed = view.findViewById<TextView>(R.id.tvFailed_Present)
+
+            when (lastSelectedTab) {
+                "Successful" -> tvSuccessful.performClick()
+                "Failed" -> tvFailed.performClick()
+                "Booking" -> tvBooking.performClick()
+                else -> tvBooking.performClick()  // Default to Booking tab
+            }
         }
     }
 
@@ -211,8 +232,8 @@ class ActivityFragmentSProvider : Fragment(){
     private fun filterBookings(statusFilter: String) {
         // Filter based on the booking status from the second element of the pair (the Booking object)
         val filteredBookings = when (statusFilter) {
-            "Booking" -> allBookings.filter { it.second.bookingStatus != "Canceled" && it.second.bookingStatus != "Completed" }
-            "Successful" -> allBookings.filter { it.second.bookingStatus == "Completed" }
+            "Booking" -> allBookings.filter { it.second.bookingStatus != "Canceled" && it.second.bookingStatus != "Complete" && it.second.bookingStatus != "Completed" }
+            "Successful" -> allBookings.filter { it.second.bookingStatus == "Complete" || it.second.bookingStatus == "Completed" }
             "Failed" -> allBookings.filter { it.second.bookingStatus == "Canceled" }
             else -> allBookings
         }

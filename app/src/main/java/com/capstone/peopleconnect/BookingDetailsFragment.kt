@@ -278,10 +278,13 @@ class BookingDetailsFragment : Fragment() {
             "Pending" -> R.color.orange
             "Accepted" -> R.color.green
             "Rejected" -> R.color.red
-            "Completed" -> R.color.blue
+            "Complete", "Completed" -> if (isClient) R.color.green else R.color.blue
             else -> R.color.black
         }
         bookingStatusTextView.setTextColor(ContextCompat.getColor(requireContext(), color))
+        
+        // Add this to convert "Complete" to "Completed" in display
+        bookingStatusTextView.text = if (status == "Complete") "Completed" else status
     }
 
     private fun openLocationInGoogleMaps() {
