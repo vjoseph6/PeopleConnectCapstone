@@ -54,6 +54,11 @@ class SProviderMainActivity : AppCompatActivity() {
                     loadFragment(SkillsFragmentSProvider(), "skills", firstName, middleName, lastName, userName, address, email, profileImage)
                     bottomNavigationView.selectedItemId = R.id.skills
                 }
+                "ActivityFragmentSProvider" -> {
+                    val email = intent.getStringExtra("EMAIL")
+                    loadFragment(ActivityFragmentSProvider(), "activities", firstName, middleName, lastName, userName, address, email, profileImage)
+                    bottomNavigationView.selectedItemId = R.id.activities
+                }
                 // Handle other fragments if needed
             }
         } else if (savedInstanceState == null) {

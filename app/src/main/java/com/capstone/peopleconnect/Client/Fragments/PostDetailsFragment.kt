@@ -161,7 +161,6 @@ class PostDetailsFragment : Fragment() {
 
     private fun applyForPost() {
         if (postId == null || providerEmail == null || clientEmail == null) {
-            Toast.makeText(context, "Unable to apply for post", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -277,7 +276,6 @@ class PostDetailsFragment : Fragment() {
         super.onResume()
         applyForPost() // Update the button state when the fragment becomes active
     }
-
 
 
 
