@@ -80,19 +80,12 @@ class OngoingFragmentClient : Fragment() {
             checkBookingStatus()
         }
 
-        // Modify the existing click listener for the View Message button
         binding.btnViewMessage.setOnClickListener {
-            // Check if the button text is "Well Done"
-            if (binding.btnViewMessage.text.toString() == "Well Done") {
-                // Do nothing or show a toast if you want to inform the user
-                Toast.makeText(requireContext(), "Service completed", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            // Existing chat navigation logic
+            // Get provider's user ID using their email
             providerEmail?.let { email ->
-                val usersRef = FirebaseDatabase.getInstance().getReference("users")
-                usersRef.orderByChild("email").equalTo(email)
+                FirebaseDatabase.getInstance().getReference("users")
+                    .orderByChild("email")
+                    .equalTo(email)
                     .addListenerForSingleValueEvent(object : ValueEventListener {
                         override fun onDataChange(snapshot: DataSnapshot) {
                             val providerData = snapshot.children.firstOrNull()
@@ -100,9 +93,11 @@ class OngoingFragmentClient : Fragment() {
                             val providerName = providerData?.child("name")?.getValue(String::class.java)
 
                             if (providerId != null && providerName != null) {
-                                val intent = Intent(requireContext(), ChatActivity::class.java)
-                                intent.putExtra("userId", providerId)
-                                intent.putExtra("name", providerName)
+                                val intent = Intent(requireContext(), ChatActivity::class.java).apply {
+                                    putExtra("userId", providerId)
+                                    putExtra("name", providerName)
+                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                                }
                                 startActivity(intent)
                             }
                         }

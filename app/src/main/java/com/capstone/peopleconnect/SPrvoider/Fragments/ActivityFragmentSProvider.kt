@@ -334,9 +334,11 @@ class ActivityFragmentSProvider : Fragment(){
                                         .addListenerForSingleValueEvent(object : ValueEventListener {
                                             override fun onDataChange(snapshot: DataSnapshot) {
                                                 val clientId = snapshot.children.firstOrNull()?.key
+                                                val clientName = snapshot.children.firstOrNull()?.child("name")?.getValue(String::class.java) ?: "Client"
+
                                                 if (clientId != null) {
-                                                    // Create acceptance notification
-                                                    val notification = NotificationModel(
+                                                    // 1. Original "Booking Accepted" notification (existing code)
+                                                    val acceptanceNotification = NotificationModel(
                                                         id = FirebaseDatabase.getInstance().reference.push().key ?: return,
                                                         title = "Booking Accepted",
                                                         description = "$providerName has accepted your booking for ${booking.bookingDay}",
@@ -350,12 +352,94 @@ class ActivityFragmentSProvider : Fragment(){
                                                         bookingTime = booking.bookingStartTime
                                                     )
 
-                                                    // Save notification
-                                                    FirebaseDatabase.getInstance()
+                                                    // 2. New ongoing progress notification for client
+                                                    val clientOngoingNotification = NotificationModel(
+                                                        id = FirebaseDatabase.getInstance().reference.push().key ?: return,
+                                                        title = "Ongoing Service",
+                                                        description = "Track your ongoing service with $providerName",
+                                                        type = "ongoing",
+                                                        senderId = currentUser.uid,
+                                                        senderName = providerName,
+                                                        timestamp = System.currentTimeMillis(),
+                                                        bookingId = bookingKey,
+                                                        bookingStatus = "Ongoing",
+                                                        bookingDate = booking.bookingDay,
+                                                        bookingTime = booking.bookingStartTime
+                                                    )
+
+                                                    // 3. New ongoing progress notification for provider
+                                                    val providerOngoingNotification = NotificationModel(
+                                                        id = FirebaseDatabase.getInstance().reference.push().key ?: return,
+                                                        title = "Ongoing Service",
+                                                        description = "Track your ongoing service with $clientName",
+                                                        type = "ongoing",
+                                                        senderId = clientId,
+                                                        senderName = clientName,
+                                                        timestamp = System.currentTimeMillis(),
+                                                        bookingId = bookingKey,
+                                                        bookingStatus = "Ongoing",
+                                                        bookingDate = booking.bookingDay,
+                                                        bookingTime = booking.bookingStartTime
+                                                    )
+
+                                                    // 4. New chat notification for client
+                                                    val clientChatNotification = NotificationModel(
+                                                        id = FirebaseDatabase.getInstance().reference.push().key ?: return,
+                                                        title = "Chat Your Provider Now",
+                                                        description = "Chat with $providerName about your booking",
+                                                        type = "chat",
+                                                        senderId = currentUser.uid,
+                                                        senderName = providerName,
+                                                        timestamp = System.currentTimeMillis(),
+                                                        bookingId = bookingKey,
+                                                        channelId = null  // We'll handle chat creation when clicked
+                                                    )
+
+                                                    // 5. New chat notification for provider
+                                                    val providerChatNotification = NotificationModel(
+                                                        id = FirebaseDatabase.getInstance().reference.push().key ?: return,
+                                                        title = "Chat Your Client Now",
+                                                        description = "Chat with $clientName about their booking",
+                                                        type = "chat",
+                                                        senderId = clientId,
+                                                        senderName = clientName,
+                                                        timestamp = System.currentTimeMillis(),
+                                                        bookingId = bookingKey,
+                                                        channelId = null  // We'll handle chat creation when clicked
+                                                    )
+
+                                                    // Save all notifications
+                                                    val notificationsRef = FirebaseDatabase.getInstance()
                                                         .getReference("notifications")
+
+                                                    // Save acceptance notification to client
+                                                    notificationsRef
                                                         .child(clientId)
-                                                        .child(notification.id)
-                                                        .setValue(notification)
+                                                        .child(acceptanceNotification.id)
+                                                        .setValue(acceptanceNotification)
+
+                                                    // Save ongoing notification to client
+                                                    notificationsRef
+                                                        .child(clientId)
+                                                        .child(clientOngoingNotification.id)
+                                                        .setValue(clientOngoingNotification)
+
+                                                    // Save ongoing notification to provider
+                                                    notificationsRef
+                                                        .child(currentUser.uid)
+                                                        .child(providerOngoingNotification.id)
+                                                        .setValue(providerOngoingNotification)
+
+                                                    // Add these to the notification saving block
+                                                    notificationsRef
+                                                        .child(clientId)
+                                                        .child(clientChatNotification.id)
+                                                        .setValue(clientChatNotification)
+
+                                                    notificationsRef
+                                                        .child(currentUser.uid)
+                                                        .child(providerChatNotification.id)
+                                                        .setValue(providerChatNotification)
                                                 }
                                             }
 
@@ -367,7 +451,7 @@ class ActivityFragmentSProvider : Fragment(){
                         }
                         Toast.makeText(context, "Booking accepted successfully", Toast.LENGTH_SHORT).show()
                         email?.let { fetchBookingsForProvider(it) }
-                        updateServiceStatus(booking.providerEmail, booking.serviceOffered) // Pass providerEmail and serviceOffered
+                        updateServiceStatus(booking.providerEmail, booking.serviceOffered)
                     }
                     .addOnFailureListener {
                         Toast.makeText(context, "Failed to accept booking", Toast.LENGTH_SHORT).show()
