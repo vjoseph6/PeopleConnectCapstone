@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.capstone.peopleconnect.BookingDetailsFragment
+import com.capstone.peopleconnect.Classes.Bookings
 import com.capstone.peopleconnect.Message.chat.ChatActivity
 import com.capstone.peopleconnect.Notifications.adapter.NotificationAdapter
 import com.capstone.peopleconnect.Notifications.model.NotificationModel
@@ -25,6 +26,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+
 
 class NotificationFragmentSProvider : Fragment() {
     private lateinit var recyclerView: RecyclerView
@@ -83,53 +85,42 @@ class NotificationFragmentSProvider : Fragment() {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val notifications = mutableListOf<NotificationModel>()
 
-                for (notificationSnapshot in snapshot.children) {
-                    try {
-                        // Debug log for raw data
-                        Log.d("NotificationDebug", "Raw notification data: ${notificationSnapshot.value}")
-
-                        // Get bookingId first and log it
-                        val bookingId = notificationSnapshot.child("bookingId").getValue(String::class.java)
-                        Log.d("NotificationDebug", "Extracted bookingId: $bookingId")
-
-                        // Get all fields explicitly from snapshot
-                        val notification = NotificationModel(
-                            id = notificationSnapshot.key ?: "",
-                            title = notificationSnapshot.child("title").getValue(String::class.java) ?: "",
-                            description = notificationSnapshot.child("description").getValue(String::class.java) ?: "",
-                            type = notificationSnapshot.child("type").getValue(String::class.java) ?: "",
-                            senderId = notificationSnapshot.child("senderId").getValue(String::class.java) ?: "",
-                            senderName = notificationSnapshot.child("senderName").getValue(String::class.java) ?: "",
-                            timestamp = notificationSnapshot.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis(),
-                            isRead = notificationSnapshot.child("isRead").getValue(Boolean::class.java) ?: false,
-                            bookingId = bookingId,
-                            bookingStatus = notificationSnapshot.child("bookingStatus").getValue(String::class.java),
-                            bookingDate = notificationSnapshot.child("bookingDate").getValue(String::class.java),
-                            bookingTime = notificationSnapshot.child("bookingTime").getValue(String::class.java)
-                        )
-
-                        Log.d("NotificationDebug", "Created notification object with bookingId: ${notification.bookingId}")
-                        notifications.add(notification)
-                    } catch (e: Exception) {
-                        Log.e("NotificationDebug", "Error parsing notification: ${e.message}", e)
-                        continue
-                    }
+                // Get all notifications first
+                val allNotifications = snapshot.children.mapNotNull { notificationSnapshot ->
+                    val notification = notificationSnapshot.getValue(NotificationModel::class.java)
+                    if (notification != null) {
+                        notification.isRead = notificationSnapshot.child("isRead").getValue(Boolean::class.java) ?: false
+                        notification.id = notificationSnapshot.key ?: ""
+                        notification
+                    } else null
                 }
 
-                Log.d("NotificationDebug", "Total notifications loaded: ${notifications.size}")
-                // Sort notifications by timestamp (newest first)
-                notifications.sortByDescending { it.timestamp }
+                // For notifications with bookingId, check booking status
+                allNotifications.forEach { notification ->
+                    if (notification.bookingId != null) {
+                        FirebaseDatabase.getInstance().getReference("bookings")
+                            .child(notification.bookingId)
+                            .child("bookingStatus")
+                            .get()
+                            .addOnSuccessListener { statusSnapshot ->
+                                val status = statusSnapshot.getValue(String::class.java)
+                                // Only add notification if booking is not completed
+                                if (status != "Completed") {
+                                    notifications.add(notification)
+                                    // Update UI
+                                    updateNotificationsUI(notifications)
+                                } else {
+                                    // Remove notification if booking is completed
+                                    notificationsRef.child(notification.id).removeValue()
 
-                // Update UI
-                if (notifications.isEmpty()) {
-                    Log.d("NotificationDebug", "No notifications to display")
-                    view?.findViewById<TextView>(R.id.no_notifications_text)?.visibility = View.VISIBLE
-                    recyclerView.visibility = View.GONE
-                } else {
-                    view?.findViewById<TextView>(R.id.no_notifications_text)?.visibility = View.GONE
-                    recyclerView.visibility = View.VISIBLE
-                    notificationAdapter.updateNotifications(notifications)
-                    Log.d("NotificationDebug", "Updated adapter with ${notifications.size} notifications")
+                                    // Also remove any call notifications between these users
+                                    removeCallNotifications(notification.senderId)
+                                }
+                            }
+                    } else {
+                        // Add non-booking related notifications directly
+                        notifications.add(notification)
+                    }
                 }
             }
 
@@ -139,6 +130,38 @@ class NotificationFragmentSProvider : Fragment() {
         }
 
         notificationsRef.addValueEventListener(notificationListener!!)
+    }
+
+    private fun removeCallNotifications(userId: String) {
+        notificationsRef.orderByChild("senderId")
+            .equalTo(userId)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    snapshot.children.forEach { notificationSnapshot ->
+                        val notification = notificationSnapshot.getValue(NotificationModel::class.java)
+                        if (notification?.type == "call") {
+                            notificationSnapshot.ref.removeValue()
+                        }
+                    }
+                }
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("NotificationDebug", "Error removing call notifications", error.toException())
+                }
+            })
+    }
+
+    private fun updateNotificationsUI(notifications: List<NotificationModel>) {
+        // Sort notifications by timestamp (newest first)
+        val sortedNotifications = notifications.sortedByDescending { it.timestamp }
+
+        if (sortedNotifications.isEmpty()) {
+            view?.findViewById<TextView>(R.id.no_notifications_text)?.visibility = View.VISIBLE
+            recyclerView.visibility = View.GONE
+        } else {
+            view?.findViewById<TextView>(R.id.no_notifications_text)?.visibility = View.GONE
+            recyclerView.visibility = View.VISIBLE
+            notificationAdapter.updateNotifications(sortedNotifications)
+        }
     }
 
     // Update the handleNotificationClick function
@@ -155,6 +178,7 @@ class NotificationFragmentSProvider : Fragment() {
                     putExtra("userId", notification.senderId)
                     putExtra("name", notification.senderName)
                     notification.channelId?.let { putExtra("channelId", it) }
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 }
                 startActivity(intent)
             }
@@ -185,6 +209,32 @@ class NotificationFragmentSProvider : Fragment() {
                 } ?: run {
                     Log.e("NotificationClick", "Booking ID is null")
                     Toast.makeText(context, "Booking details not found", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            "ongoing" -> {
+                notification.bookingId?.let { bookingId ->
+                    // Get the booking details first to get correct emails
+                    FirebaseDatabase.getInstance().getReference("bookings")
+                        .child(bookingId)
+                        .get()
+                        .addOnSuccessListener { snapshot ->
+                            val booking = snapshot.getValue(Bookings::class.java)
+                            if (booking != null) {
+                                val ongoingFragment = OngoingFragmentSProvider.newInstance(
+                                    bookingId = bookingId,
+                                    clientEmail = booking.bookByEmail,  // Use actual client email
+                                    providerEmail = booking.providerEmail  // Use actual provider email
+                                )
+                                requireActivity().supportFragmentManager.beginTransaction()
+                                    .replace(R.id.frame_layout, ongoingFragment)
+                                    .addToBackStack(null)
+                                    .commit()
+                            }
+                        }
+                        .addOnFailureListener {
+                            Toast.makeText(context, "Error loading booking details", Toast.LENGTH_SHORT).show()
+                        }
                 }
             }
         }
