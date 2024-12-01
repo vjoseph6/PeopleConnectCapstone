@@ -289,8 +289,9 @@ class RateFragmentClient : Fragment() {
                                                         // Update skill item properties
                                                         skillItem.noOfBookings += 1
                                                         skillItem.totalRating += binding.ratingBar.rating
-                                                        skillItem.rating = skillItem.totalRating / skillItem.noOfBookings
-
+                                                        val skillItemRating = skillItem.totalRating / skillItem.noOfBookings
+                                                        val roundedRating = String.format("%.1f", skillItemRating).toFloat()
+                                                        skillItem.rating = roundedRating
                                                         Log.d("UpdateUserRating", "Updated skill item: $skillItem")
 
                                                         // Save updated skill item back to Firebase
