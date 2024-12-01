@@ -164,14 +164,6 @@ class BookingDetailsFragment : Fragment() {
                 fetchClientDetails(booking.bookByEmail)
                 fetchServiceProviderDetails(booking.providerEmail)
 
-                // Check if booking is completed and has a payment ID
-                if (booking.bookingStatus == "Completed" && !booking.bookingPaymentId.isNullOrEmpty()) {
-                    try {
-                        stripeHelper.sendReceipt(booking.bookingPaymentId)
-                    } catch (e: Exception) {
-                        Log.e("BookingDetailsFragment", "Error sending receipt", e)
-                    }
-                }
             }
         }.addOnFailureListener { exception ->
             Log.e("BookingDetailsFragment", "Error fetching booking details", exception)

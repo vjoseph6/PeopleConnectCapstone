@@ -1,5 +1,7 @@
 package com.capstone.peopleconnect.Client.Fragments
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -10,6 +12,7 @@ import android.widget.Toast
 import com.capstone.peopleconnect.Classes.Rating
 import com.capstone.peopleconnect.Classes.SkillItem
 import com.capstone.peopleconnect.Classes.User
+import com.capstone.peopleconnect.Client.ClientMainActivity
 import com.capstone.peopleconnect.FeedbackSelectionFragment
 import com.capstone.peopleconnect.Helper.DatabaseHelper
 import com.capstone.peopleconnect.R
@@ -19,6 +22,8 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.squareup.picasso.Picasso
+import java.net.HttpURLConnection
+import java.net.URL
 
 
 class RateFragmentClient : Fragment() {
@@ -167,13 +172,39 @@ class RateFragmentClient : Fragment() {
                         val ratingRef = ratingsRef.push()
                         ratingRef.setValue(rating).addOnSuccessListener {
                             Toast.makeText(context, "Rating submitted successfully", Toast.LENGTH_SHORT).show()
+
                             // Call updateUserRating after successfully submitting the rating
                             updateUserRating(providerEmail ?: "", id) // Pass the rater email and booking ID
-                            parentFragmentManager.popBackStack()
+
+                            // Create an intent to go back to ClientMainActivity
+                            val intent = Intent(context, ClientMainActivity::class.java)
+
+                            // Put the extra string data to indicate the fragment to load
+                            intent.putExtra("FRAGMENT_TO_LOAD", "ActivityFragmentClient")
+                            intent.putExtra("EMAIL", email)
+
+                            // Set flags to ensure we clear the current activity stack, if necessary
+                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+
+                            // Start ClientMainActivity
+                            context?.startActivity(intent)
+
+                            // Optionally, you can finish the current activity (if applicable)
+                            activity?.finish()
+
+                            // Make HTTP request to the URL after success
+                            makeHttpRequest()
+
                         }.addOnFailureListener { e ->
-                            Toast.makeText(context, "Failed to submit rating", Toast.LENGTH_SHORT).show()
-                            Log.e("RateFragmentClient", "Error submitting rating", e)
+                            // Handle failure, maybe show a toast or log the error
+                            Toast.makeText(
+                                context,
+                                "Failed to submit rating: ${e.message}",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
+
+
                     }
 
                     override fun onCancelled(error: DatabaseError) {
@@ -182,6 +213,36 @@ class RateFragmentClient : Fragment() {
                 })
         }
     }
+
+    fun makeHttpRequest() {
+        Thread {
+            try {
+                val url = URL("https://server-stripe-test.vercel.app/api/receipt")
+                val connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = "GET" // You can change this to POST or another method if needed
+                connection.connect()
+
+                val responseCode = connection.responseCode
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    // Handle successful response
+                    val inputStream = connection.inputStream
+                    val response = inputStream.bufferedReader().use { it.readText() }
+                    Log.d("HTTP Request", "Response: $response")
+
+                    // Run on the main thread to show a Toast
+                    (context as? Activity)?.runOnUiThread {
+                        Toast.makeText(context, "Receipt sent successfully", Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Log.e("HTTP Request", "Error: $responseCode")
+                }
+                connection.disconnect()
+            } catch (e: Exception) {
+                Log.e("HTTP Request", "Exception: ${e.message}")
+            }
+        }.start()
+    }
+
 
     private fun updateUserRating(raterEmail: String, bookingId: String) {
         val bookingsRef = FirebaseDatabase.getInstance().getReference("bookings")

@@ -4,8 +4,14 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
+import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.RelativeLayout
+import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
+
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
@@ -26,7 +32,9 @@ import com.capstone.peopleconnect.SPrvoider.Fragments.HomeFragmentSProvider
 import com.capstone.peopleconnect.SPrvoider.Fragments.SkillsFragmentSProvider
 import com.google.android.material.bottomnavigation.BottomNavigationMenuView
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.snackbar.Snackbar
 
 
 class ClientMainActivity : AppCompatActivity() {
@@ -42,13 +50,13 @@ class ClientMainActivity : AppCompatActivity() {
     private lateinit var speechRecognitionHelper: SpeechRecognitionHelper
     private lateinit var witAiHandler: WitAiHandler
     private var isListening = false
+    private lateinit var btnToggleListening : ExtendedFloatingActionButton
     private var backPressedOnce = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_client_main)
 
-        val btnToggleListening: FloatingActionButton = findViewById(R.id.btnToggleListening)
         witAiHandler = WitAiHandler(this@ClientMainActivity)
 
         // Initialize the speech recognition helper with a callback to handle speech results
@@ -83,7 +91,7 @@ class ClientMainActivity : AppCompatActivity() {
                                         putString("serviceType", serviceType)
                                         putString("target", target)
                                     }
-                                    
+
                                     loadFragment(
                                         CategoryFragmentClient(),
                                         "categories",
@@ -156,30 +164,54 @@ class ClientMainActivity : AppCompatActivity() {
             }
 
             override fun onError(error: String) {
-                Toast.makeText(this@ClientMainActivity, "Error in speech recognition: $error", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@ClientMainActivity, "Error occured: Stopped before recognizing speech", Toast.LENGTH_SHORT).show()
             }
         })
 
         // Request microphone permission if not already granted
         speechRecognitionHelper.requestMicrophonePermission(this)
 
-        var isListening = false // Track listening state
+        btnToggleListening = findViewById(R.id.btnToggleListening)
 
-        // Set the button click listener for starting/stopping speech recognition
+
+        var isListening = false
+
+        btnToggleListening.apply {
+            if (isExtended) {
+                // Shrink the button and set the icon
+                shrink()
+                setIconResource(R.drawable.client_mic) // Set microphone icon
+            }
+        }
+
         btnToggleListening.setOnClickListener {
             if (isListening) {
+                // Stop listening and shrink the button
                 speechRecognitionHelper.stopSpeechToText()
-                isListening = false
+                btnToggleListening.apply {
+                    shrink()
+                    setIconResource(R.drawable.client_mic) // Set microphone icon
+                }
+                isListening = false // Update the state
             } else {
-                // Check if the recognizer is initialized
                 if (::speechRecognitionHelper.isInitialized) {
+                    // Start listening and extend the button
                     speechRecognitionHelper.startSpeechToText()
-                    isListening = true
+                    btnToggleListening.apply {
+                        extend()
+                        text = "Listening..." // Add text
+                        setIconResource(R.drawable.client_mic) // Keep microphone icon
+                    }
+                    isListening = true // Update the state
                 } else {
                     Log.d("ClientMainActivity", "SpeechRecognizer not initialized yet.")
                 }
             }
         }
+
+
+
+
 
         email = intent.getStringExtra("EMAIL") ?: ""
         firstName = intent.getStringExtra("FIRST_NAME") ?: ""
@@ -216,6 +248,13 @@ class ClientMainActivity : AppCompatActivity() {
                     loadFragment(CategoryFragmentClient(), "categories", firstName, middleName, lastName, userName, address, email, profileImage)
                     bottomNavigationView.selectedItemId = R.id.categories
                 }
+
+                "ActivityFragmentClient" -> {
+                    val email = intent.getStringExtra("EMAIL")
+                    loadFragment(ActivityFragmentClient(), "activities", firstName, middleName, lastName, userName, address, email, profileImage)
+                    bottomNavigationView.selectedItemId = R.id.activities
+                }
+
                 // Handle other fragments if needed
             }
         } else if (savedInstanceState == null) {
@@ -303,4 +342,3 @@ class ClientMainActivity : AppCompatActivity() {
         speechRecognitionHelper.destroy() // Clean up resources
     }
 }
-
