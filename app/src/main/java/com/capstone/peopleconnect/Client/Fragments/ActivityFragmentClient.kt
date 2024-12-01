@@ -2,6 +2,7 @@ package com.capstone.peopleconnect.Client.Fragments
 
 import android.app.AlertDialog
 import android.content.ContentValues
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -459,9 +460,11 @@ class ActivityFragmentClient : Fragment() {
     private fun cancelAllPendingBookings() {
         val pendingBookings = allBookings.filter {
             it.second.bookingStatus != "Canceled" &&
-                    it.second.bookingStatus != "Completed" &&
-                    it.second.bookingStatus != "Failed"
-                    it.second.bookingStatus != "Accepted"
+            it.second.bookingStatus != "Completed" &&
+            it.second.bookingStatus != "COMPLETED" &&
+            it.second.bookingStatus != "COMPLETE" &&
+            it.second.bookingStatus != "Failed" &&
+            it.second.bookingStatus != "Accepted"
         }
 
         if (pendingBookings.isEmpty()) {
@@ -469,26 +472,44 @@ class ActivityFragmentClient : Fragment() {
             return
         }
 
-        // Show confirmation dialog first
-        val confirmDialog = AlertDialog.Builder(requireContext())
-            .setTitle("Cancel All Bookings")
-            .setMessage("Are you sure you want to cancel all pending bookings?")
-            .setPositiveButton("Yes") { _, _ ->
-                showCancellationDialog(pendingBookings)
-            }
-            .setNegativeButton("No", null)
-            .create()
+        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.client_dialog_logout, null)
+        val tvTitle: TextView = dialogView.findViewById(R.id.tvLogoutTitle)
+        val btnDelete: Button = dialogView.findViewById(R.id.btnLogout)
+        val tvCancel: TextView = dialogView.findViewById(R.id.tvCancel)
 
-        confirmDialog.window?.attributes?.windowAnimations = R.style.DialogAnimation
-        confirmDialog.show()
+        // Customize dialog text for delete confirmation
+        tvTitle.text = " Are you sure you want to cancel all pending bookings?"
+        btnDelete.text = "Yes, cancel it"
+
+        // Create and display the AlertDialog
+        val alertDialog = androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .setCancelable(true)
+            .create()
+        alertDialog.window?.setBackgroundDrawable(ColorDrawable(0)) // Make background transparent
+        alertDialog.window?.attributes?.windowAnimations = R.style.DialogAnimation // Apply animations
+        alertDialog.show()
+
+        tvCancel.setOnClickListener {
+            alertDialog.dismiss()
+        }
+
+        btnDelete.setOnClickListener {
+            showCancellationDialog(pendingBookings)
+            alertDialog.dismiss()
+        }
+
+        alertDialog.show()
     }
 
     private fun cancelBookingsByService(targetServiceType: String) {
         val pendingBookings = allBookings.filter {
             it.second.bookingStatus != "Canceled" &&
                     it.second.bookingStatus != "Completed" &&
+                    it.second.bookingStatus != "COMPLETED" &&
+                    it.second.bookingStatus != "COMPLETE" &&
                     it.second.bookingStatus != "Failed" &&
-                    it.second.bookingStatus != "Accepted"
+                    it.second.bookingStatus != "Accepted" &&
                     it.second.serviceOffered == targetServiceType
         }
 
@@ -501,18 +522,35 @@ class ActivityFragmentClient : Fragment() {
             return
         }
 
-        // Show confirmation dialog first
-        val confirmDialog = AlertDialog.Builder(requireContext())
-            .setTitle("Cancel $targetServiceType Bookings")
-            .setMessage("Are you sure you want to cancel all pending bookings for $targetServiceType?")
-            .setPositiveButton("Yes") { _, _ ->
-                showCancellationDialog(pendingBookings)
-            }
-            .setNegativeButton("No", null)
-            .create()
+        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.client_dialog_logout, null)
+        val tvTitle: TextView = dialogView.findViewById(R.id.tvLogoutTitle)
+        val btnDelete: Button = dialogView.findViewById(R.id.btnLogout)
+        val tvCancel: TextView = dialogView.findViewById(R.id.tvCancel)
 
-        confirmDialog.window?.attributes?.windowAnimations = R.style.DialogAnimation
-        confirmDialog.show()
+        // Customize dialog text for delete confirmation
+        tvTitle.text = " Are you sure you want to cancel all pending bookings for $targetServiceType?"
+        btnDelete.text = "Yes, cancel it"
+
+        // Create and display the AlertDialog
+        val alertDialog = androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .setCancelable(true)
+            .create()
+        alertDialog.window?.setBackgroundDrawable(ColorDrawable(0)) // Make background transparent
+        alertDialog.window?.attributes?.windowAnimations = R.style.DialogAnimation // Apply animations
+        alertDialog.show()
+
+        tvCancel.setOnClickListener {
+            alertDialog.dismiss()
+        }
+
+        alertDialog.show()
+
+        btnDelete.setOnClickListener {
+            showCancellationDialog(pendingBookings)
+            alertDialog.dismiss()
+        }
+
     }
 
     private fun showCancellationDialog(bookingsToCancel: List<Pair<String, Bookings>>) {

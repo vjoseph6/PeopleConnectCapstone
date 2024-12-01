@@ -50,14 +50,12 @@
         android:icon="@drawable/client_mic"
         android:backgroundTint="@color/green"
         android:textColor="@android:color/white"
-        app:maxImageSize="30dp"
+        app:maxImageSize="@dimen/_30dp"
         app:tint="@android:color/white"
         app:layout_anchor="@id/bottomAppBar"
         app:layout_anchorGravity="center"
         app:iconPadding="8dp"
-        android:text=""
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp" />
+        android:text=""/>
 
 
 

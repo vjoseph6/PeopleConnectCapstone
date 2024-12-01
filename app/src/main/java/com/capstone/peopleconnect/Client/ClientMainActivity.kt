@@ -173,18 +173,16 @@ class ClientMainActivity : AppCompatActivity() {
 
         btnToggleListening = findViewById(R.id.btnToggleListening)
 
+        btnToggleListening.apply {
+            setIconResource(R.drawable.client_mic)
+            text = "default"
+            shrink()
+        }
 
         var isListening = false
 
-        btnToggleListening.apply {
-            if (isExtended) {
-                // Shrink the button and set the icon
-                shrink()
-                setIconResource(R.drawable.client_mic) // Set microphone icon
-            }
-        }
-
         btnToggleListening.setOnClickListener {
+
             if (isListening) {
                 // Stop listening and shrink the button
                 speechRecognitionHelper.stopSpeechToText()
