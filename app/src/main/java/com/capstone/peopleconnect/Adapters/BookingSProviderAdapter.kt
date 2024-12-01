@@ -173,7 +173,7 @@ class BookingSProviderAdapter(
             holder.btnAccept.visibility = View.GONE
             holder.btnCancel.visibility = View.GONE
             holder.btnStatus.visibility = View.VISIBLE
-            holder.btnStatus.text = booking.bookingStatus
+            holder.btnStatus.text = if (booking.bookingStatus == "Complete") "Completed" else booking.bookingStatus
         } else {
             holder.btnAccept.visibility = View.VISIBLE
             holder.btnCancel.visibility = View.VISIBLE
@@ -190,7 +190,7 @@ class BookingSProviderAdapter(
                 ContextCompat.getColorStateList(holder.itemView.context, R.color.green)
             "Canceled" -> holder.btnAccept.backgroundTintList =
                 ContextCompat.getColorStateList(holder.itemView.context, R.color.red)
-            "Completed" -> holder.btnAccept.backgroundTintList =
+            "Complete", "Completed" -> holder.btnAccept.backgroundTintList =
                 ContextCompat.getColorStateList(holder.itemView.context, R.color.blue)
             else -> holder.btnAccept.backgroundTintList =
                 ContextCompat.getColorStateList(holder.itemView.context, R.color.orange)

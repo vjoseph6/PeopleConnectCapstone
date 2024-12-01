@@ -221,7 +221,7 @@ class OngoingFragmentClient : Fragment() {
                     DatabaseHelper.updateBookingProgress(id, progress).addOnSuccessListener {
                         // Update booking status in main bookings table
                         val bookingRef = FirebaseDatabase.getInstance().getReference("bookings/$id")
-                        bookingRef.child("bookingStatus").setValue("Complete").addOnSuccessListener {
+                        bookingRef.child("bookingStatus").setValue("Completed").addOnSuccessListener {
                             // Navigate to rating screen with all required parameters
                             val rateFragment = RateFragmentClient.newInstance(
                                 bookingId = id,

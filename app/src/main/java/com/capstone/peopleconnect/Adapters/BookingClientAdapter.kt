@@ -175,14 +175,17 @@ class BookingClientAdapter(
         }
 
         // Set the status of the booking
-        holder.btnAccept.text = booking.bookingStatus
+        holder.btnAccept.text = when (booking.bookingStatus) {
+            "Complete" -> "Completed"  // Convert "Complete" to "Completed"
+            else -> booking.bookingStatus
+        }
         when (booking.bookingStatus) {
             "Accepted" -> holder.btnAccept.backgroundTintList =
                 ContextCompat.getColorStateList(holder.itemView.context, R.color.green)
             "Failed" -> holder.btnAccept.backgroundTintList =
                 ContextCompat.getColorStateList(holder.itemView.context, R.color.red)
-            "Completed" -> holder.btnAccept.backgroundTintList =
-                ContextCompat.getColorStateList(holder.itemView.context, R.color.blue)
+            "Complete", "Completed" -> holder.btnAccept.backgroundTintList =
+                ContextCompat.getColorStateList(holder.itemView.context, R.color.green)
             else -> holder.btnAccept.backgroundTintList =
                 ContextCompat.getColorStateList(holder.itemView.context, R.color.orange)
         }

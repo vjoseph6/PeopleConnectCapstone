@@ -49,6 +49,7 @@ class ActivityFragmentClient : Fragment() {
     private val allBookings = mutableListOf<Pair<String, Bookings>>()// Store all bookings for filtering
     private var currentFilter: String = "Booking"  // Track the current tab/filter
     private lateinit var notificationBadge: TextView
+    private var lastSelectedTab: String = "Booking"  // Track the last selected tab
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -114,21 +115,32 @@ class ActivityFragmentClient : Fragment() {
 
         // Set click listeners for each tab
         tvBooking.setOnClickListener {
-            currentFilter = "Booking"  // Update current filter
+            lastSelectedTab = "Booking"  // Save selected tab
+            currentFilter = "Booking"
             filterBookings(currentFilter)
             highlightSelectedTab(tvBooking, tvSuccessful, tvFailed)
         }
 
         tvSuccessful.setOnClickListener {
-            currentFilter = "Successful"  // Update current filter
+            lastSelectedTab = "Successful"  // Save selected tab
+            currentFilter = "Successful"
             filterBookings(currentFilter)
             highlightSelectedTab(tvSuccessful, tvBooking, tvFailed)
         }
 
         tvFailed.setOnClickListener {
-            currentFilter = "Failed"  // Update current filter
+            lastSelectedTab = "Failed"  // Save selected tab
+            currentFilter = "Failed"
             filterBookings(currentFilter)
             highlightSelectedTab(tvFailed, tvBooking, tvSuccessful)
+        }
+
+        // Add this to restore the last selected tab
+        when (lastSelectedTab) {
+            "Successful" -> tvSuccessful.performClick()
+            "Failed" -> tvFailed.performClick()
+            "Booking" -> tvBooking.performClick()
+            else -> tvBooking.performClick()  // Default to Booking tab
         }
 
         return view
@@ -193,6 +205,23 @@ class ActivityFragmentClient : Fragment() {
 
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Restore the last selected tab state when returning to the fragment
+        view?.let { view ->
+            val tvBooking = view.findViewById<TextView>(R.id.tvBooking_Present)
+            val tvSuccessful = view.findViewById<TextView>(R.id.tvSuccessful_Present)
+            val tvFailed = view.findViewById<TextView>(R.id.tvFailed_Present)
+
+            when (lastSelectedTab) {
+                "Successful" -> tvSuccessful.performClick()
+                "Failed" -> tvFailed.performClick()
+                "Booking" -> tvBooking.performClick()
+                else -> tvBooking.performClick()  // Default to Booking tab
+            }
+        }
+    }
+
     private fun setupNotificationBadge() {
         val currentUser = FirebaseAuth.getInstance().currentUser
         currentUser?.let { user ->
@@ -228,8 +257,8 @@ class ActivityFragmentClient : Fragment() {
     // Filters bookings based on status
     private fun filterBookings(statusFilter: String) {
         val filteredBookings = when (statusFilter) {
-            "Booking" -> allBookings.filter { it.second.bookingStatus != "Canceled" && it.second.bookingStatus != "Completed" }
-            "Successful" -> allBookings.filter { it.second.bookingStatus == "Completed" }
+            "Booking" -> allBookings.filter { it.second.bookingStatus != "Canceled" && it.second.bookingStatus != "Complete" && it.second.bookingStatus != "Completed" }
+            "Successful" -> allBookings.filter { it.second.bookingStatus == "Complete" || it.second.bookingStatus == "Completed" }
             "Failed" -> allBookings.filter { it.second.bookingStatus == "Failed" }
             else -> allBookings
         }

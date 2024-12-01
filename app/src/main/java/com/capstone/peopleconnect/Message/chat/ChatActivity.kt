@@ -49,11 +49,13 @@ class ChatActivity : AppCompatActivity() {
     private lateinit var token: String
     private var selectedUserId: String = ""
     private var selectedUserName: String = ""
+    private var isActivityActive = true
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_chat)
+        isActivityActive = true
 
         // Please do not delete this, as this code is the connection for the notification. It's just missing something, which is why it isn't functioning yet.
 
@@ -122,8 +124,13 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        isActivityActive = false
+    }
 
-// Please do not delete this, as this code is the connection for the notification. It's just missing something, which is why it isn't functioning yet.
+
+    // Please do not delete this, as this code is the connection for the notification. It's just missing something, which is why it isn't functioning yet.
     private fun handleCallNotification(channelId: String, callId: String) {
         loadMessageListFragment(channelId)
 
@@ -371,12 +378,17 @@ class ChatActivity : AppCompatActivity() {
 
 
     private fun createOrGetChannel() {
-        chatLoadingSpinner.visibility = View.VISIBLE // Show spinner at the start
+        if (!isActivityActive) {
+            Log.w("ChatActivity", "Attempting to create channel after activity destruction")
+            return
+        }
+
+        chatLoadingSpinner.visibility = View.VISIBLE
 
         if (currentUserId.isEmpty() || selectedUserId.isEmpty()) {
             Log.e("createOrGetChannel", "User IDs are missing. Cannot create channel.")
             Toast.makeText(this, "User data missing. Cannot create channel.", Toast.LENGTH_SHORT).show()
-            chatLoadingSpinner.visibility = View.GONE // Hide spinner if there's an error
+            chatLoadingSpinner.visibility = View.GONE
             return
         }
 
@@ -393,7 +405,12 @@ class ChatActivity : AppCompatActivity() {
         chatClient.channel(channelPrefix, sanitizedUserIds)
             .create(members, extraData)
             .enqueue { result: Result<Channel> ->
-                chatLoadingSpinner.visibility = View.GONE // Hide spinner after channel creation attempt
+                if (!isActivityActive) {
+                    Log.w("ChatActivity", "Channel created but activity is destroyed")
+                    return@enqueue
+                }
+
+                chatLoadingSpinner.visibility = View.GONE
 
                 if (result.isSuccess) {
                     Log.d("createOrGetChannel", "Channel created or retrieved successfully.")
@@ -401,47 +418,68 @@ class ChatActivity : AppCompatActivity() {
                 } else {
                     val errorMessage = result.errorOrNull()?.message ?: "Unknown error"
                     Log.e("createOrGetChannel", "Error creating/retrieving the channel: $errorMessage")
-                    Toast.makeText(this, "Failed to create/retrieve channel.", Toast.LENGTH_SHORT).show()
+                    runOnUiThread {
+                        Toast.makeText(this, "Failed to create/retrieve channel.", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
     }
 
     private fun loadMessageListFragment(channelId: String) {
-        val fragmentContainer = findViewById<View>(R.id.channel_fragment_container)
-        fragmentContainer.visibility = View.VISIBLE
+        if (!isActivityActive) {
+            Log.w("ChatActivity", "Attempting to load fragment after activity destruction")
+            return
+        }
 
-        if (supportFragmentManager.findFragmentById(R.id.channel_fragment_container) == null) {
-            val fragment = MessageListFragment.newInstance(channelId) {
-                showHeader(true)
-                MessageListView.MessageClickListener { message ->
-                    // Check if this is a video call message
-                    if (message.extraData.containsKey("is_video_call") &&
-                        message.extraData["is_video_call"] as? Boolean == true) {
-                        try {
-                            // Get the call link from the message
-                            val callLink = message.extraData["call_link"] as? String
-                            if (callLink != null) {
-                                // Open the call link
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(callLink))
-                                startActivity(intent)
-                                Toast.makeText(this@ChatActivity, "Joining video call...", Toast.LENGTH_SHORT).show()
-                                Log.d("VideoCall", "Opening call link from message: $callLink")
-                            } else {
-                                Toast.makeText(this@ChatActivity, "Call link not found", Toast.LENGTH_SHORT).show()
-                                Log.e("VideoCall", "Call link is null in message")
+        try {
+            val fragmentContainer = findViewById<View>(R.id.channel_fragment_container)
+            fragmentContainer.visibility = View.VISIBLE
+
+            if (!supportFragmentManager.isDestroyed &&
+                supportFragmentManager.findFragmentById(R.id.channel_fragment_container) == null) {
+
+                val fragment = MessageListFragment.newInstance(channelId) {
+                    showHeader(true)
+                    MessageListView.MessageClickListener { message ->
+                        // Check if this is a video call message
+                        if (message.extraData.containsKey("is_video_call") &&
+                            message.extraData["is_video_call"] as? Boolean == true) {
+                            try {
+                                // Get the call link from the message
+                                val callLink = message.extraData["call_link"] as? String
+                                if (callLink != null) {
+                                    // Open the call link
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(callLink))
+                                    startActivity(intent)
+                                    Toast.makeText(this@ChatActivity, "Joining video call...", Toast.LENGTH_SHORT).show()
+                                    Log.d("VideoCall", "Opening call link from message: $callLink")
+                                } else {
+                                    Toast.makeText(this@ChatActivity, "Call link not found", Toast.LENGTH_SHORT).show()
+                                    Log.e("VideoCall", "Call link is null in message")
+                                }
+                            } catch (e: Exception) {
+                                Log.e("VideoCall", "Error opening call link from message", e)
+                                Toast.makeText(this@ChatActivity, "Unable to open call link", Toast.LENGTH_SHORT).show()
                             }
-                        } catch (e: Exception) {
-                            Log.e("VideoCall", "Error opening call link from message", e)
-                            Toast.makeText(this@ChatActivity, "Unable to open call link", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
-            }
 
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.channel_fragment_container, fragment)
-                .commit()
-            Log.d("MessageListFragment", "Message list fragment loaded with message click listener")
+                runOnUiThread {
+                    try {
+                        supportFragmentManager.beginTransaction()
+                            .replace(R.id.channel_fragment_container, fragment)
+                            .commitAllowingStateLoss()
+                        Log.d("MessageListFragment", "Message list fragment loaded with message click listener")
+                    } catch (e: Exception) {
+                        Log.e("ChatActivity", "Error loading message fragment", e)
+                        Toast.makeText(this, "Error loading chat", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("ChatActivity", "Error in loadMessageListFragment", e)
+            Toast.makeText(this, "Error loading chat interface", Toast.LENGTH_SHORT).show()
         }
     }
 
