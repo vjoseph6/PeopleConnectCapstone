@@ -244,12 +244,13 @@ class RateFragmentSProvider : Fragment() {
                                 val newNoOfBookings = previousNoOfBookings + 1
                                 val newTotalRating = previousTotalRating + binding.ratingBar.rating
                                 val newUserRating = newTotalRating / newNoOfBookings // Average rating
+                                val roundedRating = String.format("%.1f", newUserRating).toFloat()
 
                                 // Update user rating information
                                 val updates = mapOf(
                                     "userNoOfBookings" to newNoOfBookings,
                                     "userTotalRating" to newTotalRating,
-                                    "userRating" to newUserRating
+                                    "userRating" to roundedRating
                                 )
 
                                 usersRef.child(userSnapshot.key!!).updateChildren(updates)
