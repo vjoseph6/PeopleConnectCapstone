@@ -1,6 +1,7 @@
 package com.capstone.peopleconnect.Helper
 
 import android.graphics.PorterDuff
+import android.graphics.drawable.ColorDrawable
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -61,6 +62,9 @@ class ImagePreviewActivity : AppCompatActivity() {
             .setView(dialogView)
             .setCancelable(true)
             .create()
+        alertDialog.window?.setBackgroundDrawable(ColorDrawable(0)) // Make background transparent
+        alertDialog.window?.attributes?.windowAnimations = R.style.DialogAnimation // Apply animations
+        alertDialog.show()
 
         // Set up Delete button action
         btnDelete.setOnClickListener {

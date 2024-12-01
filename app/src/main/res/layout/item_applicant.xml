@@ -1,61 +1,147 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="4dp"
-    android:layout_marginBottom="8dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="2dp">
+    android:layout_margin="4dp"
+    android:elevation="10dp"
+    app:cardCornerRadius="8dp"
+    app:cardUseCompatPadding="true">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp">
+        android:padding="10dp">
 
-        <de.hdodenhof.circleimageview.CircleImageView
+        <!-- Profile Image -->
+        <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/imgProfile"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginTop="15dp"
+            android:layout_alignParentStart="true"
+            android:layout_marginEnd="8dp"
+            android:scaleType="centerCrop"
             android:src="@drawable/profile"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:shapeAppearanceOverlay="@style/CircularImageViewStyle" />
 
+        <!-- Provider Name -->
         <TextView
             android:id="@+id/tvName"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="16dp"
-            android:fontFamily="@font/semibold_poppins"
+            android:layout_toEndOf="@id/imgProfile"
+            android:layout_alignParentTop="true"
+            android:fontFamily="@font/bold_poppins"
+            android:text="John Doe"
             android:textColor="@color/black"
-            android:textSize="16sp"
-            app:layout_constraintBottom_toBottomOf="@id/imgProfile"
-            app:layout_constraintEnd_toStartOf="@id/btnAccept"
-            app:layout_constraintStart_toEndOf="@id/imgProfile"
-            app:layout_constraintTop_toTopOf="@id/imgProfile" />
+            android:textSize="14sp" />
 
-        <ImageButton
-            android:id="@+id/btnAccept"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginEnd="8dp"
-            android:background="@drawable/circle_button_green"
-            android:src="@drawable/ic_check"
-            android:padding="8dp"
-            app:layout_constraintEnd_toStartOf="@id/btnReject"
-            app:layout_constraintTop_toTopOf="parent" />
+        <!-- Provider Rating -->
+        <RatingBar
+            android:id="@+id/providerRating"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/imgProfile"
+            android:layout_below="@id/tvName"
+            android:numStars="5"
+            android:rating="5"
+            android:scaleX="0.7"
+            android:scaleY="0.7"
+            android:layout_marginBottom="-10dp"
+            android:layout_marginStart="-40dp"
+            android:stepSize="0.5"
+            android:isIndicator="true"
+            android:layout_marginTop="2dp"
+            android:progressTint="#FFCE1B"
+            android:layout_alignBaseline="@id/tvName" /> <!-- Aligns the stars with the baseline of providerName -->
 
-        <ImageButton
-            android:id="@+id/btnReject"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@drawable/circle_button_red"
-            android:src="@drawable/ic_close"
-            android:padding="8dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+        <!-- Provider Category -->
+        <TextView
+            android:id="@+id/providerCategory"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/imgProfile"
+            android:layout_below="@id/providerRating"
+            android:fontFamily="@font/medium_poppins"
+            android:text="72 LANDSCAPING PROVIDER"
+            android:textColor="@color/green"
+            android:textSize="10sp" />
 
-</androidx.cardview.widget.CardView> 
+        <!-- Add this button to your existing LinearLayout for buttons -->
+        <Button
+            android:id="@+id/btnAccepted"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Accepted"
+            android:backgroundTint="@color/green"
+            android:visibility="gone"
+            android:layout_alignParentEnd="true"
+            android:layout_below="@id/providerDescription"
+            android:layout_marginTop="10dp"
+            android:padding="8dp" />
+
+        <!-- Description -->
+        <TextView
+            android:id="@+id/providerDescription"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/imgProfile"
+            android:layout_below="@id/providerCategory"
+            android:fontFamily="@font/regular_poppins"
+            android:text="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor."
+            android:textColor="@color/elegant_gray"
+            android:textSize="10sp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:layout_marginTop="4dp" />
+
+        <!-- Price -->
+        <TextView
+            android:id="@+id/providerPrice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@+id/providerRating"
+            android:layout_alignParentEnd="true"
+            android:fontFamily="@font/semibold_poppins"
+            android:text="₱567.00"
+            android:textColor="@color/black"
+            android:textSize="14sp" />
+
+
+        <!-- Buttons (Accept & Reject) -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_below="@id/providerDescription"
+            android:layout_alignParentEnd="true"
+
+            android:layout_marginTop="10dp">
+
+            <!-- Accept Button -->
+            <Button
+                android:id="@+id/btnAccept"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="Accept"
+                android:backgroundTint="@color/green"
+                android:src="@drawable/ic_check"
+                android:padding="8dp" />
+
+            <!-- Reject Button -->
+            <Button
+                android:id="@+id/btnReject"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Reject"
+                android:backgroundTint="@color/red"
+                android:src="@drawable/ic_close"
+                android:padding="8dp" />
+
+        </LinearLayout>
+    </RelativeLayout>
+</androidx.cardview.widget.CardView>

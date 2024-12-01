@@ -2,6 +2,7 @@ package com.capstone.peopleconnect.Client.Fragments
 
 import android.app.AlertDialog
 import android.app.Dialog
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -173,19 +174,43 @@ class PostDetailsFragment : Fragment() {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     var alreadyApplied = false
                     var applicationKey: String? = null
+                    var postHasAcceptedApplication = false
+
                     for (applicationSnapshot in snapshot.children) {
                         val application = applicationSnapshot.getValue(PostApplication::class.java)
+
+                        // Check if there's an accepted application for this post
+                        if (application?.status == "Accepted") {
+                            postHasAcceptedApplication = true
+                            break
+                        }
+
+                        // Check if provider has already applied
                         if (application?.providerEmail == providerEmail) {
                             alreadyApplied = true
                             applicationKey = applicationSnapshot.key
-                            break
                         }
                     }
-                    updateApplyButton(applyButton, alreadyApplied, applicationKey)
+
+                    // If post already has an accepted application, prevent applying
+                    if (postHasAcceptedApplication) {
+                        Toast.makeText(
+                            context,
+                            "This post has already been assigned to a provider",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        applyButton?.isEnabled = false
+                    } else {
+                        updateApplyButton(applyButton, alreadyApplied, applicationKey)
+                    }
                 }
 
                 override fun onCancelled(error: DatabaseError) {
-                    Toast.makeText(context, "Failed to check application status", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        context,
+                        "Failed to check application status",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             })
     }
@@ -220,6 +245,9 @@ class PostDetailsFragment : Fragment() {
         tvLogoutTitle.text = "Are you sure you want to cancel this application?"
 
         val dialog = dialogBuilder.create()
+        dialog.window?.setBackgroundDrawable(ColorDrawable(0)) // Make background transparent
+        dialog.window?.attributes?.windowAnimations = R.style.DialogAnimation // Apply animations
+        dialog.show()
 
         // Ensure this is a Button, not a TextView
         val btnLogout = dialogView.findViewById<Button>(R.id.btnLogout)

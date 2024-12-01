@@ -91,6 +91,11 @@ class CategoryFragmentClient : Fragment() {
         return view
     }
 
+    override fun onResume() {
+        super.onResume()
+        displayCategories()
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -137,7 +142,11 @@ class CategoryFragmentClient : Fragment() {
         // Set up TextWatcher for search functionality
         searchCategory.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
-                filterCategories(s.toString())
+                if (s.isNullOrEmpty()) {
+                    displayCategories()  // If the text is null or empty, display all categories
+                } else {
+                    filterCategories(s.toString())  // Filter categories based on input text
+                }
             }
 
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
