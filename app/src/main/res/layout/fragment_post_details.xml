@@ -53,8 +53,9 @@
                 android:text="View Applicants"
                 android:textColor="@color/white"
                 android:textSize="12sp"
+                android:textStyle="bold"
                 android:visibility="gone"
-                android:layout_marginEnd="16dp"
+                android:layout_marginEnd="10dp"
                 android:fontFamily="@font/medium_poppins"
                 android:drawablePadding="4dp"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -216,6 +217,21 @@
             </androidx.constraintlayout.widget.ConstraintLayout>
         </androidx.cardview.widget.CardView>
 
+        <TextView
+            android:id="@+id/statusView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="10dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="20dp"
+            android:fontFamily="@font/medium_poppins"
+            android:text="Status: Open"
+            android:textColor="@color/green"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="@+id/layout"
+            app:layout_constraintTop_toBottomOf="@id/layout"
+            tools:ignore="NotSibling" />
+
         <Button
             android:id="@+id/btnApply"
             android:layout_width="match_parent"
@@ -230,8 +246,25 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/textView2"
-            app:layout_constraintTop_toBottomOf="@id/layout"
+            app:layout_constraintTop_toBottomOf="@id/statusView"
             tools:ignore="NotSibling" />
+
+        <Button
+            android:id="@+id/closePost"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginBottom="60dp"
+            android:fontFamily="@font/medium_poppins"
+            android:text="Close Post"
+            android:textColor="@color/white"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/textView2"
+            app:layout_constraintTop_toBottomOf="@id/statusView"
+            tools:ignore="NotSibling"/>
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>

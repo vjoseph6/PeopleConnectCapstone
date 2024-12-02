@@ -8,7 +8,9 @@ data class Post(
     val postImages: List<String> = listOf(),
     val postStatus: String = "",
     val client: Boolean = false,
+    val status: String = "Open",
     val bookDay: String = "",
     val startTime: String = "",
+    var startDate: String? = "",
     val endTime: String = ""
 )

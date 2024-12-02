@@ -55,7 +55,7 @@ class ManagePostFragment : Fragment() {
 
         // Handle add post button
         view.findViewById<ImageButton>(R.id.addPostBtn).setOnClickListener {
-            val addPostFragment = AddPostClientFragment.newInstance(email)
+            val addPostFragment = AddPostClientFragment.newInstance(email.toString())
             requireActivity().supportFragmentManager.beginTransaction()
                 .replace(R.id.frame_layout, addPostFragment)
                 .addToBackStack(null)

@@ -48,14 +48,24 @@ class AddPostClientFragment : Fragment() {
     private val storageReference: StorageReference = FirebaseStorage.getInstance().reference
     private lateinit var categorySpinner: Spinner
     private var categoryName: String = ""
+    private lateinit var btnSavePost: Button
     private val categories = mutableListOf<String>()
     private lateinit var dateEditText: EditText
     private lateinit var startTimeEditText: EditText
+    private lateinit var descriptionPostEditText: EditText
     private lateinit var endTimeEditText: EditText
     private var startTimeCalendar: Calendar? = null
     private var endTimeCalendar: Calendar? = null
+    private var bookSTartDate: String? = null
     private lateinit var timeIcon1: ImageView
     private lateinit var timeIcon2: ImageView
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        displayExistingImages()
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,15 +79,17 @@ class AddPostClientFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_add_post_client, container, false)
-        
+
         val addImageView: ImageView = view.findViewById(R.id.addImage)
-        val btnSavePost: Button = view.findViewById(R.id.btnSavePost)
+        btnSavePost = view.findViewById(R.id.btnSavePost)
+        descriptionPostEditText = view.findViewById(R.id.descriptionPostEditText)
+        categorySpinner = view.findViewById(R.id.categorySpinner)
+        startTimeEditText = view.findViewById(R.id.startTimeEditText)
+        endTimeEditText = view.findViewById(R.id.endTimeEditText)
 
         val btnBack: ImageButton = view.findViewById(R.id.btnBackSProviderSKills)
         btnBack.setOnClickListener { requireActivity().supportFragmentManager.popBackStack() }
 
-        categorySpinner = view.findViewById(R.id.categorySpinner)
-        
         // Add this: Create and set the adapter
         val spinnerAdapter = ArrayAdapter(
             requireContext(),
@@ -87,20 +99,34 @@ class AddPostClientFragment : Fragment() {
             setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         }
         categorySpinner.adapter = spinnerAdapter
-        
-        // Then fetch categories
-        fetchCategories()
-        
-        // Setup spinner listener
+
+        val categoryToSelect = arguments?.getString("CATEGORY")
+        bookSTartDate = arguments?.getString("START_DATE")
+        fetchCategories(categoryToSelect)
+
         categorySpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 categoryName = categories[position]
+                Log.d("Category Selected", "Selected category: $categoryName")
             }
 
             override fun onNothingSelected(parent: AdapterView<*>?) {
                 categoryName = ""
             }
         }
+
+        arguments?.let {
+            val category = it.getString("CATEGORY")
+            fetchCategories(category)
+            if (category != null && category.isNotBlank() && categories.contains(category)) {
+                // Set the spinner to the correct category
+                setSpinnerSelection(categorySpinner, category)
+            } else {
+                // If no valid category, default to "Select Category" or show all categories
+                categorySpinner.setSelection(0)
+            }
+        }
+
 
         // Load placeholder image with Glide
         Glide.with(this)
@@ -116,14 +142,49 @@ class AddPostClientFragment : Fragment() {
             }
         }
 
-        btnSavePost.setOnClickListener {
-            validateAndSavePost()
+
+        arguments?.let {
+            email = it.getString("EMAIL")
+            val postId = it.getString("POST_ID")
+
+            if (postId != null) {
+                descriptionPostEditText.setText(it.getString("DESCRIPTION"))
+                val category = it.getString("CATEGORY")
+                val startDate = it.getString("START_DATE")
+                // Set spinner selection
+                fetchCategories(category)
+                startTimeEditText.setText(it.getString("START_TIME"))
+                endTimeEditText.setText(it.getString("END_TIME"))
+
+                displayExistingImages()
+
+                btnSavePost.text = "Edit"
+            } else {
+                btnSavePost.text = "Save"
+            }
+
         }
+
+        // Set up button click listener
+        btnSavePost.setOnClickListener {
+            if (btnSavePost.text == "Edit") {
+                val postId = arguments?.getString("POST_ID") ?: return@setOnClickListener
+                editPost(postId) // Call the editPost function
+            }else {
+                if (!validateInputs()) {
+                    // Optionally show a message to the user about invalid inputs
+                    return@setOnClickListener
+                }
+                savePost() // Call the savePost function for a new post
+            }
+        }
+
 
         dateEditText = view.findViewById(R.id.dateEditText)
         dateEditText.visibility = View.GONE
         startTimeEditText = view.findViewById(R.id.startTimeEditText)
         endTimeEditText = view.findViewById(R.id.endTimeEditText)
+        displayExistingImages()
 
         // Set up click listeners for date and time fields
         dateEditText.setOnClickListener {
@@ -159,6 +220,139 @@ class AddPostClientFragment : Fragment() {
 
         return view
     }
+
+    private fun setSpinnerSelection(spinner: Spinner, category: String) {
+        val adapter = spinner.adapter ?: return
+        for (i in 0 until adapter.count) {
+            if (adapter.getItem(i).toString() == category) {
+                spinner.setSelection(i)
+                return
+            }
+        }
+        // Default to the first item if the category is not found
+        spinner.setSelection(0)
+    }
+
+
+
+
+    private fun displayExistingImages() {
+        val rootView = view ?: return
+        val existingImageUrls = arguments?.getStringArrayList("IMAGES") ?: emptyList()
+        selectedImages.clear() // Clear any previously selected images
+        selectedImages.addAll(existingImageUrls.map { Uri.parse(it) }) // Add existing images to the list
+        displaySelectedImages() // Call the existing function to refresh the layout
+    }
+
+    private fun editPost(postId: String) {
+        // Validate inputs
+        if (!validateInputs()) return
+
+        // Show loading dialog
+        showLoadingDialog()
+
+        // Get existing images
+        val existingImageUrls = arguments?.getStringArrayList("IMAGES") ?: emptyList()
+
+        // Compare and find modified images
+        val imagesToUpdate = selectedImages.mapIndexed { index, uri ->
+            if (index < existingImageUrls.size && uri.toString() == existingImageUrls[index]) {
+                // Image not changed
+                existingImageUrls[index]
+            } else {
+                // Image changed or new
+                uri
+            }
+        }
+
+        // Separate modified URIs from existing URLs
+        val updatedImages = imagesToUpdate.filterIsInstance<Uri>()
+        val unchangedImages = imagesToUpdate.filterIsInstance<String>()
+
+        if (updatedImages.isNotEmpty()) {
+            // If new or modified images exist, upload them first
+            uploadChangedImagesAndUpdatePost(postId, updatedImages, unchangedImages)
+        } else {
+            // If no new or modified images, update directly with existing data
+            updatePostDirectly(postId)
+        }
+    }
+
+    private fun uploadChangedImagesAndUpdatePost(postId: String, updatedImages: List<Uri>, unchangedImages: List<String>) {
+        val newImageUrls = mutableListOf<String>()
+        val failedUploads = false
+
+        updatedImages.forEachIndexed { index, uri ->
+            val fileName = "post_images/${System.currentTimeMillis()}_${uri.lastPathSegment}"
+            val fileReference = storageReference.child(fileName)
+
+            fileReference.putFile(uri)
+                .addOnSuccessListener {
+                    fileReference.downloadUrl.addOnSuccessListener { downloadUri ->
+                        newImageUrls.add(downloadUri.toString())
+
+                        // Check if all uploads are done
+                        if (newImageUrls.size == updatedImages.size) {
+                            // Combine unchanged and newly uploaded URLs
+                            val allImages = unchangedImages.toMutableList().apply { addAll(newImageUrls) }
+                            updatePostWithNewImages(postId, allImages)
+                        }
+                    }.addOnFailureListener { e ->
+                        Toast.makeText(requireContext(), "Failed to upload image: ${e.message}", Toast.LENGTH_SHORT).show()
+                        dismissLoadingDialog()
+                    }
+                }
+                .addOnFailureListener { e ->
+                    Toast.makeText(requireContext(), "Failed to upload image: ${e.message}", Toast.LENGTH_SHORT).show()
+                    dismissLoadingDialog()
+                }
+        }
+    }
+
+    private fun updatePostWithNewImages(postId: String, newImageUrls: List<String>) {
+        val post = createPostData(postId, newImageUrls)
+        updatePostInDatabase(postId, post)
+    }
+
+
+    private fun updatePostDirectly(postId: String) {
+        // Retrieve existing post images from arguments
+        val existingImageUrls = arguments?.getStringArrayList("IMAGES") ?: emptyList()
+        val post = createPostData(postId, existingImageUrls)
+        updatePostInDatabase(postId, post)
+    }
+
+    private fun updatePostInDatabase(postId: String, post: Post) {
+        FirebaseDatabase.getInstance().reference.child("posts").child(postId)
+            .setValue(post)
+            .addOnSuccessListener {
+                dismissLoadingDialog()
+                Toast.makeText(requireContext(), "Post updated successfully", Toast.LENGTH_SHORT).show()
+                requireActivity().supportFragmentManager.popBackStack()
+            }
+            .addOnFailureListener { e ->
+                dismissLoadingDialog()
+                Toast.makeText(requireContext(), "Failed to update post: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun createPostData(postId: String, imageUrls: List<String>): Post {
+        return Post(
+            postId = postId,
+            postDescription = descriptionPostEditText.text.toString().trim(),
+            email = email ?: "",
+            categoryName = categorySpinner.selectedItem.toString(),
+            postImages = imageUrls,
+            postStatus = "Pending",
+            client = true,
+            startDate = bookSTartDate,
+            bookDay = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Calendar.getInstance().time),
+            startTime = startTimeEditText.text.toString(),
+            endTime = endTimeEditText.text.toString()
+        )
+    }
+
+
 
     fun showLoadingDialog() {
         // Create the dialog builder
@@ -206,7 +400,7 @@ class AddPostClientFragment : Fragment() {
             fileReference.putFile(uri)
                 .addOnSuccessListener {
                     if (failedUploads) return@addOnSuccessListener // Skip if any upload failed
-                    
+
                     fileReference.downloadUrl.addOnSuccessListener { downloadUri ->
                         imageUrls.add(downloadUri.toString())
                         if (imageUrls.size == selectedImages.size) {
@@ -232,18 +426,19 @@ class AddPostClientFragment : Fragment() {
             val postDescEditText: EditText = view?.findViewById(R.id.descriptionPostEditText) ?: return
             postDesc = postDescEditText.text.toString().trim()
 
-            // Validate all fields
             when {
-                postDesc.isEmpty() -> {
-                    dismissLoadingDialog()
-                    Toast.makeText(requireContext(), "Please enter a description", Toast.LENGTH_SHORT).show()
-                    return
-                }
                 categoryName.isEmpty() -> {
                     dismissLoadingDialog()
                     Toast.makeText(requireContext(), "Please select a category", Toast.LENGTH_SHORT).show()
                     return
                 }
+
+                postDesc.isEmpty() -> {
+                    dismissLoadingDialog()
+                    Toast.makeText(requireContext(), "Please enter a description", Toast.LENGTH_SHORT).show()
+                    return
+                }
+
                 startTimeEditText.text.isEmpty() -> {
                     dismissLoadingDialog()
                     Toast.makeText(requireContext(), "Please select a start time", Toast.LENGTH_SHORT).show()
@@ -264,7 +459,8 @@ class AddPostClientFragment : Fragment() {
                 postImages = imageUrls,
                 postStatus = "Pending",
                 client = true,
-                bookDay = dateEditText.text.toString(),
+                startDate = bookSTartDate.toString() ?: "",
+                bookDay = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Calendar.getInstance().time),
                 startTime = startTimeEditText.text.toString(),
                 endTime = endTimeEditText.text.toString()
             )
@@ -303,36 +499,27 @@ class AddPostClientFragment : Fragment() {
     }
 
 
-    private fun validateAndSavePost() {
-        val postDescEditText: EditText = requireView().findViewById(R.id.descriptionPostEditText)
-        val description = postDescEditText.text.toString().trim()
+    private fun validateInputs(): Boolean {
 
-        when {
-            description.isEmpty() -> {
-                Toast.makeText(requireContext(), "Please enter a description", Toast.LENGTH_SHORT).show()
-                return
-            }
-            categoryName.isEmpty() || categoryName == "Select Category" -> {
-                Toast.makeText(requireContext(), "Please select a category", Toast.LENGTH_SHORT).show()
-                return
-            }
-            startTimeEditText.text.toString().isEmpty() -> {
-                Toast.makeText(requireContext(), "Please select a start time", Toast.LENGTH_SHORT).show()
-                return
-            }
-            endTimeEditText.text.toString().isEmpty() -> {
-                Toast.makeText(requireContext(), "Please select an end time", Toast.LENGTH_SHORT).show()
-                return
-            }
-            selectedImages.isEmpty() -> {
-                Toast.makeText(requireContext(), "Please select at least one image", Toast.LENGTH_SHORT).show()
-                return
-            }
-            else -> {
-                savePost()
-            }
+        if (descriptionPostEditText.text.isNullOrEmpty()) {
+            Toast.makeText(requireContext(), "Please enter a description", Toast.LENGTH_SHORT).show()
+            return false
         }
+        if (categorySpinner.selectedItem == null) {
+            Toast.makeText(requireContext(), "Please select a category", Toast.LENGTH_SHORT).show()
+            return false
+        }
+        if (startTimeEditText.text.isNullOrEmpty()) {
+            Toast.makeText(requireContext(), "Please select a start time", Toast.LENGTH_SHORT).show()
+            return false
+        }
+        if (endTimeEditText.text.isNullOrEmpty()) {
+            Toast.makeText(requireContext(), "Please select an end time", Toast.LENGTH_SHORT).show()
+            return false
+        }
+        return true
     }
+
 
     private fun openImagePicker() {
         val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
@@ -354,6 +541,7 @@ class AddPostClientFragment : Fragment() {
 
     // Function to add image to layout
     private fun displaySelectedImages() {
+        val rootView = view ?: return
         val imageContainer: LinearLayout = requireView().findViewById(R.id.imageContainer)
         val addImage: ImageView = requireView().findViewById(R.id.addImage)
         val uploadImageText: TextView = requireView().findViewById(R.id.uploadTxt)
@@ -441,13 +629,13 @@ class AddPostClientFragment : Fragment() {
         }
     }
 
-    private fun fetchCategories() {
+    private fun fetchCategories(categoryToSelect: String? = null) {
         val databaseRef = FirebaseDatabase.getInstance().getReference("category")
         databaseRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 categories.clear()
-                categories.add("Select Category")
-                
+                categories.add("Select Category") // Default placeholder
+
                 snapshot.children.forEach { categorySnapshot ->
                     categorySnapshot.child("Sub Categories").children.forEach { subCategorySnapshot ->
                         subCategorySnapshot.child("name").getValue(String::class.java)?.let {
@@ -455,9 +643,12 @@ class AddPostClientFragment : Fragment() {
                         }
                     }
                 }
-                
-                // Update this line to notify the adapter directly
+
+                // Notify adapter of data change
                 (categorySpinner.adapter as ArrayAdapter<*>).notifyDataSetChanged()
+
+                // Set spinner selection to match `categoryToSelect`
+                categoryToSelect?.let { setSpinnerSelection(categorySpinner, it) }
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -466,12 +657,16 @@ class AddPostClientFragment : Fragment() {
         })
     }
 
+
+
+
+
     private fun showDatePicker(onDateSet: (Int, Int, Int) -> Unit) {
         val calendar = Calendar.getInstance()
-        
+
         DatePickerDialog(
             requireContext(),
-            { _, year, month, dayOfMonth -> 
+            { _, year, month, dayOfMonth ->
                 onDateSet(year, month, dayOfMonth)
             },
             calendar.get(Calendar.YEAR),
@@ -500,6 +695,7 @@ class AddPostClientFragment : Fragment() {
                     // Format and set the bookDay based on startTime
                     val dateFormat = SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
                     dateEditText.setText(dateFormat.format(startTimeCalendar!!.time))
+                    bookSTartDate = dateFormat.format(startTimeCalendar!!.time)
 
                     onDateTimeSet(startTimeCalendar!!)
                 }
@@ -512,6 +708,7 @@ class AddPostClientFragment : Fragment() {
             show()
         }
     }
+
 
     private fun showEndDateTimePicker(onDateTimeSet: (Calendar) -> Unit) {
         if (startTimeCalendar == null) {
@@ -612,13 +809,23 @@ class AddPostClientFragment : Fragment() {
 
     companion object {
         @JvmStatic
-        fun newInstance(email: String?) =
+        fun newInstance(email: String, post: Post? = null) =
             AddPostClientFragment().apply {
                 arguments = Bundle().apply {
-                    putString("EMAIL", email)
+                    putString("EMAIL", email) // Always pass the email
+                    if (post != null) {
+                        putString("DESCRIPTION", post.postDescription)
+                        putString("CATEGORY", post.categoryName)
+                        putString("START_TIME", post.startTime)
+                        putString("END_TIME", post.endTime)
+                        putString("START_DATE", post.startDate)
+                        putStringArrayList("IMAGES", ArrayList(post.postImages))
+                        putBoolean("IS_FROM_CLIENT_ADAPTER", true) // Tag to indicate editing
+                        putString("POST_ID", post.postId) // Pass the post ID for editing
+                    }
                 }
             }
-        
+
         // Using different values from AddPostFragment
         private const val CLIENT_REQUEST_IMAGE_PICK = 3001
         private const val CLIENT_REQUEST_IMAGE_REPLACE = 3002
