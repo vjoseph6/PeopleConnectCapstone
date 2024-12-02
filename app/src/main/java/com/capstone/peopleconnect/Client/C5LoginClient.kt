@@ -213,13 +213,36 @@ class C5LoginClient : AppCompatActivity() {
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    // Sign in successful, navigate to the next screen
-                    checkUserRoles(email)
+                    // Check user status after successful sign-in
+                    checkUserStatus(email)
                 } else {
                     handleSignInError(task.exception)
-
                 }
             }
+    }
+
+    // New method to check user status
+    private fun checkUserStatus(email: String) {
+        databaseReference.orderByChild("email").equalTo(email)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        val user = snapshot.children.first().getValue(User::class.java)
+                        if (user?.status == "enabled") {
+                            // Proceed to check user roles if status is enabled
+                            checkUserRoles(email)
+                        } else {
+                            Toast.makeText(this@C5LoginClient, "Your account is disabled.", Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        Toast.makeText(this@C5LoginClient, "No account found with this email.", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Toast.makeText(this@C5LoginClient, "Database Error: ${error.message}", Toast.LENGTH_SHORT).show()
+                }
+            })
     }
 
     private fun checkUserRoles(email: String) {

@@ -15,5 +15,6 @@ data class User(
     val interest: List<String> = listOf(),
     val userRating: Float = 0.0f,
     val userNoOfBookings: Int = 0,
-    val userTotalRating: Float = 0.0f
+    val userTotalRating: Float = 0.0f,
+    val status: String = ""
 )

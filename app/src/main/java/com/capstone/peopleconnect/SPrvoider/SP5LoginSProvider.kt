@@ -215,12 +215,13 @@ class SP5LoginSProvider : AppCompatActivity() {
                         var fName = ""
                         var mName = ""
                         var lName = ""
+                        var userStatus: String? = null
 
                         for (userSnapshot in snapshot.children) {
-                            // Check if the data matches the User class
                             val user = userSnapshot.getValue(User::class.java)
                             if (user != null) {
                                 val userRoles = user.roles ?: listOf()
+                                userStatus = user.status
                                 if (userRoles.contains("Service Provider")) {
                                     isServiceProvider = true
                                     userName = user.name ?: ""
@@ -236,35 +237,37 @@ class SP5LoginSProvider : AppCompatActivity() {
                             }
                         }
 
-                        if (isServiceProvider) {
+                        if (userStatus == "enabled") {
+                            if (isServiceProvider) {
+                                // Please do not delete this, as this code is the connection for the notification.
+                                // It's just missing something, which is why it isn't functioning yet.
 
-                            // Please do not delete this, as this code is the connection for the notification.
-                            // It's just missing something, which is why it isn't functioning yet.
+                                FirebaseAuth.getInstance().currentUser?.let { user ->
+                                    SelectAccount.registerDeviceForPushNotifications(user, this@SP5LoginSProvider)
+                                }
 
-                            FirebaseAuth.getInstance().currentUser?.let { user ->
-                                SelectAccount.registerDeviceForPushNotifications(user, this@SP5LoginSProvider)
+                                // Save current user details in shared preferences
+                                saveCurrentUser(email, userName, userAddress, profileImageUrl)
+
+                                // Pass user details to the next activity
+                                val intent = Intent(this@SP5LoginSProvider, SProviderMainActivity::class.java).apply {
+                                    putExtra("USER_NAME", userName)
+                                    putExtra("FIRST_NAME", fName)
+                                    putExtra("MIDDLE_NAME", mName)
+                                    putExtra("LAST_NAME", lName)
+                                    putExtra("USER_ADDRESS", userAddress)
+                                    putExtra("EMAIL", email)
+                                    putExtra("PROFILE_IMAGE_URL", profileImageUrl)
+                                }
+                                Toast.makeText(this@SP5LoginSProvider, "Welcome Service Provider $fName", Toast.LENGTH_SHORT).show()
+                                startActivity(intent)
+                            } else {
+                                Toast.makeText(this@SP5LoginSProvider, "User does not exist", Toast.LENGTH_SHORT).show()
                             }
-
-                            // Save current user details in shared preferences
-                            saveCurrentUser(email, userName, userAddress, profileImageUrl)
-
-                            // Pass user details to the next activity
-                            val intent = Intent(this@SP5LoginSProvider, SProviderMainActivity::class.java).apply {
-                                putExtra("USER_NAME", userName)
-                                putExtra("FIRST_NAME", fName)
-                                putExtra("MIDDLE_NAME", mName)
-                                putExtra("LAST_NAME", lName)
-                                putExtra("USER_ADDRESS", userAddress)
-                                putExtra("EMAIL", email)
-                                putExtra("PROFILE_IMAGE_URL", profileImageUrl)
-                            }
-                            Toast.makeText(this@SP5LoginSProvider, "Welcome Service Provider $fName", Toast.LENGTH_SHORT).show()
-                            startActivity(intent)
                         } else {
-                            Toast.makeText(this@SP5LoginSProvider, "User does not exist", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@SP5LoginSProvider, "Your account is disabled. Please contact support.", Toast.LENGTH_SHORT).show()
                         }
                     } else {
-                        // Email does not exist in the database
                         Toast.makeText(this@SP5LoginSProvider, "No account found with this email.", Toast.LENGTH_SHORT).show()
                     }
                 }
