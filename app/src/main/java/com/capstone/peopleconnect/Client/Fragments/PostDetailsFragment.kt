@@ -281,8 +281,17 @@ class PostDetailsFragment : Fragment() {
                     var alreadyApplied = false
                     var applicationKey: String? = null
 
+                    var postHasAcceptedApplication = false
+
+
                     for (applicationSnapshot in snapshot.children) {
                         val application = applicationSnapshot.getValue(PostApplication::class.java)
+
+                        // Check if there's an accepted application for this post
+                        if (application?.status == "Accepted") {
+                            postHasAcceptedApplication = true
+                            break
+                        }
 
 
                         // Check if provider has already applied
@@ -292,7 +301,21 @@ class PostDetailsFragment : Fragment() {
                         }
                     }
 
+
                     updateApplyButton(applyButton, alreadyApplied, applicationKey)
+
+                    // If post already has an accepted application, prevent applying
+                    if (postHasAcceptedApplication) {
+                        Toast.makeText(
+                            context,
+                            "This post has already been assigned to a provider",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        applyButton?.isEnabled = false
+                    } else {
+                        updateApplyButton(applyButton, alreadyApplied, applicationKey)
+                    }
+
                 }
 
                 override fun onCancelled(error: DatabaseError) {
