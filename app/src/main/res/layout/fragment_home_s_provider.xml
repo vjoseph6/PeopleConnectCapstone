@@ -137,7 +137,7 @@
                 android:layout_centerVertical="true"
                 android:layout_marginTop="10dp"
                 android:fontFamily="@font/bold_poppins"
-                android:text="Task Overview"
+                android:text="Post Overview"
                 android:textColor="@color/blue"
                 android:textSize="20sp"
                 app:layout_constraintStart_toStartOf="parent"

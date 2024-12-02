@@ -36,6 +36,7 @@ class PostDetailsFragment : Fragment() {
 
     private var categoryName: String? = null
     private var bookDay: String? = null
+    private var startDate: String? = null
     private var startTime: String? = null
     private var endTime: String? = null
     private var description: String? = null
@@ -54,6 +55,7 @@ class PostDetailsFragment : Fragment() {
         arguments?.let {
             categoryName = it.getString("CATEGORY")
             bookDay = it.getString("BOOK_DAY")
+            startDate = it.getString("START_DATE")
             startTime = it.getString("START_TIME")
             endTime = it.getString("END_TIME")
             description = it.getString("DESCRIPTION")
@@ -69,6 +71,7 @@ class PostDetailsFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_post_details, container, false)
 
         // Initialize views
+        val statusView: TextView = view.findViewById(R.id.statusView)
         imageViewPager = view.findViewById(R.id.imageViewPager)
         val categoryText: TextView = view.findViewById(R.id.categoryText)
         val dateText: TextView = view.findViewById(R.id.dateText)
@@ -78,27 +81,67 @@ class PostDetailsFragment : Fragment() {
         val topBar: View = view.findViewById(R.id.topBar)
         val btnBack: ImageButton = view.findViewById(R.id.btnBack)
 
+
         if (isFromProvider) {
             // Change colors to blue for provider view
             topBar.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.blue))
             descriptionLabel.setTextColor(ContextCompat.getColor(requireContext(), R.color.blue))
-            
+
             // Update calendar and clock icons to blue versions
             view.findViewById<ImageView>(R.id.calendarIcon)?.setImageResource(R.drawable.ic_calendar_provider)
             view.findViewById<ImageView>(R.id.clockIcon)?.setImageResource(R.drawable.ic_clock_provider)
             view.findViewById<ImageButton>(R.id.btnBack)?.setImageResource(R.drawable.backbtn2_sprovider_)
             view.findViewById<TextView>(R.id.categoryText)?.setBackgroundResource(R.drawable.category_badge_background_provider)
 
-            val applyBtn = view.findViewById<Button>(R.id.btnApply)
-            applyBtn.apply {
-                backgroundTintList = ContextCompat.getColorStateList(context, R.color.blue)
-                visibility = View.VISIBLE
-                setOnClickListener {
-                    applyForPost()
+            // Initially set status
+            database.child("posts").child(postId!!).addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val postStatus = snapshot.child("status").getValue(String::class.java) ?: "Open"
+                    val statusView: TextView = view.findViewById(R.id.statusView)
+                    statusView.text = "Status: ${postStatus.capitalize()}"
+
+                    // Change text color to red if status is Closed
+                    if (postStatus.equals("Closed", ignoreCase = true)) {
+                        statusView.setTextColor(ContextCompat.getColor(requireContext(), R.color.red))
+                    }
+
+                    val applyBtn = view.findViewById<Button>(R.id.btnApply)
+
+                    if (postStatus.equals("Closed", ignoreCase = true)) {
+                        applyBtn.apply {
+                            text = "Post Closed"
+                            setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.red))
+                            isEnabled = false
+                            setOnClickListener {
+                                Toast.makeText(context, "Post is closed", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    } else {
+                        applyBtn.apply {
+                            backgroundTintList = ContextCompat.getColorStateList(context, R.color.blue)
+                            visibility = View.VISIBLE
+                            isEnabled = true
+                            text = "Apply"
+                            setOnClickListener {
+                                applyForPost()
+                            }
+                        }
+                    }
                 }
-            }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Toast.makeText(context, "Failed to load post status", Toast.LENGTH_SHORT).show()
+                }
+            })
 
         } else {
+
+            val closePostTV: Button = view.findViewById(R.id.closePost)
+            closePostTV.visibility = View.VISIBLE
+            closePostTV.setOnClickListener {
+                handleCloseApplication()
+            }
+
             val applyBtn = view.findViewById<Button>(R.id.btnApply)
             applyBtn.visibility = View.GONE
 
@@ -131,7 +174,7 @@ class PostDetailsFragment : Fragment() {
 
         // Populate data
         categoryText.text = categoryName
-        dateText.text = bookDay
+        dateText.text = startDate
         timeText.text = "$startTime - $endTime"
         descriptionText.text = description
 
@@ -141,6 +184,69 @@ class PostDetailsFragment : Fragment() {
 
         return view
     }
+
+    private fun handleCloseApplication() {
+        // Create the custom dialog
+        val dialogView = LayoutInflater.from(context).inflate(R.layout.client_dialog_logout, null)
+        val dialog = AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .create()
+        dialog.window?.setBackgroundDrawable(ColorDrawable(0)) // Make background transparent
+        dialog.window?.attributes?.windowAnimations = R.style.DialogAnimation // Apply animations
+        dialog.show()
+
+        // Find views in the custom layout
+        val tvTitle = dialogView.findViewById<TextView>(R.id.tvLogoutTitle)
+        val btnConfirm = dialogView.findViewById<Button>(R.id.btnLogout)
+        val tvCancel = dialogView.findViewById<TextView>(R.id.tvCancel)
+
+        // Customize the dialog for closing post
+        tvTitle.text = "Do you want to close this post?"
+        btnConfirm.text = "Close"
+
+        // Set click listeners
+        btnConfirm.setOnClickListener {
+            // Update post status to "Closed"
+            if (postId != null) {
+                database.child("posts").child(postId!!).child("status").setValue("Closed")
+                    .addOnSuccessListener {
+                        Toast.makeText(context, "Post closed successfully", Toast.LENGTH_SHORT).show()
+
+                        // Remove any pending applications
+                        database.child("post_applicants")
+                            .orderByChild("postId")
+                            .equalTo(postId)
+                            .addListenerForSingleValueEvent(object : ValueEventListener {
+                                override fun onDataChange(snapshot: DataSnapshot) {
+                                    for (applicationSnapshot in snapshot.children) {
+                                        val currentApp = applicationSnapshot.getValue(PostApplication::class.java)
+                                        if (currentApp?.status == "Pending") {
+                                            applicationSnapshot.ref.child("status").setValue("Rejected")
+                                        }
+                                    }
+                                }
+
+                                override fun onCancelled(error: DatabaseError) {
+                                    Toast.makeText(context, "Failed to update applications", Toast.LENGTH_SHORT).show()
+                                }
+                            })
+
+                        // Navigate back or update UI as needed
+                        requireActivity().supportFragmentManager.popBackStack()
+                    }
+                    .addOnFailureListener {
+                        Toast.makeText(context, "Failed to close post", Toast.LENGTH_SHORT).show()
+                    }
+            }
+            dialog.dismiss()
+        }
+
+        // Cancel listener
+        tvCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+    }
+
 
     private fun showFullscreenImage(imageUrl: String) {
         val dialog = Dialog(requireContext(), android.R.style.Theme_Black_NoTitleBar_Fullscreen)
@@ -174,7 +280,9 @@ class PostDetailsFragment : Fragment() {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     var alreadyApplied = false
                     var applicationKey: String? = null
+
                     var postHasAcceptedApplication = false
+
 
                     for (applicationSnapshot in snapshot.children) {
                         val application = applicationSnapshot.getValue(PostApplication::class.java)
@@ -185,12 +293,16 @@ class PostDetailsFragment : Fragment() {
                             break
                         }
 
+
                         // Check if provider has already applied
                         if (application?.providerEmail == providerEmail) {
                             alreadyApplied = true
                             applicationKey = applicationSnapshot.key
                         }
                     }
+
+
+                    updateApplyButton(applyButton, alreadyApplied, applicationKey)
 
                     // If post already has an accepted application, prevent applying
                     if (postHasAcceptedApplication) {
@@ -203,6 +315,7 @@ class PostDetailsFragment : Fragment() {
                     } else {
                         updateApplyButton(applyButton, alreadyApplied, applicationKey)
                     }
+
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -315,6 +428,7 @@ class PostDetailsFragment : Fragment() {
                 arguments = Bundle().apply {
                     putString("CATEGORY", post.categoryName)
                     putString("BOOK_DAY", post.bookDay)
+                    putString("START_DATE", post.startDate)
                     putString("START_TIME", post.startTime)
                     putString("END_TIME", post.endTime)
                     putString("DESCRIPTION", post.postDescription)

@@ -240,7 +240,9 @@ class HomeFragmentSProvider : Fragment() {
                     if (post != null &&
                         post.client &&
                         userSkills.contains(post.categoryName) &&
-                        post.email != currentEmail) { // Added this condition
+                        post.email != currentEmail &&
+                        post.postStatus == "Approved"
+                    ) {
                         matchingPosts.add(post)
                     }
                 }
