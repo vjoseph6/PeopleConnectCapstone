@@ -4,6 +4,7 @@ import android.app.AlertDialog
 import android.app.Dialog
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -30,6 +31,7 @@ import com.google.firebase.database.ServerValue
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.Query
 
 
 class PostDetailsFragment : Fragment() {
@@ -48,6 +50,8 @@ class PostDetailsFragment : Fragment() {
     private lateinit var imageAdapter: PostImageAdapter
     private lateinit var database: DatabaseReference
     private var clientEmail: String? = null
+    private var postStatusListener: ValueEventListener? = null
+    private var postStatusQuery: Query? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,6 +85,73 @@ class PostDetailsFragment : Fragment() {
         val topBar: View = view.findViewById(R.id.topBar)
         val btnBack: ImageButton = view.findViewById(R.id.btnBack)
 
+        // Common functionality for updating statusView
+        fun updateStatusView(postStatus: String) {
+            statusView.text = "Status: ${postStatus.capitalize()}"
+
+            // Change text color to red if status is Closed
+            if (postStatus.equals("Closed", ignoreCase = true)) {
+                statusView.setTextColor(ContextCompat.getColor(requireContext(), R.color.red))
+            } else {
+                statusView.setTextColor(ContextCompat.getColor(requireContext(), R.color.green))
+            }
+        }
+
+        // Store the query and listener for potential removal
+        postStatusQuery = database.child("posts").child(postId!!)
+        postStatusListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                // Explicit null and attachment checks
+                if (!isAdded || context == null) return
+
+                val postStatus = snapshot.child("status").getValue(String::class.java) ?: "Open"
+
+                // Ensure UI updates happen on the main thread
+                activity?.runOnUiThread {
+                    updateStatusView(postStatus)
+
+                    // Show "application rejected" toast only for provider view
+                    if (isFromProvider && postStatus.equals("Closed", ignoreCase = true)) {
+                        showSafeToast(
+                            "Your application has been rejected",
+                            Toast.LENGTH_SHORT
+                        )
+                    }
+
+                    if (isFromProvider) {
+                        val applyBtn = view.findViewById<Button>(R.id.btnApply)
+
+                        if (postStatus.equals("Closed", ignoreCase = true)) {
+                            applyBtn.apply {
+                                text = "Post Closed"
+                                setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.red))
+                                isEnabled = false
+                                setOnClickListener {
+                                    showSafeToast("Post is closed")
+                                }
+                            }
+                        } else {
+                            applyBtn.apply {
+                                setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.blue))
+                                visibility = View.VISIBLE
+                                isEnabled = true
+                                text = "Apply"
+                                setOnClickListener {
+                                    applyForPost()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                showSafeToast("Failed to load post status")
+            }
+        }
+
+        // Add the listener
+        postStatusQuery?.addValueEventListener(postStatusListener!!)
 
         if (isFromProvider) {
             // Change colors to blue for provider view
@@ -92,54 +163,14 @@ class PostDetailsFragment : Fragment() {
             view.findViewById<ImageView>(R.id.clockIcon)?.setImageResource(R.drawable.ic_clock_provider)
             view.findViewById<ImageButton>(R.id.btnBack)?.setImageResource(R.drawable.backbtn2_sprovider_)
             view.findViewById<TextView>(R.id.categoryText)?.setBackgroundResource(R.drawable.category_badge_background_provider)
-
-            // Initially set status
-            database.child("posts").child(postId!!).addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val postStatus = snapshot.child("status").getValue(String::class.java) ?: "Open"
-                    val statusView: TextView = view.findViewById(R.id.statusView)
-                    statusView.text = "Status: ${postStatus.capitalize()}"
-
-                    // Change text color to red if status is Closed
-                    if (postStatus.equals("Closed", ignoreCase = true)) {
-                        statusView.setTextColor(ContextCompat.getColor(requireContext(), R.color.red))
-                    }
-
-                    val applyBtn = view.findViewById<Button>(R.id.btnApply)
-
-                    if (postStatus.equals("Closed", ignoreCase = true)) {
-                        applyBtn.apply {
-                            text = "Post Closed"
-                            setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.red))
-                            isEnabled = false
-                            setOnClickListener {
-                                Toast.makeText(context, "Post is closed", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    } else {
-                        applyBtn.apply {
-                            backgroundTintList = ContextCompat.getColorStateList(context, R.color.blue)
-                            visibility = View.VISIBLE
-                            isEnabled = true
-                            text = "Apply"
-                            setOnClickListener {
-                                applyForPost()
-                            }
-                        }
-                    }
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Toast.makeText(context, "Failed to load post status", Toast.LENGTH_SHORT).show()
-                }
-            })
-
         } else {
-
             val closePostTV: Button = view.findViewById(R.id.closePost)
             closePostTV.visibility = View.VISIBLE
             closePostTV.setOnClickListener {
-                handleCloseApplication()
+                handleCloseApplication { updatedStatus ->
+                    // Update the button text based on the post status
+                    closePostTV.text = if (updatedStatus == "Closed") "Reopen Post" else "Close Post"
+                }
             }
 
             val applyBtn = view.findViewById<Button>(R.id.btnApply)
@@ -162,6 +193,50 @@ class PostDetailsFragment : Fragment() {
             }
         }
 
+        if (!isFromProvider) {
+            val closePostTV: Button = view.findViewById(R.id.closePost)
+            closePostTV.visibility = View.VISIBLE
+
+            // Track the current post status by querying the database
+            var currentPostStatus = "Open" // Default initial state
+
+            // Function to update button based on current status
+            fun updateClosePostButton() {
+                database.child("posts").child(postId!!).child("status")
+                    .addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            currentPostStatus = snapshot.getValue(String::class.java) ?: "Open"
+                            closePostTV.text = if (currentPostStatus == "Closed") "Reopen Post" else "Close Post"
+                        }
+
+                        override fun onCancelled(error: DatabaseError) {
+                            // Handle error
+                            closePostTV.text = "Close Post"
+                        }
+                    })
+            }
+
+            // Initial button state setup
+            updateClosePostButton()
+
+            closePostTV.setOnClickListener {
+                if (currentPostStatus == "Open") {
+                    // Close Post Logic
+                    handleCloseApplication { updatedStatus ->
+                        currentPostStatus = updatedStatus
+                        updateClosePostButton()
+                    }
+                } else {
+                    // Reopen Post Logic
+                    reopenPost { reopenStatus ->
+                        currentPostStatus = reopenStatus
+                        updateClosePostButton()
+                    }
+                }
+            }
+        }
+
+
         btnBack.setOnClickListener {
             requireActivity().supportFragmentManager.popBackStack()
         }
@@ -178,6 +253,8 @@ class PostDetailsFragment : Fragment() {
         timeText.text = "$startTime - $endTime"
         descriptionText.text = description
 
+
+
         // Set up TabLayout
         val tabLayout: TabLayout = view.findViewById(R.id.imageIndicator)
         TabLayoutMediator(tabLayout, imageViewPager) { _, _ -> }.attach()
@@ -185,65 +262,122 @@ class PostDetailsFragment : Fragment() {
         return view
     }
 
-    private fun handleCloseApplication() {
-        // Create the custom dialog
+    // Remove listener to prevent memory leaks
+    override fun onDestroyView() {
+        super.onDestroyView()
+
+        // Remove the listener if it exists
+        postStatusQuery?.removeEventListener(postStatusListener!!)
+        postStatusListener = null
+        postStatusQuery = null
+    }
+
+    // Safe toast method with additional checks
+    private fun showSafeToast(message: String, length: Int = Toast.LENGTH_SHORT) {
+        // Check if the fragment is attached and the context is available
+        if (isAdded && context != null) {
+            activity?.runOnUiThread {
+                try {
+                    Toast.makeText(requireContext(), message, length).show()
+                } catch (e: IllegalStateException) {
+                    // Log the error or handle it silently
+                    Log.e("PostDetailsFragment", "Failed to show toast", e)
+                }
+            }
+        }
+    }
+
+    private fun handleCloseApplication(onStatusUpdated: ((String) -> Unit)? = null) {
         val dialogView = LayoutInflater.from(context).inflate(R.layout.client_dialog_logout, null)
         val dialog = AlertDialog.Builder(requireContext())
             .setView(dialogView)
             .create()
-        dialog.window?.setBackgroundDrawable(ColorDrawable(0)) // Make background transparent
-        dialog.window?.attributes?.windowAnimations = R.style.DialogAnimation // Apply animations
+        dialog.window?.setBackgroundDrawable(ColorDrawable(0))
+        dialog.window?.attributes?.windowAnimations = R.style.DialogAnimation
         dialog.show()
 
-        // Find views in the custom layout
         val tvTitle = dialogView.findViewById<TextView>(R.id.tvLogoutTitle)
         val btnConfirm = dialogView.findViewById<Button>(R.id.btnLogout)
         val tvCancel = dialogView.findViewById<TextView>(R.id.tvCancel)
 
-        // Customize the dialog for closing post
         tvTitle.text = "Do you want to close this post?"
         btnConfirm.text = "Close"
 
-        // Set click listeners
         btnConfirm.setOnClickListener {
-            // Update post status to "Closed"
             if (postId != null) {
                 database.child("posts").child(postId!!).child("status").setValue("Closed")
                     .addOnSuccessListener {
                         Toast.makeText(context, "Post closed successfully", Toast.LENGTH_SHORT).show()
 
-                        // Remove any pending applications
+                        // Update pending applications to rejected
                         database.child("post_applicants")
                             .orderByChild("postId")
                             .equalTo(postId)
                             .addListenerForSingleValueEvent(object : ValueEventListener {
                                 override fun onDataChange(snapshot: DataSnapshot) {
                                     for (applicationSnapshot in snapshot.children) {
-                                        val currentApp = applicationSnapshot.getValue(PostApplication::class.java)
-                                        if (currentApp?.status == "Pending") {
+                                        val currentApplication = applicationSnapshot.getValue(PostApplication::class.java)
+                                        if (currentApplication?.status == "Pending") {
                                             applicationSnapshot.ref.child("status").setValue("Rejected")
                                         }
                                     }
+                                    onStatusUpdated?.invoke("Closed")
                                 }
 
                                 override fun onCancelled(error: DatabaseError) {
                                     Toast.makeText(context, "Failed to update applications", Toast.LENGTH_SHORT).show()
+                                    onStatusUpdated?.invoke("Error")
                                 }
                             })
 
-                        // Navigate back or update UI as needed
                         requireActivity().supportFragmentManager.popBackStack()
                     }
                     .addOnFailureListener {
                         Toast.makeText(context, "Failed to close post", Toast.LENGTH_SHORT).show()
+                        onStatusUpdated?.invoke("Error")
                     }
             }
             dialog.dismiss()
         }
 
-        // Cancel listener
         tvCancel.setOnClickListener {
             dialog.dismiss()
+        }
+    }
+
+    private fun reopenPost(onStatusUpdated: ((String) -> Unit)? = null) {
+        if (postId != null) {
+            database.child("posts").child(postId!!).child("status").setValue("Open")
+                .addOnSuccessListener {
+                    Toast.makeText(context, "Post reopened successfully", Toast.LENGTH_SHORT).show()
+
+                    /*// Revert rejected applications back to pending
+                    database.child("post_applicants")
+                        .orderByChild("postId")
+                        .equalTo(postId)
+                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(snapshot: DataSnapshot) {
+                                for (applicationSnapshot in snapshot.children) {
+                                    val currentApplication = applicationSnapshot.getValue(PostApplication::class.java)
+                                    if (currentApplication?.status == "Rejected") {
+                                        applicationSnapshot.ref.child("status").setValue("Pending")
+                                    }
+                                }
+                                onStatusUpdated?.invoke("Open")
+                            }
+
+                            override fun onCancelled(error: DatabaseError) {
+                                Toast.makeText(context, "Failed to update applications", Toast.LENGTH_SHORT).show()
+                                onStatusUpdated?.invoke("Error")
+                            }
+                        })*/
+
+                    requireActivity().supportFragmentManager.popBackStack()
+                }
+                .addOnFailureListener {
+                    Toast.makeText(context, "Failed to reopen post", Toast.LENGTH_SHORT).show()
+                    onStatusUpdated?.invoke("Error")
+                }
         }
     }
 
@@ -278,21 +412,20 @@ class PostDetailsFragment : Fragment() {
             .equalTo(postId)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    var alreadyApplied = false
+                    var existingApplication: PostApplication? = null
                     var applicationKey: String? = null
 
                     for (applicationSnapshot in snapshot.children) {
                         val application = applicationSnapshot.getValue(PostApplication::class.java)
 
-
-                        // Check if provider has already applied
+                        // Check if provider has already applied or has a previous rejected application
                         if (application?.providerEmail == providerEmail) {
-                            alreadyApplied = true
+                            existingApplication = application
                             applicationKey = applicationSnapshot.key
                         }
                     }
 
-                    updateApplyButton(applyButton, alreadyApplied, applicationKey)
+                    updateApplyButton(applyButton, existingApplication, applicationKey)
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -305,21 +438,44 @@ class PostDetailsFragment : Fragment() {
             })
     }
 
-    private fun updateApplyButton(applyButton: Button?, alreadyApplied: Boolean, applicationKey: String?) {
+    private fun updateApplyButton(applyButton: Button?, existingApplication: PostApplication?, applicationKey: String?) {
         applyButton?.apply {
-            if (alreadyApplied) {
-                text = "Cancel"
-                setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.red))
-                setOnClickListener {
-                    showCancelDialog(applicationKey)
+            when (existingApplication?.status) {
+                "Pending" -> {
+                    text = "Cancel Application"
+                    setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.red))
+                    setOnClickListener {
+                        showCancelDialog(applicationKey)
+                    }
                 }
-            } else {
-                text = "Apply"
-                setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.blue))
-                setOnClickListener {
-                    createNewApplication()
+                "Rejected" -> {
+                    text = "Reapply"
+                    setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.blue))
+                    setOnClickListener {
+                        reapplyForPost(applicationKey)
+                    }
+                }
+                else -> {
+                    text = "Apply"
+                    setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.blue))
+                    setOnClickListener {
+                        createNewApplication()
+                    }
                 }
             }
+        }
+    }
+
+    private fun reapplyForPost(applicationKey: String?) {
+        applicationKey?.let { key ->
+            database.child("post_applicants").child(key).child("status").setValue("Pending")
+                .addOnSuccessListener {
+                    Toast.makeText(context, "Reapplied successfully", Toast.LENGTH_SHORT).show()
+                    applyForPost() // Refresh the button state
+                }
+                .addOnFailureListener {
+                    Toast.makeText(context, "Failed to reapply", Toast.LENGTH_SHORT).show()
+                }
         }
     }
 
