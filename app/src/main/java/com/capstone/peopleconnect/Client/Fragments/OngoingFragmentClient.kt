@@ -23,12 +23,16 @@ import com.capstone.peopleconnect.Classes.BookingProgress
 import com.capstone.peopleconnect.Helper.DatabaseHelper
 import com.capstone.peopleconnect.Helper.NetworkHelper
 import com.capstone.peopleconnect.Message.chat.ChatActivity
+import com.capstone.peopleconnect.Notifications.model.NotificationModel
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DatabaseReference
 
 class OngoingFragmentClient : Fragment() {
     private lateinit var binding: FragmentOngoingClientBinding
     private var bookingId: String? = null
     private var providerEmail: String? = null
     private var email: String? = null  // Add this property
+    private lateinit var notificationsRef: DatabaseReference
     private var currentState = BookingProgress.STATE_PENDING
     private var progressListener: ValueEventListener? = null
 
@@ -60,6 +64,24 @@ class OngoingFragmentClient : Fragment() {
                 binding.btnViewMessage.text = "No Internet Connection"
             } else {
                 validateStateTransition(currentState)
+            }
+        }
+
+        // Initialize notificationsRef
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        if (currentUser != null) {
+            notificationsRef = FirebaseDatabase.getInstance().reference
+                .child("notifications")
+                .child(currentUser.uid)
+        }
+
+        // Add long click listener to status message
+        binding.statusMessage.setOnLongClickListener {
+            if (currentState == "AWAITING_CLIENT_CONFIRMATION") {
+                showCompletionConfirmationDialog()
+                true
+            } else {
+                false
             }
         }
 
@@ -183,18 +205,27 @@ class OngoingFragmentClient : Fragment() {
         when (state) {
             BookingProgress.STATE_PENDING -> {
                 binding.btnViewMessage.text = "View Message"
+                binding.statusMessage.text = "Waiting for service provider..."
+                binding.statusMessage.visibility = View.VISIBLE
             }
             BookingProgress.STATE_ARRIVE -> {
                 binding.btnViewMessage.text = "View Message"
+                binding.statusMessage.text = "Service provider has arrived at your location"
+                binding.statusMessage.visibility = View.VISIBLE
             }
             BookingProgress.STATE_WORKING -> {
                 binding.btnViewMessage.text = "View Message"
+                binding.statusMessage.text = "Service provider is currently working"
+                binding.statusMessage.visibility = View.VISIBLE
             }
             "AWAITING_CLIENT_CONFIRMATION" -> {
-                showCompletionConfirmationDialog()
+                binding.statusMessage.text = "Please confirm if the work is completed"
+                binding.statusMessage.visibility = View.VISIBLE
             }
             BookingProgress.STATE_COMPLETE -> {
                 binding.btnViewMessage.text = "Well Done"
+                binding.statusMessage.text = "Service completed"
+                binding.statusMessage.visibility = View.VISIBLE
             }
         }
     }
@@ -205,48 +236,193 @@ class OngoingFragmentClient : Fragment() {
             .setMessage("Has the work been completed?")
             .setPositiveButton("Yes") { _, _ ->
                 bookingId?.let { id ->
-                    // Update booking progress
-                    val progress = BookingProgress(
-                        state = BookingProgress.STATE_COMPLETE,
-                        bookingId = id,
-                        providerEmail = providerEmail ?: "",
-                        clientEmail = email ?: "",
-                        timestamp = System.currentTimeMillis()
-                    )
-                    DatabaseHelper.updateBookingProgress(id, progress).addOnSuccessListener {
-                        // Update booking status in main bookings table
-                        val bookingRef = FirebaseDatabase.getInstance().getReference("bookings/$id")
-                        bookingRef.child("bookingStatus").setValue("Completed").addOnSuccessListener {
-                            // Navigate to rating screen with all required parameters
-                            val rateFragment = RateFragmentClient.newInstance(
-                                bookingId = id,
-                                providerEmail = providerEmail ?: "",
-                                clientEmail = email ?: ""
-                            )
-                            parentFragmentManager.beginTransaction()
-                                .replace(R.id.frame_layout, rateFragment)
-                                .addToBackStack(null)
-                                .commit()
-                        }
-                    }
+                    handleWorkCompletion(id)
                 }
             }
             .setNegativeButton("No") { _, _ ->
                 bookingId?.let { id ->
-                    val progress = BookingProgress(
-                        state = BookingProgress.STATE_WORKING,
-                        bookingId = id,
-                        providerEmail = providerEmail ?: "",
-                        clientEmail = email ?: "",
-                        timestamp = System.currentTimeMillis()
-                    )
-                    DatabaseHelper.updateBookingProgress(id, progress)
+                    handleWorkDeclined(id)
                 }
             }
             .setCancelable(false)
             .show()
     }
 
+    private fun handleWorkCompletion(bookingId: String) {
+        // First update the booking status
+        val bookingRef = FirebaseDatabase.getInstance().getReference("bookings/$bookingId")
+        bookingRef.child("bookingStatus").setValue("Completed")
+            .addOnSuccessListener {
+                // After booking status is updated, update the progress
+                val progress = BookingProgress(
+                    state = BookingProgress.STATE_COMPLETE,
+                    bookingId = bookingId,
+                    providerEmail = providerEmail ?: "",
+                    clientEmail = email ?: "",
+                    timestamp = System.currentTimeMillis()
+                )
+
+                DatabaseHelper.updateBookingProgress(bookingId, progress)
+                    .addOnSuccessListener {
+                        // Remove notifications only after both updates are successful
+                        FirebaseAuth.getInstance().currentUser?.let { currentUser ->
+                            removeOngoingNotifications(currentUser.uid, bookingId) {
+                                // Navigate to rating screen only after all updates are complete
+                                navigateToRating(bookingId)
+                            }
+                        }
+                    }
+                    .addOnFailureListener { error ->
+                        handleError("Failed to update progress", error)
+                    }
+            }
+            .addOnFailureListener { error ->
+                handleError("Failed to update booking status", error)
+            }
+    }
+
+    private fun handleWorkDeclined(bookingId: String) {
+        val progress = BookingProgress(
+            state = BookingProgress.STATE_WORKING,
+            bookingId = bookingId,
+            providerEmail = providerEmail ?: "",
+            clientEmail = email ?: "",
+            timestamp = System.currentTimeMillis()
+        )
+
+        DatabaseHelper.updateBookingProgress(bookingId, progress)
+            .addOnSuccessListener {
+                FirebaseAuth.getInstance().currentUser?.let { currentUser ->
+                    removeOngoingNotifications(currentUser.uid, bookingId) {
+                        sendWorkDeclinedNotifications(bookingId, currentUser.uid)
+                    }
+                }
+            }
+            .addOnFailureListener { error ->
+                handleError("Failed to decline work", error)
+            }
+    }
+
+    private fun removeOngoingNotifications(userId: String, bookingId: String, onComplete: () -> Unit) {
+        val notificationsRef = FirebaseDatabase.getInstance().reference
+            .child("notifications")
+            .child(userId)
+
+        notificationsRef.orderByChild("bookingId")
+            .equalTo(bookingId)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    var removedCount = 0
+                    val totalToRemove = snapshot.children.count {
+                        it.getValue(NotificationModel::class.java)?.type == "ongoing"
+                    }
+
+                    if (totalToRemove == 0) {
+                        onComplete()
+                        return
+                    }
+
+                    for (notificationSnapshot in snapshot.children) {
+                        val notification = notificationSnapshot.getValue(NotificationModel::class.java)
+                        if (notification?.type == "ongoing") {
+                            notificationSnapshot.ref.removeValue()
+                                .addOnSuccessListener {
+                                    removedCount++
+                                    if (removedCount == totalToRemove) {
+                                        onComplete()
+                                    }
+                                }
+                                .addOnFailureListener { error ->
+                                    Log.e("OngoingFragment", "Error removing notification", error)
+                                    removedCount++
+                                    if (removedCount == totalToRemove) {
+                                        onComplete()
+                                    }
+                                }
+                        }
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("OngoingFragment", "Error removing notifications", error.toException())
+                    onComplete()
+                }
+            })
+    }
+
+    private fun sendWorkDeclinedNotifications(bookingId: String, clientUid: String) {
+        providerEmail?.let { email ->
+            FirebaseDatabase.getInstance().getReference("users")
+                .orderByChild("email")
+                .equalTo(email)
+                .addListenerForSingleValueEvent(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        val providerId = snapshot.children.firstOrNull()?.key ?: return
+                        createAndSendNotifications(bookingId, clientUid, providerId)
+                    }
+
+                    override fun onCancelled(error: DatabaseError) {
+                        handleError("Error finding provider", error.toException())
+                    }
+                })
+        }
+    }
+
+    private fun createAndSendNotifications(bookingId: String, clientUid: String, providerId: String) {
+        // Create Work Started notification for client
+        val workStartedNotification = NotificationModel(
+            id = FirebaseDatabase.getInstance().reference.push().key ?: return,
+            title = "Work Started",
+            description = "Service provider has started working",
+            type = "ongoing",
+            progressState = "working",
+            senderId = providerId,
+            senderName = "Service Provider",
+            timestamp = System.currentTimeMillis(),
+            bookingId = bookingId,
+            bookingStatus = "Ongoing"
+        )
+
+        // Create decline notification for provider
+        val declineNotification = NotificationModel(
+            id = FirebaseDatabase.getInstance().reference.push().key ?: return,
+            title = "Work Completion Declined",
+            description = "Client has declined the work completion. Please double-check your work.",
+            type = "ongoing",
+            progressState = "work_declined",
+            senderId = clientUid,
+            senderName = "Client",
+            timestamp = System.currentTimeMillis(),
+            bookingId = bookingId,
+            bookingStatus = "Ongoing"
+        )
+
+        // Save both notifications
+        val notificationsRef = FirebaseDatabase.getInstance().reference.child("notifications")
+        notificationsRef.child(clientUid).child(workStartedNotification.id).setValue(workStartedNotification)
+        notificationsRef.child(providerId).child(declineNotification.id).setValue(declineNotification)
+    }
+
+    private fun navigateToRating(bookingId: String) {
+        if (!isAdded) return  // Check if fragment is still attached
+
+        val rateFragment = RateFragmentClient.newInstance(
+            bookingId = bookingId,
+            providerEmail = providerEmail ?: "",
+            clientEmail = email ?: ""
+        )
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.frame_layout, rateFragment)
+            .addToBackStack(null)
+            .commit()
+    }
+
+    private fun handleError(message: String, error: Exception) {
+        Log.e("OngoingFragment", "$message: ${error.message}", error)
+        if (isAdded) {
+            Toast.makeText(context, "$message. Please try again.", Toast.LENGTH_SHORT).show()
+        }
+    }
     private fun updateUI(state: String) {
         val context = requireContext()
         val greenColor = ContextCompat.getColor(context, R.color.green)

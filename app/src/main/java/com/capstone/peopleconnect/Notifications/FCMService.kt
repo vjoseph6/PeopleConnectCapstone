@@ -5,6 +5,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.media.RingtoneManager
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -210,30 +211,41 @@ class FCMService : FirebaseMessagingService() {
                 description = "Notifications for new chat messages"
                 enableLights(true)
                 enableVibration(true)
+
+                // Different vibration patterns based on notification type
+                if (title.contains("Work") || title.contains("Service Provider") ||
+                    title.contains("Booking") || title.contains("Confirmation")) {
+                    // Booking/Service related - stronger vibration + sound
+                    vibrationPattern = longArrayOf(0, 500, 200, 500)
+                    setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION), null)
+                } else {
+                    // Chat messages - vibration only
+                    vibrationPattern = longArrayOf(0, 200)
+                    setSound(null, null)
+                }
             }
             notificationManager.createNotificationChannel(channel)
         }
 
-        // Create intent for notification click
-        val intent = Intent(this, ChatActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra("userId", senderId)
-            putExtra("name", senderName)
-        }
-
-        val pendingIntent = PendingIntent.getActivity(
-            this, 0, intent,
-            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        // Build notification
+        // Build notification with appropriate pattern
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(message)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(pendingIntent)
+
+        // Set notification pattern based on type
+        if (title.contains("Work") || title.contains("Service Provider") ||
+            title.contains("Booking") || title.contains("Confirmation")) {
+            notificationBuilder
+                .setDefaults(NotificationCompat.DEFAULT_ALL)
+                .setVibrate(longArrayOf(0, 500, 200, 500))
+                .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+        } else {
+            notificationBuilder
+                .setVibrate(longArrayOf(0, 200))
+        }
 
         // Show notification
         notificationManager.notify(System.currentTimeMillis().toInt(), notificationBuilder.build())

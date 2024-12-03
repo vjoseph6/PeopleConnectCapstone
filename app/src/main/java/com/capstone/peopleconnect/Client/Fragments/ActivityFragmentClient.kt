@@ -42,6 +42,7 @@ import com.google.firebase.auth.FirebaseAuth
 
 class ActivityFragmentClient : Fragment() {
 
+    private var isClickEnabled = true
     private lateinit var emptyView: RelativeLayout
     private lateinit var adapter: BookingClientAdapter
     private lateinit var recyclerView: RecyclerView
@@ -116,24 +117,45 @@ class ActivityFragmentClient : Fragment() {
 
         // Set click listeners for each tab
         tvBooking.setOnClickListener {
-            lastSelectedTab = "Booking"  // Save selected tab
-            currentFilter = "Booking"
-            filterBookings(currentFilter)
-            highlightSelectedTab(tvBooking, tvSuccessful, tvFailed)
-        }
+            if (isClickEnabled) {
+                isClickEnabled = false
+                lastSelectedTab = "Booking"
+                currentFilter = "Booking"
+                filterBookings(currentFilter)
+                highlightSelectedTab(tvBooking, tvSuccessful, tvFailed)
 
+                // Re-enable clicks after a short delay
+                view?.postDelayed({
+                    isClickEnabled = true
+                }, 300) // 300ms delay
+            }
+        }
         tvSuccessful.setOnClickListener {
-            lastSelectedTab = "Successful"  // Save selected tab
-            currentFilter = "Successful"
-            filterBookings(currentFilter)
-            highlightSelectedTab(tvSuccessful, tvBooking, tvFailed)
+            if (isClickEnabled) {
+                isClickEnabled = false
+                lastSelectedTab = "Successful"
+                currentFilter = "Successful"
+                filterBookings(currentFilter)
+                highlightSelectedTab(tvSuccessful, tvBooking, tvFailed)
+
+                view?.postDelayed({
+                    isClickEnabled = true
+                }, 300)
+            }
         }
 
         tvFailed.setOnClickListener {
-            lastSelectedTab = "Failed"  // Save selected tab
-            currentFilter = "Failed"
-            filterBookings(currentFilter)
-            highlightSelectedTab(tvFailed, tvBooking, tvSuccessful)
+            if (isClickEnabled) {
+                isClickEnabled = false
+                lastSelectedTab = "Failed"
+                currentFilter = "Failed"
+                filterBookings(currentFilter)
+                highlightSelectedTab(tvFailed, tvBooking, tvSuccessful)
+
+                view?.postDelayed({
+                    isClickEnabled = true
+                }, 300)
+            }
         }
 
         // Add this to restore the last selected tab

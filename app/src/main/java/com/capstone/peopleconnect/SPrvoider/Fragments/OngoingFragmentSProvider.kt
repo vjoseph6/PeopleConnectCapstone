@@ -16,8 +16,10 @@ import com.capstone.peopleconnect.Classes.BookingProgress
 import com.capstone.peopleconnect.Classes.User
 import com.capstone.peopleconnect.Helper.DatabaseHelper
 import com.capstone.peopleconnect.Helper.NetworkHelper
+import com.capstone.peopleconnect.Notifications.model.NotificationModel
 import com.capstone.peopleconnect.R
 import com.capstone.peopleconnect.databinding.FragmentOngoingSProviderBinding
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -357,48 +359,98 @@ class OngoingFragmentSProvider : Fragment() {
             }
 
             try {
-                val progress = BookingProgress(
-                    state = nextState,
-                    bookingId = id,
-                    providerEmail = providerEmail ?: "",
-                    clientEmail = clientEmail ?: "",
-                    timestamp = System.currentTimeMillis()
-                )
+                FirebaseDatabase.getInstance().getReference("users")
+                    .orderByChild("email")
+                    .equalTo(clientEmail)
+                    .addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            val clientId = snapshot.children.firstOrNull()?.key
+                            if (clientId != null) {
+                                val notificationsRef = FirebaseDatabase.getInstance().reference
+                                    .child("notifications")
+                                    .child(clientId)
 
-                DatabaseHelper.updateBookingProgress(id, progress)
-                    .addOnCompleteListener { task ->
-                        isUpdating = false
-                        if (task.isSuccessful) {
-                            when (nextState) {
-                                BookingProgress.STATE_AWAITING_CONFIRMATION -> {
-                                    swipeBackground?.isEnabled = false
-                                    swipeText?.text = "Waiting for client confirmation..."
-                                }
-                                BookingProgress.STATE_COMPLETE -> {
-                                    // Navigate to rating screen when booking is completed
-                                    val rateFragment = RateFragmentSProvider.newInstance(
-                                        bookingId = id,
-                                        clientEmail = clientEmail ?: "",
-                                        providerEmail = providerEmail ?: ""
-                                    )
-                                    parentFragmentManager.beginTransaction()
-                                        .replace(R.id.frame_layout, rateFragment)
-                                        .addToBackStack(null)
-                                        .commit()
-                                }
-                                else -> {
-                                    swipeBackground?.isEnabled = true
-                                    resetSwipeButton()
-                                }
+                                notificationsRef.orderByChild("bookingId")
+                                    .equalTo(id)
+                                    .addListenerForSingleValueEvent(object : ValueEventListener {
+                                        override fun onDataChange(notificationSnapshot: DataSnapshot) {
+                                            // Only remove ongoing-type notifications
+                                            for (notification in notificationSnapshot.children) {
+                                                val notificationModel = notification.getValue(NotificationModel::class.java)
+                                                if (notificationModel?.type == "ongoing") {
+                                                    notification.ref.removeValue()
+                                                }
+                                            }
+
+                                            // Rest of the code remains the same
+                                            val progress = BookingProgress(
+                                                state = nextState,
+                                                bookingId = id,
+                                                providerEmail = providerEmail ?: "",
+                                                clientEmail = clientEmail ?: "",
+                                                timestamp = System.currentTimeMillis()
+                                            )
+
+                                            DatabaseHelper.updateBookingProgress(id, progress)
+                                                .addOnSuccessListener {
+                                                    // Send appropriate notification based on state
+                                                    when (nextState) {
+                                                        BookingProgress.STATE_ARRIVE -> {
+                                                            sendProgressNotification(
+                                                                "Service Provider Arrived",
+                                                                "Your service provider has arrived at your location",
+                                                                "ongoing",
+                                                                "arrive"
+                                                            )
+                                                            swipeBackground?.isEnabled = true
+                                                        }
+                                                        BookingProgress.STATE_WORKING -> {
+                                                            sendProgressNotification(
+                                                                "Work Started",
+                                                                "Your service provider has started working",
+                                                                "ongoing",
+                                                                "working"
+                                                            )
+                                                            swipeBackground?.isEnabled = true
+                                                        }
+                                                        BookingProgress.STATE_AWAITING_CONFIRMATION -> {
+                                                            sendProgressNotification(
+                                                                "Work Completion Confirmation",
+                                                                "Your service provider has completed the work. Please confirm.",
+                                                                "ongoing",
+                                                                "awaiting_confirmation"
+                                                            )
+                                                            swipeBackground?.isEnabled = false
+                                                            swipeText?.text = "Waiting for client confirmation..."
+                                                        }
+                                                    }
+                                                    updateUI(nextState)
+                                                    isUpdating = false
+                                                }
+                                                .addOnFailureListener {
+                                                    isUpdating = false
+                                                    swipeBackground?.isEnabled = true
+                                                    Log.e("OngoingFragmentSProvider", "Error updating progress", it)
+                                                    updateUI(currentState)
+                                                    resetSwipeButton()
+                                                }
+                                        }
+
+                                        override fun onCancelled(error: DatabaseError) {
+                                            Log.e("OngoingFragmentSProvider", "Error removing notifications", error.toException())
+                                            isUpdating = false
+                                            swipeBackground?.isEnabled = true
+                                        }
+                                    })
                             }
-                            updateUI(nextState)
-                        } else {
-                            swipeBackground?.isEnabled = true
-                            Log.e("OngoingFragmentSProvider", "Error updating progress", task.exception)
-                            updateUI(currentState)
-                            resetSwipeButton()
                         }
-                    }
+
+                        override fun onCancelled(error: DatabaseError) {
+                            Log.e("OngoingFragmentSProvider", "Error finding client", error.toException())
+                            isUpdating = false
+                            swipeBackground?.isEnabled = true
+                        }
+                    })
             } catch (e: Exception) {
                 isUpdating = false
                 swipeBackground?.isEnabled = true
@@ -409,20 +461,122 @@ class OngoingFragmentSProvider : Fragment() {
         }
     }
 
+    private fun proceedWithProgressUpdate(bookingId: String, nextState: String) {
+        val progress = BookingProgress(
+            state = nextState,
+            bookingId = bookingId,
+            providerEmail = providerEmail ?: "",
+            clientEmail = clientEmail ?: "",
+            timestamp = System.currentTimeMillis()
+        )
+
+        DatabaseHelper.updateBookingProgress(bookingId, progress)
+            .addOnCompleteListener { task ->
+                isUpdating = false
+                if (task.isSuccessful) {
+                    when (nextState) {
+                        BookingProgress.STATE_ARRIVE -> {
+                            sendProgressNotification(
+                                "Service Provider Arrived",
+                                "Your service provider has arrived at your location",
+                                "ongoing",
+                                "arrive"
+                            )
+                            swipeBackground?.isEnabled = true
+                            resetSwipeButton()
+                        }
+                        BookingProgress.STATE_WORKING -> {
+                            sendProgressNotification(
+                                "Work Started",
+                                "Your service provider has started working",
+                                "ongoing",
+                                "working"
+                            )
+                            swipeBackground?.isEnabled = true
+                            resetSwipeButton()
+                        }
+                        BookingProgress.STATE_AWAITING_CONFIRMATION -> {
+                            sendProgressNotification(
+                                "Work Completion Confirmation",
+                                "Your service provider has completed the work. Please confirm.",
+                                "ongoing",
+                                "awaiting_confirmation"
+                            )
+                            swipeBackground?.isEnabled = false
+                            swipeText?.text = "Waiting for client confirmation..."
+                        }
+                    }
+                    updateUI(nextState)
+                } else {
+                    swipeBackground?.isEnabled = true
+                    Log.e("OngoingFragmentSProvider", "Error updating progress", task.exception)
+                    updateUI(currentState)
+                    resetSwipeButton()
+                }
+            }
+    }
+    private fun sendProgressNotification(title: String, description: String, type: String, progressState: String) {
+        FirebaseAuth.getInstance().currentUser?.let { currentUser ->
+            FirebaseDatabase.getInstance().getReference("users")
+                .child(currentUser.uid)
+                .child("name")
+                .get()
+                .addOnSuccessListener { providerNameSnapshot ->
+                    val providerName = providerNameSnapshot.getValue(String::class.java) ?: "Service Provider"
+
+                    // Update description with provider name
+                    val personalizedDescription = description.replace("Your service provider", providerName)
+
+                    // Find client's ID using their email
+                    FirebaseDatabase.getInstance().getReference("users")
+                        .orderByChild("email")
+                        .equalTo(clientEmail)
+                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(snapshot: DataSnapshot) {
+                                val clientId = snapshot.children.firstOrNull()?.key
+                                if (clientId != null) {
+                                    val notification = NotificationModel(
+                                        id = FirebaseDatabase.getInstance().reference.push().key ?: return,
+                                        title = title,
+                                        description = personalizedDescription,
+                                        type = type,
+                                        progressState = progressState,  // Use progressState instead of ongoingType
+                                        senderId = currentUser.uid,
+                                        senderName = providerName,
+                                        timestamp = System.currentTimeMillis(),
+                                        bookingId = bookingId,
+                                        bookingStatus = "Ongoing"
+                                    )
+
+                                    // Save notification
+                                    FirebaseDatabase.getInstance()
+                                        .getReference("notifications")
+                                        .child(clientId)
+                                        .child(notification.id)
+                                        .setValue(notification)
+                                }
+                            }
+
+                            override fun onCancelled(error: DatabaseError) {
+                                Log.e("Notification", "Error finding client", error.toException())
+                            }
+                        })
+                }
+        }
+    }
+
+
+
 
 
 
     private fun updateUI(state: String) {
-        swipeText?.text = if (isUpdating) {
-            "Updating..."
-        } else {
-            when (state) {
-                BookingProgress.STATE_PENDING -> "Swipe to Arrive"
-                BookingProgress.STATE_ARRIVE -> "Swipe to Start Work"
-                BookingProgress.STATE_WORKING -> "Swipe to Completed"
-                "AWAITING_CLIENT_CONFIRMATION" -> "Waiting for client confirmation..."
-                else -> "Completed"
-            }
+        swipeText?.text = when (state) {
+            BookingProgress.STATE_PENDING -> "Swipe to Arrive"
+            BookingProgress.STATE_ARRIVE -> "Swipe to Start Work"
+            BookingProgress.STATE_WORKING -> "Swipe to Completed"
+            "AWAITING_CLIENT_CONFIRMATION" -> "Waiting for client confirmation..."
+            else -> "Completed"
         }
 
 

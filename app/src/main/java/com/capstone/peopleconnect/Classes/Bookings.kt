@@ -18,5 +18,7 @@ data class Bookings(
     val bookingPaymentId: String = "",
     val bookingCancelClient: String = "",
     val bookingCancelProvider: String = "",
-    val bookingUploadImages: List<String> = listOf()
+    val bookingUploadImages: List<String> = listOf(),
+    val receiptSent: Boolean = false,
+    val receiptSentDate: String = ""
 )
