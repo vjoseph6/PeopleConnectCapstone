@@ -60,6 +60,7 @@
         android:gravity="center"
         android:orientation="vertical"
         android:visibility="gone"
+        android:layout_marginTop="-100dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -67,18 +68,16 @@
 
         <ImageView
             android:id="@+id/emptyGif"
-            android:layout_width="200dp"
-            android:layout_height="200dp"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
             android:scaleType="centerCrop" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
             android:fontFamily="@font/medium_poppins"
             android:text="No applicants yet"
-            android:textColor="@color/black"
-            android:textSize="16sp" />
+            android:textSize="14sp" />
 
     </LinearLayout>
 
