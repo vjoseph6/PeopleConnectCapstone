@@ -317,6 +317,8 @@ class PostDetailsFragment : Fragment() {
                                 override fun onDataChange(snapshot: DataSnapshot) {
                                     for (applicationSnapshot in snapshot.children) {
                                         val currentApplication = applicationSnapshot.getValue(PostApplication::class.java)
+
+                                        // Only reject pending applications, keep accepted and rejected as is
                                         if (currentApplication?.status == "Pending") {
                                             applicationSnapshot.ref.child("status").setValue("Rejected")
                                         }
@@ -351,7 +353,7 @@ class PostDetailsFragment : Fragment() {
                 .addOnSuccessListener {
                     Toast.makeText(context, "Post reopened successfully", Toast.LENGTH_SHORT).show()
 
-                    /*// Revert rejected applications back to pending
+                    // Optionally, you can add logic to update rejected applications
                     database.child("post_applicants")
                         .orderByChild("postId")
                         .equalTo(postId)
@@ -359,9 +361,12 @@ class PostDetailsFragment : Fragment() {
                             override fun onDataChange(snapshot: DataSnapshot) {
                                 for (applicationSnapshot in snapshot.children) {
                                     val currentApplication = applicationSnapshot.getValue(PostApplication::class.java)
-                                    if (currentApplication?.status == "Rejected") {
-                                        applicationSnapshot.ref.child("status").setValue("Pending")
-                                    }
+
+                                    // Optional: You can decide whether to reset rejected applications
+                                    // This is commented out as per your requirements, but can be adjusted
+                                    // if (currentApplication?.status == "Rejected") {
+                                    //     applicationSnapshot.ref.child("status").setValue("Pending")
+                                    // }
                                 }
                                 onStatusUpdated?.invoke("Open")
                             }
@@ -370,7 +375,7 @@ class PostDetailsFragment : Fragment() {
                                 Toast.makeText(context, "Failed to update applications", Toast.LENGTH_SHORT).show()
                                 onStatusUpdated?.invoke("Error")
                             }
-                        })*/
+                        })
 
                     requireActivity().supportFragmentManager.popBackStack()
                 }
@@ -406,6 +411,7 @@ class PostDetailsFragment : Fragment() {
         }
 
         val applyButton = view?.findViewById<Button>(R.id.btnApply)
+        val statusView: TextView? = view?.findViewById(R.id.statusView)
 
         database.child("post_applicants")
             .orderByChild("postId")
@@ -414,18 +420,58 @@ class PostDetailsFragment : Fragment() {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     var existingApplication: PostApplication? = null
                     var applicationKey: String? = null
+                    var postHasAcceptedApplication = false
+                    var userAcceptedApplication: PostApplication? = null
+                    var postStatus = "Open" // Default to Open
 
-                    for (applicationSnapshot in snapshot.children) {
-                        val application = applicationSnapshot.getValue(PostApplication::class.java)
+                    // First, check the post status
+                    database.child("posts").child(postId!!).child("status")
+                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(postStatusSnapshot: DataSnapshot) {
+                                postStatus = postStatusSnapshot.getValue(String::class.java) ?: "Open"
 
-                        // Check if provider has already applied or has a previous rejected application
-                        if (application?.providerEmail == providerEmail) {
-                            existingApplication = application
-                            applicationKey = applicationSnapshot.key
-                        }
-                    }
+                                // Now process applications
+                                for (applicationSnapshot in snapshot.children) {
+                                    val application = applicationSnapshot.getValue(PostApplication::class.java)
 
-                    updateApplyButton(applyButton, existingApplication, applicationKey)
+                                    // Check if there's an accepted application for this post
+                                    if (application?.status == "Accepted") {
+                                        postHasAcceptedApplication = true
+
+                                        // Check if current provider's application is accepted
+                                        if (application.providerEmail == providerEmail) {
+                                            userAcceptedApplication = application
+                                        }
+                                        break
+                                    }
+
+                                    // Check if provider has already applied
+                                    if (application?.providerEmail == providerEmail) {
+                                        existingApplication = application
+                                        applicationKey = applicationSnapshot.key
+                                    }
+                                }
+
+                                // Update status view and apply button
+                                updateStatusAndApplyButton(
+                                    statusView,
+                                    applyButton,
+                                    existingApplication,
+                                    applicationKey,
+                                    postHasAcceptedApplication,
+                                    userAcceptedApplication,
+                                    postStatus
+                                )
+                            }
+
+                            override fun onCancelled(error: DatabaseError) {
+                                Toast.makeText(
+                                    context,
+                                    "Failed to check post status",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        })
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -438,31 +484,101 @@ class PostDetailsFragment : Fragment() {
             })
     }
 
-    private fun updateApplyButton(applyButton: Button?, existingApplication: PostApplication?, applicationKey: String?) {
+    private fun updateStatusAndApplyButton(
+        statusView: TextView?,
+        applyButton: Button?,
+        existingApplication: PostApplication?,
+        applicationKey: String?,
+        postHasAcceptedApplication: Boolean,
+        userAcceptedApplication: PostApplication?,
+        postStatus: String
+    ) {
+        // Update status view text and color
+        statusView?.apply {
+            text = "Status: ${postStatus.capitalize()}"
+            setTextColor(
+                ContextCompat.getColor(
+                    requireContext(),
+                    if (postStatus == "Closed") R.color.red else R.color.green
+                )
+            )
+        }
+
         applyButton?.apply {
-            when (existingApplication?.status) {
-                "Pending" -> {
+            when {
+                // Current provider's application is accepted (regardless of post status)
+                userAcceptedApplication != null -> {
+                    text = "Accepted"
+                    setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.green))
+                    isEnabled = false
+                    visibility = View.VISIBLE
+                }
+
+                // Post has an accepted application (not by current provider)
+                postHasAcceptedApplication -> {
+                    text = "Assigned"
+                    setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.gray))
+                    isEnabled = false
+                    visibility = View.VISIBLE
+                }
+
+                // Provider has a pending application
+                existingApplication?.status == "Pending" -> {
                     text = "Cancel Application"
                     setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.red))
+                    isEnabled = true
+                    visibility = View.VISIBLE
                     setOnClickListener {
                         showCancelDialog(applicationKey)
                     }
                 }
-                "Rejected" -> {
-                    text = "Reapply"
-                    setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.blue))
-                    setOnClickListener {
-                        reapplyForPost(applicationKey)
+
+                // Provider's application was rejected
+                existingApplication?.status == "Rejected" -> {
+                    when {
+                        // If post is closed, show Rejected with disabled button
+                        postStatus == "Closed" -> {
+                            text = "Rejected"
+                            setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.red))
+                            isEnabled = false
+                        }
+
+                        // If post is open, allow reapplication
+                        postStatus == "Open" -> {
+                            text = "Reapply"
+                            setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.blue))
+                            isEnabled = true
+                            setOnClickListener {
+                                reapplyForPost(applicationKey)
+                            }
+                        }
+
+                        // Fallback
+                        else -> {
+                            text = "Rejected"
+                            setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.red))
+                            isEnabled = false
+                        }
                     }
+                    visibility = View.VISIBLE
                 }
+
+                // No existing application or previous applications
                 else -> {
                     text = "Apply"
                     setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.blue))
+                    isEnabled = true
+                    visibility = View.VISIBLE
                     setOnClickListener {
                         createNewApplication()
                     }
                 }
             }
+        }
+
+        // Modify the toast logic in the status change listener
+        if (isFromProvider && postStatus == "Closed" && userAcceptedApplication == null) {
+            showSafeToast("Your application has been rejected", Toast.LENGTH_SHORT)
         }
     }
 
