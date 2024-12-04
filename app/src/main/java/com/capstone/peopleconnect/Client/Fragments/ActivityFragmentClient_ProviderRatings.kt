@@ -5,28 +5,26 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.capstone.peopleconnect.Adapters.RatingsAdapter
+import com.capstone.peopleconnect.Classes.Rating
 import com.capstone.peopleconnect.R
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-/**
- * A simple [Fragment] subclass.
- * Use the [ActivityFragmentClient_ProviderRatings.newInstance] factory method to
- * create an instance of this fragment.
- */
 class ActivityFragmentClient_ProviderRatings : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var ratingsAdapter: RatingsAdapter
+    private val ratingsList = mutableListOf<Rating>()
+    private var email: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
+            email = it.getString("EMAIL")
         }
     }
 
@@ -34,30 +32,78 @@ class ActivityFragmentClient_ProviderRatings : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(
-            R.layout.fragment_activity_client__provider_ratings,
-            container,
-            false
-        )
+        val view = inflater.inflate(R.layout.fragment_activity_client__provider_ratings, container, false)
+
+        recyclerView = view.findViewById(R.id.rvRatings)
+        recyclerView.layoutManager = LinearLayoutManager(requireContext())
+
+        ratingsAdapter = RatingsAdapter(ratingsList)
+        recyclerView.adapter = ratingsAdapter
+
+        fetchRatings()
+
+        return view
     }
 
+    private fun fetchRatings() {
+        val ratingsRef = FirebaseDatabase.getInstance().getReference("ratings")
+
+        ratingsRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                ratingsList.clear() // Clear the list before adding new data
+                for (ratingSnapshot in snapshot.children) {
+                    val rating = ratingSnapshot.getValue(Rating::class.java)
+                    if (rating != null && rating.ratedEmail == email) {
+                        // Fetch user details based on raterEmail
+                        fetchUser(rating)
+                    }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                // Handle error
+            }
+        })
+    }
+
+    private fun fetchUser(rating: Rating) {
+        val usersRef = FirebaseDatabase.getInstance().getReference("users")
+
+        usersRef.orderByChild("email").equalTo(rating.raterEmail)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.exists()) {
+                        for (userSnapshot in snapshot.children) {
+                            rating.name = userSnapshot.child("name").getValue(String::class.java) ?: "Unknown"
+                            rating.profileImageUrl = userSnapshot.child("profileImageUrl").getValue(String::class.java) ?: ""
+                        }
+                    }
+                    ratingsList.add(rating)
+                    updateAdapter()
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    // Handle error
+                }
+            })
+    }
+
+    private fun updateAdapter() {
+        if (!::ratingsAdapter.isInitialized) {
+            ratingsAdapter = RatingsAdapter(ratingsList)
+            recyclerView.adapter = ratingsAdapter
+        } else {
+            ratingsAdapter.notifyDataSetChanged()
+        }
+    }
+
+
     companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment ActivityFragmentClient_ProviderRatings.
-         */
-        // TODO: Rename and change types and number of parameters
         @JvmStatic
-        fun newInstance(param1: String, param2: String) =
+        fun newInstance(email: String) =
             ActivityFragmentClient_ProviderRatings().apply {
                 arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
+                    putString("EMAIL", email)
                 }
             }
     }

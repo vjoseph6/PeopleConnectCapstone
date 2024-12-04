@@ -28,7 +28,9 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import android.content.Intent
 import android.net.Uri
 import com.bumptech.glide.Glide
+import com.capstone.peopleconnect.Client.Fragments.ActivityFragmentClient_ProviderProfile
 import com.capstone.peopleconnect.Helper.StripeHelper
+import com.capstone.peopleconnect.SPrvoider.Fragments.ActivityFragmentSProvider_ClientRatings
 
 
 class BookingDetailsFragment : Fragment() {
@@ -56,6 +58,7 @@ class BookingDetailsFragment : Fragment() {
     private lateinit var btnBackClient: ImageButton
     private lateinit var clientRatingTextView: TextView
     private lateinit var providerRatingTextView: TextView
+    private  var bookByEmail: String? =  null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -119,6 +122,29 @@ class BookingDetailsFragment : Fragment() {
             requireActivity().supportFragmentManager.popBackStack()
         }
 
+        val viewProfileTextView: TextView = view.findViewById(R.id.tvViewProfile)
+
+        // Set click listener for the view profile TextView
+        viewProfileTextView.setOnClickListener {
+            if (!isClient) {
+                // Navigate to ActivityFragmentSProvider_ClientRatings and pass the booking.bookByEmail
+                val bookingEmail = bookByEmail
+                val ratingsFragment = ActivityFragmentSProvider_ClientRatings.newInstance(bookingEmail.toString())
+                requireActivity().supportFragmentManager.beginTransaction()
+                    .replace(R.id.frame_layout, ratingsFragment)
+                    .addToBackStack(null)
+                    .commit()
+            } else {
+                // Navigate to ActivityFragmentClient_ProviderProfile and pass the provider's name
+                val providerName = providerNameTextView.text.toString()
+                val profileFragment = ActivityFragmentClient_ProviderProfile.newInstance(name = providerName, tag = "fromApplicants")
+                requireActivity().supportFragmentManager.beginTransaction()
+                    .replace(R.id.frame_layout, profileFragment)
+                    .addToBackStack(null)
+                    .commit()
+            }
+        }
+
         // Initialize the location button and animate it
         val viewLocationBtn: ImageButton = view.findViewById(R.id.viewLocationBtn)
 
@@ -162,6 +188,7 @@ class BookingDetailsFragment : Fragment() {
 
                 // Fetch Client and Service Provider details
                 fetchClientDetails(booking.bookByEmail)
+                bookByEmail = booking.bookByEmail
                 fetchServiceProviderDetails(booking.providerEmail)
 
             }

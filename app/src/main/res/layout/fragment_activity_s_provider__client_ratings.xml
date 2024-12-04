@@ -23,7 +23,7 @@
             android:background="@drawable/back_button_background_client"
             android:contentDescription="Back Button"
             android:elevation="4dp"
-            android:src="@drawable/backbtn2_client_"
+            android:src="@drawable/backbtn2_sprovider_"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 

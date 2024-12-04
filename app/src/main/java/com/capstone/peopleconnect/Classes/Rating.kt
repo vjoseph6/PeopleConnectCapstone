@@ -6,5 +6,7 @@ data class Rating(
     val ratedEmail: String = "",
     val rating: Float = 0f,
     val feedback: String = "",
-    val timestamp: Long = 0
+    var name: String? = "",
+    var profileImageUrl: String? = "",
+    val timestamp: Long = 0,
 )

@@ -56,6 +56,12 @@ class ClientMainActivity : AppCompatActivity() {
         // Get intent extras
         getIntentExtras()
 
+
+            override fun onError(error: String) {
+                Toast.makeText(this@ClientMainActivity, "Stopped before recognizing speech", Toast.LENGTH_SHORT).show()
+            }
+        })
+
         // Initialize bottom navigation
         setupBottomNavigation(savedInstanceState)
     }

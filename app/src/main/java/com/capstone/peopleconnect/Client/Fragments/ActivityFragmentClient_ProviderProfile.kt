@@ -117,7 +117,21 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
             bookNowButton.visibility = View.GONE
         }
 
+        // Set up click listener for providerRatingTextView
+        providerRatingTextView.setOnClickListener {
+            navigateToProviderRatings(email)
+            Log.d("Email passed in ", "$email")
+        }
+
         return view
+    }
+
+    private fun navigateToProviderRatings(email: String) {
+        val providerRatingsFragment = ActivityFragmentClient_ProviderRatings.newInstance(email)
+        requireActivity().supportFragmentManager.beginTransaction()
+            .replace(R.id.frame_layout, providerRatingsFragment)
+            .addToBackStack(null)
+            .commit()
     }
 
     private fun fetchUser(providerName: String) {
