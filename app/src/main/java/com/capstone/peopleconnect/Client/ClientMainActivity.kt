@@ -4,38 +4,20 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
-import android.view.View
-import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.RelativeLayout
-import android.widget.TextView
 import android.widget.Toast
-import androidx.core.content.ContextCompat
-
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentManager
-import androidx.fragment.app.FragmentTransaction
-import androidx.navigation.findNavController
-import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.ui.NavigationUI
-import androidx.navigation.ui.setupWithNavController
 import com.capstone.peopleconnect.Adapters.SpeechRecognitionCallback
 import com.capstone.peopleconnect.Client.Fragments.ActivityFragmentClient
 import com.capstone.peopleconnect.Client.Fragments.CategoryFragmentClient
 import com.capstone.peopleconnect.Client.Fragments.HomeFragmentClient
-import com.capstone.peopleconnect.Client.Fragments.MicFragmentClient
 import com.capstone.peopleconnect.Client.Fragments.ProfileFragmentClient
+import com.capstone.peopleconnect.Helper.NotificationHelper
 import com.capstone.peopleconnect.Helper.SpeechRecognitionHelper
 import com.capstone.peopleconnect.Helper.WitAiHandler
 import com.capstone.peopleconnect.R
-import com.capstone.peopleconnect.SPrvoider.Fragments.HomeFragmentSProvider
-import com.capstone.peopleconnect.SPrvoider.Fragments.SkillsFragmentSProvider
-import com.google.android.material.bottomnavigation.BottomNavigationMenuView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.snackbar.Snackbar
-
+import com.google.firebase.auth.FirebaseAuth
 
 class ClientMainActivity : AppCompatActivity() {
 
@@ -50,167 +32,57 @@ class ClientMainActivity : AppCompatActivity() {
     private lateinit var speechRecognitionHelper: SpeechRecognitionHelper
     private lateinit var witAiHandler: WitAiHandler
     private var isListening = false
-    private lateinit var btnToggleListening : ExtendedFloatingActionButton
+    private lateinit var btnToggleListening: ExtendedFloatingActionButton
     private var backPressedOnce = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_client_main)
 
-        witAiHandler = WitAiHandler(this@ClientMainActivity)
+        // Add this after initializing Firebase Auth
+        FirebaseAuth.getInstance().currentUser?.let { user ->
+            NotificationHelper.setupActivityNotificationMonitoring(
+                context = this,
+                userId = user.uid
+            )
+        }
 
-        // Initialize the speech recognition helper with a callback to handle speech results
-        speechRecognitionHelper = SpeechRecognitionHelper(this, object : SpeechRecognitionCallback {
-            override fun onSpeechResult(result: String) {
-                witAiHandler.sendMessageToWit(result, object : WitAiHandler.WitAiCallback {
-                    override fun onResponse(
-                        bookDay: String,
-                        startTime: String,
-                        endTime: String,
-                        rating: String,
-                        serviceType: String,
-                        target: String
-                    ) {
-                        Log.d("ClientMainActivity", """
-                            Wit.ai response:
-                            Target: $target
-                            Day: $bookDay
-                            Time: $startTime to $endTime
-                            Rating: $rating
-                            Service: $serviceType
-                        """.trimIndent())
+        // Initialize WitAI and Speech Recognition
+        setupSpeechRecognition()
 
-                        runOnUiThread {
-                            when (target) {
-                                "book_service" -> {
-                                    val additionalParams = Bundle().apply {
-                                        putString("bookDay", bookDay)
-                                        putString("startTime", startTime)
-                                        putString("endTime", endTime)
-                                        putString("rating", rating)
-                                        putString("serviceType", serviceType)
-                                        putString("target", target)
-                                    }
+        // Initialize UI elements
+        setupUI()
 
-                                    loadFragment(
-                                        CategoryFragmentClient(),
-                                        "categories",
-                                        firstName,
-                                        middleName,
-                                        lastName,
-                                        userName,
-                                        address,
-                                        email,
-                                        profileImage,
-                                        additionalParams
-                                    )
-                                    bottomNavigationView.selectedItemId = R.id.categories
-                                }
-                                "view_profile" -> {
-                                    loadFragment(
-                                        ProfileFragmentClient(),
-                                        "profile",
-                                        firstName,
-                                        middleName,
-                                        lastName,
-                                        userName,
-                                        address,
-                                        email,
-                                        profileImage
-                                    )
-                                    bottomNavigationView.selectedItemId = R.id.profile
-                                }
-                                "cancel_booking" -> {
-                                    val additionalParams = Bundle().apply {
-                                        putString("target", target)
-                                        putString("serviceType", serviceType)
-                                    }
-                                    loadFragment(
-                                        ActivityFragmentClient(),
-                                        "activities",
-                                        firstName,
-                                        middleName,
-                                        lastName,
-                                        userName,
-                                        address,
-                                        email,
-                                        profileImage,
-                                        additionalParams
-                                    )
-                                    bottomNavigationView.selectedItemId = R.id.activities
-                                }
-                                else -> {
-                                    Toast.makeText(
-                                        this@ClientMainActivity,
-                                        "Command not recognized: $target",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            }
-                        }
-                    }
+        // Get intent extras
+        getIntentExtras()
 
-                    override fun onError(errorMessage: String) {
-                        Log.e("ClientMainActivity", "Wit.ai error: $errorMessage")
-                        runOnUiThread {
-                            Toast.makeText(
-                                this@ClientMainActivity,
-                                "Error processing command: $errorMessage",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    }
-                })
-            }
 
             override fun onError(error: String) {
                 Toast.makeText(this@ClientMainActivity, "Stopped before recognizing speech", Toast.LENGTH_SHORT).show()
             }
         })
 
-        // Request microphone permission if not already granted
+        // Initialize bottom navigation
+        setupBottomNavigation(savedInstanceState)
+    }
+
+    private fun setupSpeechRecognition() {
+        witAiHandler = WitAiHandler(this)
+        speechRecognitionHelper = SpeechRecognitionHelper(this, createSpeechCallback())
         speechRecognitionHelper.requestMicrophonePermission(this)
+    }
 
+    private fun setupUI() {
         btnToggleListening = findViewById(R.id.btnToggleListening)
-
         btnToggleListening.apply {
             setIconResource(R.drawable.client_mic)
             text = "default"
             shrink()
         }
+        setupToggleListeningButton()
+    }
 
-        var isListening = false
-
-        btnToggleListening.setOnClickListener {
-
-            if (isListening) {
-                // Stop listening and shrink the button
-                speechRecognitionHelper.stopSpeechToText()
-                btnToggleListening.apply {
-                    shrink()
-                    setIconResource(R.drawable.client_mic) // Set microphone icon
-                }
-                isListening = false // Update the state
-            } else {
-                if (::speechRecognitionHelper.isInitialized) {
-                    // Start listening and extend the button
-                    speechRecognitionHelper.startSpeechToText()
-                    btnToggleListening.apply {
-                        extend()
-                        text = "Listening..." // Add text
-                        setIconResource(R.drawable.client_mic) // Keep microphone icon
-                    }
-                    isListening = true // Update the state
-                } else {
-                    Log.d("ClientMainActivity", "SpeechRecognizer not initialized yet.")
-                }
-            }
-        }
-
-
-
-
-
+    private fun getIntentExtras() {
         email = intent.getStringExtra("EMAIL") ?: ""
         firstName = intent.getStringExtra("FIRST_NAME") ?: ""
         userName = intent.getStringExtra("USER_NAME") ?: ""
@@ -218,50 +90,30 @@ class ClientMainActivity : AppCompatActivity() {
         lastName = intent.getStringExtra("LAST_NAME") ?: ""
         address = intent.getStringExtra("USER_ADDRESS") ?: ""
         profileImage = intent.getStringExtra("PROFILE_IMAGE_URL") ?: ""
+    }
 
-        // Find the NavController associated with the FrameLayout
-        var navHostFragment = supportFragmentManager.findFragmentById(R.id.frame_layout) as NavHostFragment?
-        if (navHostFragment == null) {
-            navHostFragment = NavHostFragment.create(R.navigation.nav_graph)
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.frame_layout, navHostFragment)
-                .setPrimaryNavigationFragment(navHostFragment)
-                .commitNow()
-        }
-
-        // Get NavController
-        val navController = navHostFragment.navController
-
-        // Setup BottomNavigationView with NavController
+    private fun setupBottomNavigation(savedInstanceState: Bundle?) {
         bottomNavigationView = findViewById(R.id.bottom_navigation)
-        NavigationUI.setupWithNavController(bottomNavigationView, navController)
 
-
-        // Check if an intent extra is provided to load a specific fragment
-        val fragmentToLoad = intent.getStringExtra("FRAGMENT_TO_LOAD")
-        if (fragmentToLoad != null) {
-            when (fragmentToLoad) {
+        // Handle initial fragment loading
+        if (savedInstanceState == null) {
+            when (intent.getStringExtra("FRAGMENT_TO_LOAD")) {
                 "CategoryFragmentClient" -> {
-                    val email = intent.getStringExtra("EMAIL")
                     loadFragment(CategoryFragmentClient(), "categories", firstName, middleName, lastName, userName, address, email, profileImage)
                     bottomNavigationView.selectedItemId = R.id.categories
                 }
-
                 "ActivityFragmentClient" -> {
-                    val email = intent.getStringExtra("EMAIL")
                     loadFragment(ActivityFragmentClient(), "activities", firstName, middleName, lastName, userName, address, email, profileImage)
                     bottomNavigationView.selectedItemId = R.id.activities
                 }
-
-                // Handle other fragments if needed
+                else -> {
+                    loadFragment(HomeFragmentClient(), "home", firstName, middleName, lastName, userName, address, email, profileImage)
+                    bottomNavigationView.selectedItemId = R.id.home
+                }
             }
-        } else if (savedInstanceState == null) {
-            // Default fragment
-            loadFragment(HomeFragmentClient(), "home", firstName, middleName, lastName, userName, address, email, profileImage)
-            bottomNavigationView.selectedItemId = R.id.home
         }
 
-        // Set the item selected listener for BottomNavigationView
+        // Set up navigation item selection listener
         bottomNavigationView.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.home -> {
@@ -285,26 +137,112 @@ class ClientMainActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupToggleListeningButton() {
+        btnToggleListening.setOnClickListener {
+            if (isListening) {
+                stopListening()
+            } else {
+                startListening()
+            }
+        }
+    }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
+    private fun stopListening() {
+        speechRecognitionHelper.stopSpeechToText()
+        btnToggleListening.apply {
+            shrink()
+            setIconResource(R.drawable.client_mic)
+        }
+        isListening = false
+    }
+
+    private fun startListening() {
+        if (::speechRecognitionHelper.isInitialized) {
+            speechRecognitionHelper.startSpeechToText()
+            btnToggleListening.apply {
+                extend()
+                text = "Listening..."
+                setIconResource(R.drawable.client_mic)
+            }
+            isListening = true
+        } else {
+            Log.d("ClientMainActivity", "SpeechRecognizer not initialized yet.")
+        }
+    }
+
+    private fun createSpeechCallback() = object : SpeechRecognitionCallback {
+        override fun onSpeechResult(result: String) {
+            witAiHandler.sendMessageToWit(result, createWitAiCallback())
+        }
+
+        override fun onError(error: String) {
+            Toast.makeText(this@ClientMainActivity, "Error occurred: Stopped before recognizing speech", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun createWitAiCallback() = object : WitAiHandler.WitAiCallback {
+        override fun onResponse(bookDay: String, startTime: String, endTime: String, rating: String, serviceType: String, target: String) {
+            handleWitAiResponse(bookDay, startTime, endTime, rating, serviceType, target)
+        }
+
+        override fun onError(errorMessage: String) {
+            Log.e("ClientMainActivity", "Wit.ai error: $errorMessage")
+            runOnUiThread {
+                Toast.makeText(this@ClientMainActivity, "Error processing command: $errorMessage", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun handleWitAiResponse(bookDay: String, startTime: String, endTime: String, rating: String, serviceType: String, target: String) {
+        runOnUiThread {
+            when (target) {
+                "book_service" -> handleBookService(bookDay, startTime, endTime, rating, serviceType)
+                "view_profile" -> handleViewProfile()
+                "cancel_booking" -> handleCancelBooking(target, serviceType)
+                else -> Toast.makeText(this, "Command not recognized: $target", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun handleBookService(bookDay: String, startTime: String, endTime: String, rating: String, serviceType: String) {
+        val additionalParams = Bundle().apply {
+            putString("bookDay", bookDay)
+            putString("startTime", startTime)
+            putString("endTime", endTime)
+            putString("rating", rating)
+            putString("serviceType", serviceType)
+            putString("target", "book_service")
+        }
+        loadFragment(CategoryFragmentClient(), "categories", firstName, middleName, lastName, userName, address, email, profileImage, additionalParams)
+        bottomNavigationView.selectedItemId = R.id.categories
+    }
+
+    private fun handleViewProfile() {
+        loadFragment(ProfileFragmentClient(), "profile", firstName, middleName, lastName, userName, address, email, profileImage)
+        bottomNavigationView.selectedItemId = R.id.profile
+    }
+
+    private fun handleCancelBooking(target: String, serviceType: String) {
+        val additionalParams = Bundle().apply {
+            putString("target", target)
+            putString("serviceType", serviceType)
+        }
+        loadFragment(ActivityFragmentClient(), "activities", firstName, middleName, lastName, userName, address, email, profileImage, additionalParams)
+        bottomNavigationView.selectedItemId = R.id.activities
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        // Pass the permission result to the helper
         speechRecognitionHelper.handlePermissionsResult(requestCode, permissions, grantResults)
     }
 
-
     override fun onBackPressed() {
         val currentFragment = supportFragmentManager.findFragmentById(R.id.frame_layout)
-
         if (currentFragment is CategoryFragmentClient) {
-            (currentFragment as CategoryFragmentClient).handleFragmentBackPress()
+            currentFragment.handleFragmentBackPress()
         } else {
             if (backPressedOnce) {
-                finishAffinity()  // Exit the app
+                finishAffinity()
                 super.onBackPressed()
             } else {
                 Toast.makeText(this, "Press back again to exit the application", Toast.LENGTH_SHORT).show()
@@ -325,18 +263,15 @@ class ClientMainActivity : AppCompatActivity() {
             putString("PROFILE_IMAGE_URL", profileImageUrl)
             additionalParams?.let { putAll(it) }
         }
-
         fragment.arguments = bundle
-
-        // Start a new transaction to replace the current fragment
-        val transaction = supportFragmentManager.beginTransaction()
-        transaction.replace(R.id.frame_layout, fragment, tag) // Replace fragment in the container
-        transaction.addToBackStack(null) // Add transaction to back stack for navigation
-        transaction.commit() // Commit the transaction
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.frame_layout, fragment, tag)
+            .addToBackStack(null)
+            .commit()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        speechRecognitionHelper.destroy() // Clean up resources
+        speechRecognitionHelper.destroy()
     }
 }

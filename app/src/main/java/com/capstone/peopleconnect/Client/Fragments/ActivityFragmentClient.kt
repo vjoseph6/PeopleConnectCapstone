@@ -38,10 +38,12 @@ import android.util.Log
 import androidx.core.content.res.ResourcesCompat
 import com.capstone.peopleconnect.Notifications.model.NotificationModel
 import com.google.firebase.auth.FirebaseAuth
+import com.capstone.peopleconnect.Helper.NotificationHelper
 
 
 class ActivityFragmentClient : Fragment() {
 
+    private var isClickEnabled = true
     private lateinit var emptyView: RelativeLayout
     private lateinit var adapter: BookingClientAdapter
     private lateinit var recyclerView: RecyclerView
@@ -116,24 +118,45 @@ class ActivityFragmentClient : Fragment() {
 
         // Set click listeners for each tab
         tvBooking.setOnClickListener {
-            lastSelectedTab = "Booking"  // Save selected tab
-            currentFilter = "Booking"
-            filterBookings(currentFilter)
-            highlightSelectedTab(tvBooking, tvSuccessful, tvFailed)
-        }
+            if (isClickEnabled) {
+                isClickEnabled = false
+                lastSelectedTab = "Booking"
+                currentFilter = "Booking"
+                filterBookings(currentFilter)
+                highlightSelectedTab(tvBooking, tvSuccessful, tvFailed)
 
+                // Re-enable clicks after a short delay
+                view?.postDelayed({
+                    isClickEnabled = true
+                }, 300) // 300ms delay
+            }
+        }
         tvSuccessful.setOnClickListener {
-            lastSelectedTab = "Successful"  // Save selected tab
-            currentFilter = "Successful"
-            filterBookings(currentFilter)
-            highlightSelectedTab(tvSuccessful, tvBooking, tvFailed)
+            if (isClickEnabled) {
+                isClickEnabled = false
+                lastSelectedTab = "Successful"
+                currentFilter = "Successful"
+                filterBookings(currentFilter)
+                highlightSelectedTab(tvSuccessful, tvBooking, tvFailed)
+
+                view?.postDelayed({
+                    isClickEnabled = true
+                }, 300)
+            }
         }
 
         tvFailed.setOnClickListener {
-            lastSelectedTab = "Failed"  // Save selected tab
-            currentFilter = "Failed"
-            filterBookings(currentFilter)
-            highlightSelectedTab(tvFailed, tvBooking, tvSuccessful)
+            if (isClickEnabled) {
+                isClickEnabled = false
+                lastSelectedTab = "Failed"
+                currentFilter = "Failed"
+                filterBookings(currentFilter)
+                highlightSelectedTab(tvFailed, tvBooking, tvSuccessful)
+
+                view?.postDelayed({
+                    isClickEnabled = true
+                }, 300)
+            }
         }
 
         // Add this to restore the last selected tab
@@ -224,35 +247,11 @@ class ActivityFragmentClient : Fragment() {
     }
 
     private fun setupNotificationBadge() {
-        val currentUser = FirebaseAuth.getInstance().currentUser
-        currentUser?.let { user ->
-            val notificationsRef = FirebaseDatabase.getInstance()
-                .getReference("notifications")
-                .child(user.uid)
-
-            notificationsRef.addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    var unreadCount = 0
-                    snapshot.children.forEach { notification ->
-                        val isRead = notification.child("isRead").getValue(Boolean::class.java) ?: false
-                        if (!isRead) unreadCount++
-                    }
-
-                    activity?.runOnUiThread {
-                        if (unreadCount > 0) {
-                            notificationBadge.visibility = View.VISIBLE
-                            notificationBadge.text = if (unreadCount > 99) "99+" else unreadCount.toString()
-                        } else {
-                            notificationBadge.visibility = View.GONE
-                        }
-                    }
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Log.e(ContentValues.TAG, "Failed to read notifications", error.toException())
-                }
-            })
-        }
+        NotificationHelper.setupNotificationBadge(
+            fragment = this,
+            notificationBadge = notificationBadge,
+            tag = ContentValues.TAG
+        )
     }
 
     // Filters bookings based on status

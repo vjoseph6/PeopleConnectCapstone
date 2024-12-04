@@ -12,9 +12,13 @@ import com.capstone.peopleconnect.Adapters.SpeechRecognitionCallback
 import com.capstone.peopleconnect.Client.Fragments.ActivityFragmentClient
 import com.capstone.peopleconnect.Client.Fragments.CategoryFragmentClient
 import com.capstone.peopleconnect.Client.Fragments.HomeFragmentClient
+
 import com.capstone.peopleconnect.Client.Fragments.ProfileFragmentClient
 import com.capstone.peopleconnect.Helper.SpeechRecognitionHelper
 import com.capstone.peopleconnect.Helper.WitAiHandler
+
+import com.capstone.peopleconnect.Helper.NotificationHelper
+
 import com.capstone.peopleconnect.R
 import com.capstone.peopleconnect.SProvider.Fragments.ProfileFragmentSProvider
 import com.capstone.peopleconnect.SPrvoider.Fragments.ActivityFragmentSProvider
@@ -22,7 +26,11 @@ import com.capstone.peopleconnect.SPrvoider.Fragments.HomeFragmentSProvider
 import com.capstone.peopleconnect.SPrvoider.Fragments.MicFragmentSProvider
 import com.capstone.peopleconnect.SPrvoider.Fragments.SkillsFragmentSProvider
 import com.google.android.material.bottomnavigation.BottomNavigationView
+
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+
+import com.google.firebase.auth.FirebaseAuth
+
 
 class SProviderMainActivity : AppCompatActivity() {
 
@@ -43,6 +51,7 @@ class SProviderMainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sprovider_main)
+
 
 
         witAiHandler = WitAiHandler(this@SProviderMainActivity)
@@ -155,6 +164,15 @@ class SProviderMainActivity : AppCompatActivity() {
                 Toast.makeText(this@SProviderMainActivity, "Stopped before recognizing speech", Toast.LENGTH_SHORT).show()
             }
         })
+
+        // Add this after setContentView
+        FirebaseAuth.getInstance().currentUser?.let { user ->
+            NotificationHelper.setupActivityNotificationMonitoring(
+                context = this,
+                userId = user.uid
+            )
+        }
+
 
         email = intent.getStringExtra("EMAIL") ?: ""
         firstName = intent.getStringExtra("FIRST_NAME") ?: ""

@@ -19,6 +19,7 @@ import com.capstone.peopleconnect.Adapters.ServiceProviderAdapter
 import com.capstone.peopleconnect.Classes.SkillItem
 import com.capstone.peopleconnect.Classes.Skills
 import com.capstone.peopleconnect.Classes.User
+import com.capstone.peopleconnect.Helper.NotificationHelper
 import com.capstone.peopleconnect.R
 import com.capstone.peopleconnect.SPrvoider.Fragments.NotificationFragmentSProvider
 import com.google.firebase.database.DataSnapshot
@@ -106,37 +107,12 @@ class HomeFragmentClient : Fragment() {
     }
 
     private fun setupNotificationBadge() {
-        val currentUser = FirebaseAuth.getInstance().currentUser
-        currentUser?.let { user ->
-            val notificationsRef = FirebaseDatabase.getInstance()
-                .getReference("notifications")
-                .child(user.uid)
-
-            notificationsRef.addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    var unreadCount = 0
-                    snapshot.children.forEach { notification ->
-                        val isRead = notification.child("isRead").getValue(Boolean::class.java) ?: false
-                        if (!isRead) unreadCount++
-                    }
-
-                    activity?.runOnUiThread {
-                        if (unreadCount > 0) {
-                            notificationBadge.visibility = View.VISIBLE
-                            notificationBadge.text = if (unreadCount > 99) "99+" else unreadCount.toString()
-                        } else {
-                            notificationBadge.visibility = View.GONE
-                        }
-                    }
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Log.e(TAG, "Failed to read notifications", error.toException())
-                }
-            })
-        }
+        NotificationHelper.setupNotificationBadge(
+            fragment = this,
+            notificationBadge = notificationBadge,
+            tag = TAG
+        )
     }
-
     private fun updateDateText(view: View) {
         val dateFormat = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault())
         dateFormat.timeZone = TimeZone.getTimeZone("GMT+8")
