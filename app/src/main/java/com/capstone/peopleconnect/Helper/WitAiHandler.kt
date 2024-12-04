@@ -24,7 +24,7 @@ class WitAiHandler(private val context: Context) {
     private val token = "Bearer RQVZBAYTWBXQHUYUYRNZXM47V6ZSNYLS"
 
     interface WitAiCallback {
-        fun onResponse(bookDay: String, startTime: String, endTime: String, rating: String, serviceType: String, target: String)
+        fun onResponse(bookDay: String, startTime: String, endTime: String, rating: String, serviceType: String, target: String, intent: String)
         fun onError(errorMessage: String)
     }
 
@@ -73,7 +73,19 @@ class WitAiHandler(private val context: Context) {
             val jsonResponse = JSONObject(response)
             Log.d("RESPONSE", "$response")
             val entities = jsonResponse.optJSONObject("entities")
-            
+
+
+            val intentsArray = jsonResponse.optJSONArray("intents")
+            var intent = "No intent found"
+            var intentConfidence = 0.0
+
+            if (intentsArray != null && intentsArray.length() > 0) {
+                val intentObj = intentsArray.optJSONObject(0)
+                intent = intentObj?.optString("name") ?: "No intent found"
+                intentConfidence = intentObj?.optDouble("confidence") ?: 0.0
+                Log.d("Intent", "Intent: $intent, Confidence: $intentConfidence")
+            }
+
             // Extract target and check for multiple targets
             val targetArray = entities?.optJSONArray("target:target")
             if (targetArray != null && targetArray.length() > 1) {
@@ -184,7 +196,8 @@ class WitAiHandler(private val context: Context) {
                     endTime ?: "",
                     rating,
                     combinedServiceTypes,
-                    target
+                    target,
+                    intent
                 )
             }
 
@@ -195,7 +208,8 @@ class WitAiHandler(private val context: Context) {
                     endTime ?: "",
                     rating,
                     combinedServiceTypes,
-                    target
+                    target,
+                    intent
                 )
             }
 

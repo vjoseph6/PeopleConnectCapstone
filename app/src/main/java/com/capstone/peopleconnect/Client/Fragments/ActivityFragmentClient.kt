@@ -182,17 +182,19 @@ class ActivityFragmentClient : Fragment() {
         updateDateText(view)
 
         // Check if we need to auto-cancel bookings
+        // Check if we need to auto-cancel bookings
         arguments?.let { args ->
             val target = args.getString("target")
             val serviceType = args.getString("serviceType")
+            val intent = args.getString("intent")
 
-            if (target == "cancel_booking") {
+            // First, check the intent
+            if (intent == "cancel_booking") {
                 val tvBooking = view.findViewById<TextView>(R.id.tvBooking_Present)
                 tvBooking.performClick()
 
-                // Wait for bookings to load
                 Handler().postDelayed({
-                    // Check if serviceType is null, empty, or "Service Type not found"
+                    // If intent matches, proceed with cancellation
                     if (serviceType.isNullOrEmpty() || serviceType == "Service Type not found") {
                         // Cancel all pending bookings
                         cancelAllPendingBookings()
@@ -201,6 +203,23 @@ class ActivityFragmentClient : Fragment() {
                         cancelBookingsByService(serviceType)
                     }
                 }, 500)
+            }
+            // If intent doesn't match, check target as a fallback
+            else if (target == "cancel_booking") {
+                val tvBooking = view.findViewById<TextView>(R.id.tvBooking_Present)
+                tvBooking.performClick()
+
+                Handler().postDelayed({
+                    if (serviceType.isNullOrEmpty() || serviceType == "Service Type not found") {
+                        // Cancel all pending bookings
+                        cancelAllPendingBookings()
+                    } else {
+                        // Cancel specific service type bookings
+                        cancelBookingsByService(serviceType)
+                    }
+                }, 500)
+            } else {
+
             }
         }
 
