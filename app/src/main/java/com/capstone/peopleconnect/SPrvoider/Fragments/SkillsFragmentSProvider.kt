@@ -2,6 +2,7 @@ package com.capstone.peopleconnect.SPrvoider.Fragments
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -11,6 +12,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -137,6 +139,45 @@ class SkillsFragmentSProvider : Fragment() {
         return view
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        arguments?.let { args ->
+            val target = args.getString("target")
+            val serviceType = args.getString("serviceType")
+
+            if (target == "off_service") {
+                // Wait for bookings to load
+                Handler().postDelayed({
+                    // Check if serviceType is null, empty, or "Service Type not found"
+                    if (serviceType.isNullOrEmpty() || serviceType == "Service Type not found") {
+                        // Cancel all pending bookings
+                        offAllServices()
+                    } else {
+                        // Cancel specific service type bookings
+                        offServicesByService(serviceType)
+                    }
+                }, 500)
+            }
+
+            if (target == "on_service") {
+                // Wait for bookings to load
+                Handler().postDelayed({
+                    // Check if serviceType is null, empty, or "Service Type not found"
+                    if (serviceType.isNullOrEmpty() || serviceType == "Service Type not found") {
+                        // Cancel all pending bookings
+                        onAllServices()
+                    } else {
+                        // Cancel specific service type bookings
+                        onServicesByService(serviceType)
+                    }
+                }, 500)
+            }
+
+        }
+    }
+
+
     private fun setupNotificationBadge() {
         val currentUser = FirebaseAuth.getInstance().currentUser
         currentUser?.let { user ->
@@ -260,6 +301,162 @@ class SkillsFragmentSProvider : Fragment() {
                 callback("") // Return empty string on error
             }
         })
+    }
+
+    private fun onAllServices() {
+        updateAllSkillsVisibility(true) { success ->
+            if (success) {
+                Toast.makeText(requireContext(), "All services turned on", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun offAllServices() {
+        updateAllSkillsVisibility(false) { success ->
+            if (success) {
+                Toast.makeText(requireContext(), "All services turned off", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun onServicesByService(serviceType: String) {
+        val serviceTypes = serviceType.split(", ")
+        val successResults = mutableListOf<String>()
+        val failedResults = mutableListOf<String>()
+
+        serviceTypes.forEach { type ->
+            updateSkillVisibilityByServiceType(type, true) { success ->
+                if (success) {
+                    successResults.add(type)
+                } else {
+                    failedResults.add(type)
+                }
+
+                // When all services have been processed
+                if (successResults.size + failedResults.size == serviceTypes.size) {
+                    val toastMessage = when {
+                        successResults.isNotEmpty() && failedResults.isEmpty() ->
+                            "Services turned on: ${successResults.joinToString(", ")}"
+                        successResults.isNotEmpty() && failedResults.isNotEmpty() ->
+                            "Services turned on: ${successResults.joinToString(", ")}. " +
+                                    "Services already on: ${failedResults.joinToString(", ")}"
+                        else ->
+                            "No services could be turned on"
+                    }
+                    Toast.makeText(requireContext(), toastMessage, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun offServicesByService(serviceType: String) {
+        val serviceTypes = serviceType.split(", ")
+        val successResults = mutableListOf<String>()
+        val failedResults = mutableListOf<String>()
+
+        serviceTypes.forEach { type ->
+            updateSkillVisibilityByServiceType(type, false) { success ->
+                if (success) {
+                    successResults.add(type)
+                } else {
+                    failedResults.add(type)
+                }
+
+                // When all services have been processed
+                if (successResults.size + failedResults.size == serviceTypes.size) {
+                    val toastMessage = when {
+                        successResults.isNotEmpty() && failedResults.isEmpty() ->
+                            "Services turned off: ${successResults.joinToString(", ")}"
+                        successResults.isNotEmpty() && failedResults.isNotEmpty() ->
+                            "Services turned off: ${successResults.joinToString(", ")}. " +
+                                    "Services already off: ${failedResults.joinToString(", ")}"
+                        else ->
+                            "No services could be turned off"
+                    }
+                    Toast.makeText(requireContext(), toastMessage, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun updateAllSkillsVisibility(isVisible: Boolean, callback: (Boolean) -> Unit) {
+        val databaseReference = FirebaseDatabase.getInstance().reference.child("skills")
+
+        databaseReference.orderByChild("user").equalTo(email).addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                var updateCount = 0
+                var totalCount = 0
+
+                for (skillSnapshot in snapshot.children) {
+                    val skillItemsSnapshot = skillSnapshot.child("skillItems")
+                    totalCount += skillItemsSnapshot.childrenCount.toInt()
+
+                    for (skillItemSnapshot in skillItemsSnapshot.children) {
+                        skillItemSnapshot.ref.child("visible").setValue(isVisible)
+                            .addOnCompleteListener {
+                                updateCount++
+                                if (updateCount == totalCount) {
+                                    callback(true)
+                                }
+                            }
+                    }
+                }
+
+                if (totalCount == 0) {
+                    callback(false)
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "Database error: ${error.message}")
+                callback(false)
+            }
+        })
+    }
+
+    private fun updateSkillVisibilityByServiceType(serviceType: String, isVisible: Boolean, callback: (Boolean) -> Unit) {
+        val databaseReference = FirebaseDatabase.getInstance().reference
+
+        databaseReference.child("skills").orderByChild("user").equalTo(email)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    var skillUpdated = false
+
+                    for (skillSnapshot in snapshot.children) {
+                        val skillItemsSnapshot = skillSnapshot.child("skillItems")
+
+                        for (skillItemSnapshot in skillItemsSnapshot.children) {
+                            val skillName = skillItemSnapshot.child("name").getValue(String::class.java)
+
+                            if (skillName == serviceType) {
+                                val currentVisibility = skillItemSnapshot.child("visible").getValue(Boolean::class.java) ?: true
+
+                                if (currentVisibility != isVisible) {
+                                    skillItemSnapshot.ref.child("visible").setValue(isVisible)
+                                        .addOnSuccessListener {
+                                            skillUpdated = true
+                                            callback(true)
+                                        }
+                                        .addOnFailureListener {
+                                            callback(false)
+                                        }
+                                } else {
+                                    callback(false)
+                                }
+                                return
+                            }
+                        }
+                    }
+
+                    // If no matching skill found
+                    callback(false)
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e(TAG, "Database error: ${error.message}")
+                    callback(false)
+                }
+            })
     }
 
     private fun updateSkillVisibilityInDatabase(skill: SkillItem) {

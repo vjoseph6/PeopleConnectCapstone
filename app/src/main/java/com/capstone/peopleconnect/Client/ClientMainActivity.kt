@@ -164,7 +164,7 @@ class ClientMainActivity : AppCompatActivity() {
             }
 
             override fun onError(error: String) {
-                Toast.makeText(this@ClientMainActivity, "Error occured: Stopped before recognizing speech", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@ClientMainActivity, "Stopped before recognizing speech", Toast.LENGTH_SHORT).show()
             }
         })
 

@@ -5,6 +5,7 @@ import android.util.Log
 import android.widget.Toast
 import com.capstone.peopleconnect.Client.ClientMainActivity
 import com.capstone.peopleconnect.R
+import com.capstone.peopleconnect.SPrvoider.SProviderMainActivity
 import okhttp3.*
 import org.json.JSONObject
 import java.io.IOException
@@ -41,6 +42,11 @@ class WitAiHandler(private val context: Context) {
                 (context as? ClientMainActivity)?.runOnUiThread {
                     callback.onError("Request failed: ${e.message}")
                 }
+
+                (context as? SProviderMainActivity)?.runOnUiThread {
+                    callback.onError("Request failed: ${e.message}")
+                }
+
             }
 
             override fun onResponse(call: Call, response: Response) {
@@ -52,6 +58,9 @@ class WitAiHandler(private val context: Context) {
                     Log.e("WitAiHandler", "Error: ${response.code} ${response.message}")
                     // Notify error on the main thread
                     (context as? ClientMainActivity)?.runOnUiThread {
+                        callback.onError("Error: ${response.code} ${response.message}")
+                    }
+                    (context as? SProviderMainActivity)?.runOnUiThread {
                         callback.onError("Error: ${response.code} ${response.message}")
                     }
                 }
@@ -73,6 +82,9 @@ class WitAiHandler(private val context: Context) {
                 (context as? ClientMainActivity)?.runOnUiThread {
                     callback.onError("Multiple actions detected. Please specify one action at a time.")
                 }
+                (context as? SProviderMainActivity)?.runOnUiThread {
+                    callback.onError("Multiple actions detected. Please specify one action at a time.")
+                }
                 return
             }
             
@@ -80,9 +92,18 @@ class WitAiHandler(private val context: Context) {
             Log.d("Target", "Target: $target")
 
             // Extract and display serviceType
+            val serviceTypes = mutableListOf<String>()
             val serviceTypeArray = entities?.optJSONArray("serviceType:serviceType")
-            val serviceType = serviceTypeArray?.optJSONObject(0)?.optString("value") ?: "Service Type not found"
-            Log.d("ServiceType", "Service Type: $serviceType")
+
+            if (serviceTypeArray != null) {
+                for (i in 0 until serviceTypeArray.length()) {
+                    val serviceType = serviceTypeArray.optJSONObject(i)?.optString("value")
+                    serviceType?.let { serviceTypes.add(it) }
+                }
+            }
+            Log.d("ServiceType", "Service Type: $serviceTypes")
+
+            val combinedServiceTypes = serviceTypes.joinToString(", ")
 
             var bookDay: String? = null
             var startTime: String? = null
@@ -142,7 +163,7 @@ class WitAiHandler(private val context: Context) {
             }
 
             // Handle default case if no bookDay was found
-            if (bookDay == null || bookDay.equals("today", ignoreCase = true)) {
+            if (bookDay.equals("today", ignoreCase = true)) {
                 bookDay = "Today"
             }
 
@@ -158,17 +179,32 @@ class WitAiHandler(private val context: Context) {
 
             (context as? ClientMainActivity)?.runOnUiThread {
                 callback.onResponse(
-                    bookDay ?: "Unknown", 
-                    startTime ?: "Unknown", 
-                    endTime ?: "Unknown", 
-                    rating, 
-                    serviceType, 
+                    bookDay ?: "",
+                    startTime ?: "",
+                    endTime ?: "",
+                    rating,
+                    combinedServiceTypes,
                     target
                 )
             }
+
+            (context as? SProviderMainActivity)?.runOnUiThread {
+                callback.onResponse(
+                    bookDay ?: "",
+                    startTime ?: "",
+                    endTime ?: "",
+                    rating,
+                    combinedServiceTypes,
+                    target
+                )
+            }
+
         } catch (e: Exception) {
             Log.e("WitAiHandler", "Error parsing response", e)
             (context as? ClientMainActivity)?.runOnUiThread {
+                callback.onError("Error parsing response: ${e.message}")
+            }
+            (context as? SProviderMainActivity)?.runOnUiThread {
                 callback.onError("Error parsing response: ${e.message}")
             }
         }

@@ -57,6 +57,20 @@
             android:padding="16dp">
 
             <TextView
+                android:id="@+id/tvViewProfile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:backgroundTint="@color/orange"
+                android:fontFamily="@font/semibold_poppins"
+                android:text="Client Profile"
+                android:textColor="@color/black"
+                android:textSize="12sp"
+                android:layout_marginTop="-10dp"
+                app:layout_constraintBottom_toTopOf="@+id/clientProviderInfoLayout"
+                app:layout_constraintTop_toTopOf="@+id/tvBookingStatus"
+                tools:ignore="MissingConstraints" />
+
+            <TextView
                 android:id="@+id/tvBookingStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
