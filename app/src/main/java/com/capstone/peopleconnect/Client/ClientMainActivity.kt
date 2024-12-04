@@ -57,11 +57,6 @@ class ClientMainActivity : AppCompatActivity() {
         getIntentExtras()
 
 
-            override fun onError(error: String) {
-                Toast.makeText(this@ClientMainActivity, "Stopped before recognizing speech", Toast.LENGTH_SHORT).show()
-            }
-        })
-
         // Initialize bottom navigation
         setupBottomNavigation(savedInstanceState)
     }
@@ -181,30 +176,83 @@ class ClientMainActivity : AppCompatActivity() {
     }
 
     private fun createWitAiCallback() = object : WitAiHandler.WitAiCallback {
-        override fun onResponse(bookDay: String, startTime: String, endTime: String, rating: String, serviceType: String, target: String) {
-            handleWitAiResponse(bookDay, startTime, endTime, rating, serviceType, target)
+        override fun onResponse(
+            bookDay: String,
+            startTime: String,
+            endTime: String,
+            rating: String,
+            serviceType: String,
+            target: String,
+            intent: String
+        ) {
+            handleWitAiResponse(
+                bookDay,
+                startTime,
+                endTime,
+                rating,
+                serviceType,
+                target,
+                intent
+            )
         }
 
         override fun onError(errorMessage: String) {
             Log.e("ClientMainActivity", "Wit.ai error: $errorMessage")
             runOnUiThread {
-                Toast.makeText(this@ClientMainActivity, "Error processing command: $errorMessage", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this@ClientMainActivity,
+                    "Error processing command: $errorMessage",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
 
-    private fun handleWitAiResponse(bookDay: String, startTime: String, endTime: String, rating: String, serviceType: String, target: String) {
+    private fun handleWitAiResponse(
+        bookDay: String,
+        startTime: String,
+        endTime: String,
+        rating: String,
+        serviceType: String,
+        target: String,
+        intent: String,
+    ) {
         runOnUiThread {
-            when (target) {
-                "book_service" -> handleBookService(bookDay, startTime, endTime, rating, serviceType)
-                "view_profile" -> handleViewProfile()
-                "cancel_booking" -> handleCancelBooking(target, serviceType)
-                else -> Toast.makeText(this, "Command not recognized: $target", Toast.LENGTH_SHORT).show()
+            // First, check the intent
+            when {
+                intent == "cancel_booking"  -> {
+                    // High confidence cancel booking intent
+                    handleCancelBooking(target, serviceType, intent)
+                    return@runOnUiThread
+                }
+                intent == "book_service"  -> {
+                    // High confidence book service intent
+                    handleBookService(bookDay, startTime, endTime, rating, serviceType, intent)
+                    return@runOnUiThread
+                }
+
+                // If no recognizable intent, fall back to target
+                target == "cancel_booking" -> {
+                    handleCancelBooking(target, serviceType, intent)
+                }
+                target == "book_service" -> {
+                    handleBookService(bookDay, startTime, endTime, rating, serviceType, intent)
+                }
+                target == "view_profile" -> {
+                    handleViewProfile()
+                }
+                else -> {
+                    Toast.makeText(
+                        this,
+                        "Command not recognized: $target (Intent: $intent)",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
         }
     }
 
-    private fun handleBookService(bookDay: String, startTime: String, endTime: String, rating: String, serviceType: String) {
+    private fun handleBookService(bookDay: String, startTime: String, endTime: String, rating: String, serviceType: String, intent: String) {
         val additionalParams = Bundle().apply {
             putString("bookDay", bookDay)
             putString("startTime", startTime)
@@ -212,6 +260,7 @@ class ClientMainActivity : AppCompatActivity() {
             putString("rating", rating)
             putString("serviceType", serviceType)
             putString("target", "book_service")
+            putString("intent", intent)
         }
         loadFragment(CategoryFragmentClient(), "categories", firstName, middleName, lastName, userName, address, email, profileImage, additionalParams)
         bottomNavigationView.selectedItemId = R.id.categories
@@ -222,10 +271,11 @@ class ClientMainActivity : AppCompatActivity() {
         bottomNavigationView.selectedItemId = R.id.profile
     }
 
-    private fun handleCancelBooking(target: String, serviceType: String) {
+    private fun handleCancelBooking(target: String, serviceType: String, intent: String) {
         val additionalParams = Bundle().apply {
             putString("target", target)
             putString("serviceType", serviceType)
+            putString("intent", intent)
         }
         loadFragment(ActivityFragmentClient(), "activities", firstName, middleName, lastName, userName, address, email, profileImage, additionalParams)
         bottomNavigationView.selectedItemId = R.id.activities

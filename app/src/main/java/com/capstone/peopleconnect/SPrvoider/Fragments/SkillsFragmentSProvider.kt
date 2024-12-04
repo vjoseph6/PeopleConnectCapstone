@@ -146,35 +146,51 @@ class SkillsFragmentSProvider : Fragment() {
         arguments?.let { args ->
             val target = args.getString("target")
             val serviceType = args.getString("serviceType")
+            val intent = args.getString("intent")
 
-            if (target == "off_service") {
-                // Wait for bookings to load
+            // First, check the intent for off_service
+            if (intent == "off_service") {
                 Handler().postDelayed({
-                    // Check if serviceType is null, empty, or "Service Type not found"
                     if (serviceType.isNullOrEmpty() || serviceType == "Service Type not found") {
-                        // Cancel all pending bookings
                         offAllServices()
                     } else {
-                        // Cancel specific service type bookings
                         offServicesByService(serviceType)
                     }
                 }, 500)
             }
-
-            if (target == "on_service") {
-                // Wait for bookings to load
+            // First, check the intent for on_service
+            else if (intent == "on_service") {
                 Handler().postDelayed({
-                    // Check if serviceType is null, empty, or "Service Type not found"
                     if (serviceType.isNullOrEmpty() || serviceType == "Service Type not found") {
-                        // Cancel all pending bookings
                         onAllServices()
                     } else {
-                        // Cancel specific service type bookings
                         onServicesByService(serviceType)
                     }
                 }, 500)
             }
+            // Fall back to target if intent doesn't match
+            else {
+                if (target == "off_service") {
+                    Handler().postDelayed({
+                        if (serviceType.isNullOrEmpty() || serviceType == "Service Type not found") {
+                            offAllServices()
+                        } else {
+                            offServicesByService(serviceType)
+                        }
+                    }, 500)
+                }
+                if (target == "on_service") {
+                    Handler().postDelayed({
+                        if (serviceType.isNullOrEmpty() || serviceType == "Service Type not found") {
+                            onAllServices()
+                        } else {
+                            onServicesByService(serviceType)
+                        }
+                    }, 500)
+                } else {
 
+                }
+            }
         }
     }
 

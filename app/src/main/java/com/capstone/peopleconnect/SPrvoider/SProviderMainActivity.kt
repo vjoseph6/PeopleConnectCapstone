@@ -66,20 +66,74 @@ class SProviderMainActivity : AppCompatActivity() {
                         endTime: String,
                         rating: String,
                         serviceType: String,
-                        target: String
+                        target: String,
+                        intent: String
                     ) {
-                        Log.d("ClientMainActivity", """
-                            Wit.ai response:
-                            Target: $target
-                            Day: $bookDay
-                            Time: $startTime to $endTime
-                            Rating: $rating
-                            Service: $serviceType
-                        """.trimIndent())
-
                         runOnUiThread {
-                            when (target) {
-                                "cancel_booking" -> {
+                            // First, check the intent
+                            when {
+                                intent == "cancel_booking"  -> {
+                                    val additionalParams = Bundle().apply {
+                                        putString("target", "cancel_booking")
+                                        putString("serviceType", serviceType)
+                                        putString("intent", intent)
+                                    }
+                                    loadFragment(
+                                        ActivityFragmentSProvider(),
+                                        "activities",
+                                        firstName,
+                                        middleName,
+                                        lastName,
+                                        userName,
+                                        address,
+                                        email,
+                                        profileImage,
+                                        additionalParams
+                                    )
+                                    bottomNavigationView.selectedItemId = R.id.activities
+                                }
+                                intent == "on_service"  -> {
+                                    val additionalParams = Bundle().apply {
+                                        putString("target", "on_service")
+                                        putString("serviceType", serviceType)
+                                        putString("intent", intent)
+                                    }
+                                    loadFragment(
+                                        SkillsFragmentSProvider(),
+                                        "activities",
+                                        firstName,
+                                        middleName,
+                                        lastName,
+                                        userName,
+                                        address,
+                                        email,
+                                        profileImage,
+                                        additionalParams
+                                    )
+                                    bottomNavigationView.selectedItemId = R.id.skills
+                                }
+                                intent == "off_service" -> {
+                                    val additionalParams = Bundle().apply {
+                                        putString("target", "off_service")
+                                        putString("serviceType", serviceType)
+                                        putString("intent", intent)
+                                    }
+                                    loadFragment(
+                                        SkillsFragmentSProvider(),
+                                        "activities",
+                                        firstName,
+                                        middleName,
+                                        lastName,
+                                        userName,
+                                        address,
+                                        email,
+                                        profileImage,
+                                        additionalParams
+                                    )
+                                    bottomNavigationView.selectedItemId = R.id.skills
+                                }
+                                // Fall back to target if intent doesn't match
+                                target == "cancel_booking" -> {
                                     val additionalParams = Bundle().apply {
                                         putString("target", target)
                                         putString("serviceType", serviceType)
@@ -98,7 +152,7 @@ class SProviderMainActivity : AppCompatActivity() {
                                     )
                                     bottomNavigationView.selectedItemId = R.id.activities
                                 }
-                                "on_service" -> {
+                                target == "on_service" -> {
                                     val additionalParams = Bundle().apply {
                                         putString("target", target)
                                         putString("serviceType", serviceType)
@@ -117,7 +171,7 @@ class SProviderMainActivity : AppCompatActivity() {
                                     )
                                     bottomNavigationView.selectedItemId = R.id.skills
                                 }
-                                "off_service" -> {
+                                target == "off_service" -> {
                                     val additionalParams = Bundle().apply {
                                         putString("target", target)
                                         putString("serviceType", serviceType)
@@ -146,6 +200,7 @@ class SProviderMainActivity : AppCompatActivity() {
                             }
                         }
                     }
+
 
                     override fun onError(errorMessage: String) {
                         Log.e("Sprovider", "Wit.ai error: $errorMessage")
