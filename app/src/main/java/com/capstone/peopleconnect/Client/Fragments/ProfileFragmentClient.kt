@@ -1,5 +1,6 @@
 package com.capstone.peopleconnect.Client.Fragments
 
+import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
@@ -16,6 +17,7 @@ import com.capstone.peopleconnect.R
 import com.capstone.peopleconnect.SPrvoider.Fragments.LocationFragmentSProvider
 import com.capstone.peopleconnect.SelectAccount
 import com.google.android.material.imageview.ShapeableImageView
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -33,9 +35,13 @@ class ProfileFragmentClient : Fragment() {
     private var profileImageUrl: String? = null
     private lateinit var userQuery: Query
     private lateinit var valueEventListener: ValueEventListener
+    private lateinit var auth: FirebaseAuth
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        auth = FirebaseAuth.getInstance()
+
         arguments?.let {
             email = it.getString("EMAIL")
         }
@@ -159,9 +165,21 @@ class ProfileFragmentClient : Fragment() {
 
         dialogView.findViewById<Button>(R.id.btnLogout).setOnClickListener {
             dialog.dismiss()
+            // Sign out from Firebase Auth
+            auth.signOut()
+
+            // Clear any stored user data
+            val sharedPref = requireActivity().getSharedPreferences(
+                "com.capstone.peopleconnect.PREFERENCE_FILE_KEY",
+                Context.MODE_PRIVATE
+            )
+            sharedPref.edit().clear().apply()
+
+            // Navigate to SelectAccount activity
             val intent = Intent(requireContext(), SelectAccount::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             startActivity(intent)
-            activity?.finish() // Close the current activity
+            requireActivity().finish()
         }
 
         dialogView.findViewById<TextView>(R.id.tvCancel).setOnClickListener {

@@ -87,6 +87,12 @@ dependencies {
     //volley
     implementation ("com.android.volley:volley:1.2.1")
 
+    implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
+    implementation("com.google.firebase:firebase-analytics")
+
+    // Make sure you have the Google Play Services measurement SDK
+    implementation("com.google.android.gms:play-services-measurement-api:21.5.0")
+
 
 
 

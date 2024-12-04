@@ -8,6 +8,7 @@ import android.content.Context
 import android.os.Build
 import android.util.Log
 import com.capstone.peopleconnect.R
+import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.messaging.FirebaseMessaging
@@ -23,6 +24,9 @@ import io.getstream.chat.android.state.plugin.factory.StreamStatePluginFactory
 class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+
+        // Add this line after Firebase initialization
+        FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(true)
 
         // Notification channel creation (commented out)
 
