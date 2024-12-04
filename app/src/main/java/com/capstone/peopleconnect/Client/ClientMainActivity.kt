@@ -11,11 +11,13 @@ import com.capstone.peopleconnect.Client.Fragments.ActivityFragmentClient
 import com.capstone.peopleconnect.Client.Fragments.CategoryFragmentClient
 import com.capstone.peopleconnect.Client.Fragments.HomeFragmentClient
 import com.capstone.peopleconnect.Client.Fragments.ProfileFragmentClient
+import com.capstone.peopleconnect.Helper.NotificationHelper
 import com.capstone.peopleconnect.Helper.SpeechRecognitionHelper
 import com.capstone.peopleconnect.Helper.WitAiHandler
 import com.capstone.peopleconnect.R
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+import com.google.firebase.auth.FirebaseAuth
 
 class ClientMainActivity : AppCompatActivity() {
 
@@ -36,6 +38,14 @@ class ClientMainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_client_main)
+
+        // Add this after initializing Firebase Auth
+        FirebaseAuth.getInstance().currentUser?.let { user ->
+            NotificationHelper.setupActivityNotificationMonitoring(
+                context = this,
+                userId = user.uid
+            )
+        }
 
         // Initialize WitAI and Speech Recognition
         setupSpeechRecognition()

@@ -25,6 +25,7 @@ import com.capstone.peopleconnect.Adapters.BookingSProviderAdapter
 import com.capstone.peopleconnect.BookingDetailsFragment
 import com.capstone.peopleconnect.Classes.Bookings
 import com.capstone.peopleconnect.Classes.User
+import com.capstone.peopleconnect.Helper.NotificationHelper
 import com.capstone.peopleconnect.R
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
@@ -209,35 +210,11 @@ class ActivityFragmentSProvider : Fragment(){
     }
 
     private fun setupNotificationBadge() {
-        val currentUser = FirebaseAuth.getInstance().currentUser
-        currentUser?.let { user ->
-            val notificationsRef = FirebaseDatabase.getInstance()
-                .getReference("notifications")
-                .child(user.uid)
-
-            notificationsRef.addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    var unreadCount = 0
-                    snapshot.children.forEach { notification ->
-                        val isRead = notification.child("isRead").getValue(Boolean::class.java) ?: false
-                        if (!isRead) unreadCount++
-                    }
-
-                    activity?.runOnUiThread {
-                        if (unreadCount > 0) {
-                            notificationBadgeSProvider.visibility = View.VISIBLE
-                            notificationBadgeSProvider.text = if (unreadCount > 99) "99+" else unreadCount.toString()
-                        } else {
-                            notificationBadgeSProvider.visibility = View.GONE
-                        }
-                    }
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Log.e(TAG, "Failed to read notifications", error.toException())
-                }
-            })
-        }
+        NotificationHelper.setupNotificationBadge(
+            fragment = this,
+            notificationBadge = notificationBadgeSProvider,
+            tag = TAG
+        )
     }
 
     private fun updateDateText(view: View) {

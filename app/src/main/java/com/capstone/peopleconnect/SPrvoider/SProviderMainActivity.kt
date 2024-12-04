@@ -7,6 +7,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.capstone.peopleconnect.Client.Fragments.HomeFragmentClient
+import com.capstone.peopleconnect.Helper.NotificationHelper
 import com.capstone.peopleconnect.R
 import com.capstone.peopleconnect.SProvider.Fragments.ProfileFragmentSProvider
 import com.capstone.peopleconnect.SPrvoider.Fragments.ActivityFragmentSProvider
@@ -14,6 +15,7 @@ import com.capstone.peopleconnect.SPrvoider.Fragments.HomeFragmentSProvider
 import com.capstone.peopleconnect.SPrvoider.Fragments.MicFragmentSProvider
 import com.capstone.peopleconnect.SPrvoider.Fragments.SkillsFragmentSProvider
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.firebase.auth.FirebaseAuth
 
 class SProviderMainActivity : AppCompatActivity() {
 
@@ -32,6 +34,14 @@ class SProviderMainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sprovider_main)
+
+        // Add this after setContentView
+        FirebaseAuth.getInstance().currentUser?.let { user ->
+            NotificationHelper.setupActivityNotificationMonitoring(
+                context = this,
+                userId = user.uid
+            )
+        }
 
         email = intent.getStringExtra("EMAIL") ?: ""
         firstName = intent.getStringExtra("FIRST_NAME") ?: ""
