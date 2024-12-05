@@ -41,6 +41,18 @@
         app:layout_constraintStart_toStartOf="@id/textName"
         app:layout_constraintTop_toBottomOf="@id/textName" />
 
+    <!-- Service Type -->
+    <TextView
+        android:id="@+id/textService"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:fontFamily="@font/regular_poppins"
+        android:textColor="@color/light_gray"
+        android:textSize="12sp"
+        app:layout_constraintStart_toStartOf="@id/textName"
+        app:layout_constraintTop_toBottomOf="@id/textDescription" />
+
     <!-- Category Chip -->
     <TextView
         android:id="@+id/textCategory"
@@ -53,9 +65,9 @@
         android:text="Great"
         android:textColor="@color/white"
         android:textSize="12sp"
-        app:layout_constraintBottom_toBottomOf="@id/imageProfile"
+        app:layout_constraintBottom_toBottomOf="@id/textService"
         app:layout_constraintEnd_toStartOf="@id/iconRating"
-        app:layout_constraintTop_toTopOf="@id/imageProfile" />
+        app:layout_constraintTop_toTopOf="@id/textService" />
 
     <!-- Star Icon -->
     <ImageView

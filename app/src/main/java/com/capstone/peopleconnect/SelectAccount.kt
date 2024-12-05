@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.View
+import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import com.capstone.peopleconnect.Classes.User
@@ -24,16 +26,32 @@ import io.getstream.chat.android.client.ChatClient
 import io.getstream.chat.android.models.Device
 import io.getstream.chat.android.models.PushProvider
 import io.getstream.chat.android.models.User as ChatUser
+import android.os.Handler
+import android.os.Looper
+import android.widget.TextView
+import android.widget.Toast
 
 class SelectAccount : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
     private lateinit var databaseReference: DatabaseReference
+    private lateinit var cardClient: CardView
+    private lateinit var cardServiceProvider: CardView
+    private lateinit var progressBar: ProgressBar
+    private lateinit var tvSelectAccountType: TextView
+    private lateinit var tvSubtitle: TextView
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_select_account)
 
+        // Initialize views
+        progressBar = findViewById(R.id.progressBar)
+        cardClient = findViewById(R.id.cardClient)
+        cardServiceProvider = findViewById(R.id.cardServiceProvider)
+        tvSelectAccountType = findViewById(R.id.tvSelectAccountType)
+        tvSubtitle = findViewById(R.id.tvSubtitle)
 
         auth = FirebaseAuth.getInstance()
         databaseReference = FirebaseDatabase.getInstance().reference.child("users")
@@ -41,9 +59,25 @@ class SelectAccount : AppCompatActivity() {
         // Check if user is already logged in
         val currentUser = auth.currentUser
         if (currentUser != null) {
+            // Show loading state
+            showLoading(true)
+            // Check user role and redirect
             checkUserRoleAndRedirect(currentUser.email ?: "")
+        } else {
+            // Show account selection UI
+            showLoading(false)
+            setupAccountSelection()
         }
+    }
+    private fun showLoading(isLoading: Boolean) {
+        progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+        cardClient.visibility = if (isLoading) View.GONE else View.VISIBLE
+        cardServiceProvider.visibility = if (isLoading) View.GONE else View.VISIBLE
+        tvSelectAccountType.visibility = if (isLoading) View.GONE else View.VISIBLE
+        tvSubtitle.visibility = if (isLoading) View.GONE else View.VISIBLE
+    }
 
+    private fun setupAccountSelection() {
         val toCLient = findViewById<CardView>(R.id.cardClient)
         val toSProvider = findViewById<CardView>(R.id.cardServiceProvider)
 
@@ -59,28 +93,56 @@ class SelectAccount : AppCompatActivity() {
     }
 
     private fun checkUserRoleAndRedirect(email: String) {
-        databaseReference.orderByChild("email").equalTo(email)
+        // Add a timeout handler
+        val timeoutHandler = Handler(Looper.getMainLooper())
+        val timeoutRunnable = Runnable {
+            showLoading(false)
+            setupAccountSelection()
+            Toast.makeText(this, "Connection timeout. Please try again.", Toast.LENGTH_SHORT).show()
+        }
+        timeoutHandler.postDelayed(timeoutRunnable, 10000) // 10 second timeout
+
+        // Optimize query by adding indexOn rule and limiting to 1 result
+        databaseReference.orderByChild("email").equalTo(email).limitToFirst(1)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
+                    // Remove the timeout handler since we got a response
+                    timeoutHandler.removeCallbacks(timeoutRunnable)
+
                     if (snapshot.exists()) {
-                        for (userSnapshot in snapshot.children) {
-                            val user = userSnapshot.getValue(User::class.java)
-                            user?.let {
-                                when {
-                                    it.roles?.contains("Client") == true -> {
-                                        redirectToClientMain(user)
-                                    }
-                                    it.roles?.contains("Service Provider") == true -> {
-                                        redirectToProviderMain(user)
-                                    }
+                        val userSnapshot = snapshot.children.first()
+                        val user = userSnapshot.getValue(User::class.java)
+                        user?.let {
+                            when {
+                                it.roles?.contains("Client") == true -> {
+                                    redirectToClientMain(user)
+                                }
+                                it.roles?.contains("Service Provider") == true -> {
+                                    redirectToProviderMain(user)
+                                }
+                                else -> {
+                                    showLoading(false)
+                                    setupAccountSelection()
                                 }
                             }
+                        } ?: run {
+                            showLoading(false)
+                            setupAccountSelection()
                         }
+                    } else {
+                        showLoading(false)
+                        setupAccountSelection()
                     }
                 }
 
                 override fun onCancelled(error: DatabaseError) {
+                    // Remove the timeout handler
+                    timeoutHandler.removeCallbacks(timeoutRunnable)
+
                     Log.e("SelectAccount", "Error checking user role", error.toException())
+                    showLoading(false)
+                    setupAccountSelection()
+                    Toast.makeText(this@SelectAccount, "Error checking account type. Please try again.", Toast.LENGTH_SHORT).show()
                 }
             })
     }

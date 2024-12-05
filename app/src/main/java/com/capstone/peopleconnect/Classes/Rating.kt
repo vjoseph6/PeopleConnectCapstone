@@ -9,4 +9,5 @@ data class Rating(
     var name: String? = "",
     var profileImageUrl: String? = "",
     val timestamp: Long = 0,
+    val serviceOffered: String = ""  // Add this line
 )

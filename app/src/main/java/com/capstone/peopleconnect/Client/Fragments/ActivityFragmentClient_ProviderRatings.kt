@@ -14,18 +14,22 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import android.util.Log
 
 class ActivityFragmentClient_ProviderRatings : Fragment() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var ratingsAdapter: RatingsAdapter
     private val ratingsList = mutableListOf<Rating>()
     private var email: String? = null
+    private var selectedService: String? = null  // Add this line
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
             email = it.getString("EMAIL")
+            selectedService = it.getString("SERVICE")  // Add this line
         }
+
     }
 
     override fun onCreateView(
@@ -48,22 +52,23 @@ class ActivityFragmentClient_ProviderRatings : Fragment() {
     private fun fetchRatings() {
         val ratingsRef = FirebaseDatabase.getInstance().getReference("ratings")
 
-        ratingsRef.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                ratingsList.clear() // Clear the list before adding new data
-                for (ratingSnapshot in snapshot.children) {
-                    val rating = ratingSnapshot.getValue(Rating::class.java)
-                    if (rating != null && rating.ratedEmail == email) {
-                        // Fetch user details based on raterEmail
-                        fetchUser(rating)
+        ratingsRef.orderByChild("ratedEmail").equalTo(email)
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    ratingsList.clear()
+
+                    for (ratingSnapshot in snapshot.children) {
+                        val rating = ratingSnapshot.getValue(Rating::class.java)
+                        if (rating != null && rating.serviceOffered == selectedService) {
+                            fetchUser(rating)  // Only call fetchUser once
+                        }
                     }
                 }
-            }
 
-            override fun onCancelled(error: DatabaseError) {
-                // Handle error
-            }
-        })
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("ProviderRatings", "Error fetching ratings", error.toException())
+                }
+            })
     }
 
     private fun fetchUser(rating: Rating) {
@@ -100,10 +105,11 @@ class ActivityFragmentClient_ProviderRatings : Fragment() {
 
     companion object {
         @JvmStatic
-        fun newInstance(email: String) =
+        fun newInstance(email: String, service: String) =  // Update this line
             ActivityFragmentClient_ProviderRatings().apply {
                 arguments = Bundle().apply {
                     putString("EMAIL", email)
+                    putString("SERVICE", service)  // Add this line
                 }
             }
     }

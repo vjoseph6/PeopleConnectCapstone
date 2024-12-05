@@ -21,6 +21,8 @@ class RatingsAdapter(private val ratings: List<Rating>) : RecyclerView.Adapter<R
         val textName: TextView = itemView.findViewById(R.id.textName)
         val textDescription: TextView = itemView.findViewById(R.id.textDescription)
         val textRating: TextView = itemView.findViewById(R.id.textRating)
+        val textService: TextView = itemView.findViewById(R.id.textService) // Add this line
+        val textCategory: TextView = itemView.findViewById(R.id.textCategory) // Add this line
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RatingViewHolder {
@@ -33,14 +35,26 @@ class RatingsAdapter(private val ratings: List<Rating>) : RecyclerView.Adapter<R
         holder.textName.text = rating.name ?: "Unknown"
         holder.textDescription.text = rating.feedback
         holder.textRating.text = rating.rating.toString()
+        holder.textService.text = rating.serviceOffered // Add this line
+
+        // Set category text based on rating value
+        val categoryText = when (rating.rating) {
+            5.0f -> "Perfect"
+            4.0f -> "Great"
+            3.0f -> "Good"
+            2.0f -> "Fair"
+            1.0f -> "Poor"
+            else -> ""
+        }
+        holder.textCategory.text = categoryText
 
         if (!rating.profileImageUrl.isNullOrEmpty()) {
             Picasso.get().load(rating.profileImageUrl).into(holder.imageProfile)
         } else {
-            // Set a default image if the URL is empty
-            holder.imageProfile.setImageResource(R.drawable.profile) // Replace with your default image resource
+            holder.imageProfile.setImageResource(R.drawable.profile)
         }
     }
+
     override fun getItemCount(): Int {
         return ratings.size
     }
