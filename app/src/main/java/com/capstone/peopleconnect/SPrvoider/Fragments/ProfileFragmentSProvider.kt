@@ -144,7 +144,7 @@ class ProfileFragmentSProvider : Fragment() {
         // Security icons
         val projectIcons: LinearLayout = view.findViewById(R.id.projects_sprovider)
         projectIcons.setOnClickListener {
-            val projectFragment = YourProjectsFragmentSProvider.newInstance(email = email)
+            val projectFragment = YourProjectsFragmentSProvider.newInstance(email = email, tag = null)
             parentFragmentManager.beginTransaction()
                 .replace(R.id.frame_layout, projectFragment)
                 .addToBackStack(null)

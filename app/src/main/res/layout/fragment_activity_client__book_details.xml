@@ -23,7 +23,7 @@
             android:id="@+id/filter_by_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Book Details"
+            android:text="Booking  Details"
             android:textColor="@color/white"
             android:textSize="16sp"
             android:fontFamily="@font/semibold_poppins"
@@ -51,34 +51,75 @@
             android:padding="16dp">
 
             <LinearLayout
+                android:id="@+id/selectionLayout"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="10dp"
+                android:weightSum="3"
+                app:layout_constraintTop_toTopOf="parent"
+                android:gravity="center"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <TextView
+                    android:id="@+id/perHourTab"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:textColor="@color/green"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/regular_poppins"
+                    android:text="Hour Based"/>
+
+                <TextView
+                    android:id="@+id/perTaskTab"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_gravity="center"
+                    android:gravity="center"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:textColor="@color/green"
+                    android:fontFamily="@font/regular_poppins"
+                    android:text="Task Based"/>
+
+
+            </LinearLayout>
+
+            <LinearLayout
                 android:id="@+id/layoutHorizontal"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:weightSum="3"
-                app:layout_constraintTop_toTopOf="parent"
+                android:layout_marginTop="20dp"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent">
+                app:layout_constraintTop_toBottomOf="@+id/selectionLayout">
 
                 <!-- Date Picker Section -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:gravity="center">
+                    android:gravity="center"
+                    android:orientation="vertical">
 
                     <!-- Date Label -->
                     <TextView
                         android:id="@+id/dateLabel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Date"
                         android:layout_marginStart="15dp"
                         android:fontFamily="@font/medium_poppins"
+                        android:gravity="center"
+                        android:text="Date"
                         android:textColor="@color/green"
-                        android:textSize="14sp"
-                        android:gravity="center" />
+                        android:textSize="14sp" />
 
                     <!-- Date Picker -->
                     <LinearLayout
@@ -98,12 +139,13 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
-                            android:textColor="@color/black"
                             android:background="@drawable/client_edit_text_rounded_corner"
                             android:fontFamily="@font/regular_poppins"
                             android:hint="Set Date"
-                            android:singleLine="true"
+                            android:enabled="false"
                             android:padding="12dp"
+                            android:singleLine="true"
+                            android:textColor="@color/black"
                             android:textSize="9sp" />
                     </LinearLayout>
                 </LinearLayout>
@@ -113,20 +155,20 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:gravity="center">
+                    android:gravity="center"
+                    android:orientation="vertical">
 
                     <!-- Start Time Label -->
                     <TextView
                         android:id="@+id/startTimeLabel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Start Time"
                         android:layout_marginStart="15dp"
-                        android:textColor="@color/green"
                         android:fontFamily="@font/medium_poppins"
-                        android:textSize="14sp"
-                        android:gravity="center" />
+                        android:gravity="center"
+                        android:text="Start Time"
+                        android:textColor="@color/green"
+                        android:textSize="14sp" />
 
                     <!-- Start Time Picker -->
                     <LinearLayout
@@ -147,12 +189,12 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
-                            android:textColor="@color/black"
                             android:background="@drawable/client_edit_text_rounded_corner"
                             android:fontFamily="@font/regular_poppins"
                             android:hint="Start Time"
-                            android:singleLine="true"
                             android:padding="12dp"
+                            android:singleLine="true"
+                            android:textColor="@color/black"
                             android:textSize="10sp" />
                     </LinearLayout>
                 </LinearLayout>
@@ -162,20 +204,20 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:gravity="center">
+                    android:gravity="center"
+                    android:orientation="vertical">
 
                     <!-- End Time Label -->
                     <TextView
                         android:id="@+id/endTimeLabel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginStart="15dp"
+                        android:fontFamily="@font/medium_poppins"
+                        android:gravity="center"
                         android:text="End Time"
                         android:textColor="@color/green"
-                        android:fontFamily="@font/medium_poppins"
-                        android:textSize="14sp"
-                        android:layout_marginStart="15dp"
-                        android:gravity="center" />
+                        android:textSize="14sp" />
 
                     <!-- End Time Picker -->
                     <LinearLayout
@@ -195,12 +237,12 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
-                            android:singleLine="true"
-                            android:textColor="@color/black"
                             android:background="@drawable/client_edit_text_rounded_corner"
                             android:fontFamily="@font/regular_poppins"
                             android:hint="End Time"
                             android:padding="12dp"
+                            android:singleLine="true"
+                            android:textColor="@color/black"
                             android:textSize="10sp" />
                     </LinearLayout>
                 </LinearLayout>
@@ -263,12 +305,43 @@
                 android:background="@drawable/client_edit_text_rounded_corner"
                 android:fontFamily="@font/regular_poppins"
                 android:hint="Rate"
+                android:inputType="number"
                 android:enabled="false"
                 android:padding="12dp"
                 android:textSize="12sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/tvRate" />
+
+            <TextView
+                android:id="@+id/tvScope"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:fontFamily="@font/semibold_poppins"
+                android:text="Task Scope"
+                android:textColor="@color/green"
+                android:textSize="14sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/etRate" />
+
+            <Spinner
+                android:id="@+id/spinnerScope"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                android:background="@drawable/client_edit_text_rounded_corner"
+                android:fontFamily="@font/regular_poppins"
+                android:enabled="false"
+                android:padding="12dp"
+                android:textSize="12sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvScope" />
 
             <TextView
                 android:id="@+id/hourRate"
@@ -316,7 +389,7 @@
                 android:textSize="14sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/etRate" />
+                app:layout_constraintTop_toBottomOf="@+id/spinnerScope" />
 
             <EditText
                 android:id="@+id/etDescription"

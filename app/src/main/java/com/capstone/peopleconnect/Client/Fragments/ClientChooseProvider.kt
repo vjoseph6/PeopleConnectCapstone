@@ -188,9 +188,6 @@ class ClientChooseProvider : Fragment() {
                     processSkillSnapshot(skillSetSnapshot, user, previouslyBookedEmails)
                 }
 
-                // Log the results
-                Log.d("Providers", "Previous bookings: ${previouslyBookedProviders.size}")
-                Log.d("Providers", "New providers: ${providerList.size}")
 
                 updateVisibility()
                 providerAdapter.notifyDataSetChanged()

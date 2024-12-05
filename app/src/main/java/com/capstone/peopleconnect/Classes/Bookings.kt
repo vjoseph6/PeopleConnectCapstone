@@ -20,5 +20,6 @@ data class Bookings(
     val bookingCancelProvider: String = "",
     val bookingUploadImages: List<String> = listOf(),
     val receiptSent: Boolean = false,
-    val receiptSentDate: String = ""
+    val receiptSentDate: String = "",
+    val bookingScope: String = ""
 )

@@ -13,6 +13,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -44,10 +45,12 @@ class CategoryFragmentClient : Fragment() {
     private var categoryList: MutableList<Category> = mutableListOf()
     private var isInSubcategoriesView = false  // Flag to track the state
     private lateinit var notificationBadge: TextView
+    private lateinit var headerTextView: TextView
 
     // To handle double back press
     private var backPressedOnce = false
     private val backPressHandler = Handler()
+    private lateinit var backButton: ImageButton
 
     //this is for the variables to be passed on each screens
     private var bookDay: String? = null
@@ -60,6 +63,11 @@ class CategoryFragmentClient : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_category_client, container, false)
+
+
+        headerTextView = view.findViewById(R.id.tvPopularProjects)
+        backButton = view.findViewById(R.id.btnBackClient)
+
 
         Log.d("CategoryFragmentClient", "Arguments: ${arguments?.getString("serviceType")}")
 
@@ -370,6 +378,8 @@ class CategoryFragmentClient : Fragment() {
                         // Fetch subcategories when category is clicked
                         fetchSubcategories(category.name, serviceType)
                         onCategoryClick(category.name, email.toString())
+                        headerTextView.text = "Sub Category"
+                        backButton.visibility = View.VISIBLE
                     }
                     recyclerView.adapter = categoryAdapter
                 }
@@ -393,6 +403,12 @@ class CategoryFragmentClient : Fragment() {
                     val subcategoryImage = subcategorySnapshot.child("image").getValue(String::class.java) ?: ""
                     val subcategory = Category(name = subcategoryName, image = subcategoryImage)
                     subcategoryList.add(subcategory)
+                }
+
+                backButton.setOnClickListener {
+                    displayCategories()
+                    headerTextView.text = "Service Category"
+                    backButton.visibility = View.GONE
                 }
 
                 if (subcategoryList.isNotEmpty()) {

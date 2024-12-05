@@ -110,6 +110,8 @@
             android:layout_below="@id/headerLayout"
             android:padding="16dp">
 
+
+
             <androidx.cardview.widget.CardView
                 android:id="@+id/searchContainer"
                 android:layout_width="match_parent"
@@ -150,7 +152,7 @@
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvCategories"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:clipToPadding="false"
                 android:orientation="vertical"
@@ -158,6 +160,17 @@
                 android:scrollbars="vertical"
                 android:layout_below="@id/searchContainer"
                 tools:listitem="@layout/category_fragment_list" />
+
+            <ImageButton
+                android:id="@+id/btnBackClient"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:visibility="gone"
+                android:background="@drawable/backbtn_client_"
+                android:src="@drawable/backbtn_client_"
+                android:layout_below="@id/rvCategories"
+                android:layout_alignParentEnd="true"
+                android:layout_marginTop="10dp"/>
 
             <RelativeLayout
                 android:id="@+id/emptyView"

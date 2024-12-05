@@ -5,6 +5,7 @@ import android.graphics.drawable.ColorDrawable
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -23,6 +24,7 @@ import com.squareup.picasso.Picasso
 class ImagePreviewActivity : AppCompatActivity() {
     private lateinit var imageUrl: String
     private lateinit var email: String
+    private lateinit var tag: String
     private lateinit var loadingDialog: android.app.AlertDialog
     private lateinit var categoryName: String
 
@@ -34,6 +36,7 @@ class ImagePreviewActivity : AppCompatActivity() {
         imageUrl = intent.getStringExtra("IMAGE_URL") ?: ""
         email = intent.getStringExtra("EMAIL") ?: ""
         categoryName = intent.getStringExtra("CATEGORY_NAME") ?: ""
+        tag = intent.getStringExtra("ISCLIENT") ?: ""
 
         // Load the image into the ImageView
         val imageView: ImageView = findViewById(R.id.fullScreenImage)
@@ -41,6 +44,11 @@ class ImagePreviewActivity : AppCompatActivity() {
 
         // Set up the delete button to show a confirmation dialog
         val btnDelete: ImageButton = findViewById(R.id.deleteButton)
+
+        if (tag.isNotEmpty()) {
+            btnDelete.visibility = View.GONE
+        }
+
         btnDelete.setOnClickListener {
             showDeleteConfirmationDialog()
         }

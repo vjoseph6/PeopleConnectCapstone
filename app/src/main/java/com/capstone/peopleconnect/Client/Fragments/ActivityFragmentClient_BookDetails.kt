@@ -19,14 +19,18 @@ import android.view.ViewGroup
 import android.view.Window
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
 import com.capstone.peopleconnect.Classes.Bookings
@@ -50,6 +54,8 @@ import java.util.Locale
 import java.util.UUID
 import kotlin.math.ceil
 import com.capstone.peopleconnect.Notifications.model.NotificationModel
+import java.text.ParseException
+import java.util.Date
 
 
 class ActivityFragmentClient_BookDetails : Fragment() {
@@ -65,6 +71,8 @@ class ActivityFragmentClient_BookDetails : Fragment() {
     private lateinit var endTimeEditText: EditText
     private lateinit var bookNow: Button
     private lateinit var locationEditText: EditText
+    private  var startDateTimeTextView: String ? = null
+    private  var endDateTimeTextView: String ? = null
     private lateinit var databaseReference: DatabaseReference
     private  var rate: String = "0"
     private var startTimeCalendar: Calendar? = null
@@ -80,10 +88,155 @@ class ActivityFragmentClient_BookDetails : Fragment() {
     private var selectedImagePosition = -1
     private lateinit var loadingDialog: AlertDialog
     private lateinit var stripeHelper: StripeHelper
-    private var bookDay: String? = null
-    private var startTime: String? = null
-    private var endTime: String? = null
+    private var bookDay: String? = ""
+    private var startTime: String? = ""
+    private var endTime: String? = ""
     private var providerEmailFetched: String = ""
+
+    private var originalRateValue: Double = 0.0
+    private var isPerHourSelected = true
+    private lateinit var perHourTab: TextView
+    private lateinit var perTaskTab: TextView
+    private lateinit var tvScope: TextView
+    private lateinit var spinnerScope: Spinner
+    private lateinit var etRate: EditText
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        // Initialize views
+        perHourTab = view.findViewById(R.id.perHourTab)
+        perTaskTab = view.findViewById(R.id.perTaskTab)
+        tvScope = view.findViewById(R.id.tvScope)
+        spinnerScope = view.findViewById(R.id.spinnerScope)
+        etRate = view.findViewById(R.id.etRate)
+
+
+        // Setup spinner options
+        val scopeOptions = arrayOf(
+            "Select Task Scope",
+            "Small (1-2 hrs)",
+            "Medium (3-5 hrs)",
+            "Heavy (6 hrs+)"
+        )
+        val adapter = ArrayAdapter(
+            requireContext(),
+            R.layout.spinner_dropdown_item, // Custom layout for spinner items
+            scopeOptions
+        )
+        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item) // Apply custom layout for dropdown items
+        spinnerScope.adapter = adapter
+
+        // Initial setup
+        setupPerHourView()
+
+        // Set up click listeners
+        perHourTab.setOnClickListener {
+            handlePerHourTabClick()
+        }
+
+        perTaskTab.setOnClickListener {
+            handlePerTaskTabClick()
+        }
+
+
+    }
+
+    private fun handlePerHourTabClick() {
+        if (!isPerHourSelected) {
+            // Update mode to per hour
+            isPerHourSelected = true
+
+            // Get the rate EditText
+            val rateEditText = view?.findViewById<EditText>(R.id.etRate)
+            val hourRateEditText = view?.findViewById<EditText>(R.id.etHourRate)
+
+            hourRateEditText?.let {
+                // Set default value to 1
+                it.setText("1")
+                // Attach a TextWatcher to handle rate changes
+                it.addTextChangedListener(rateEditText?.let { it1 -> createRateTextWatcher(it1) })
+            }
+
+            // Disable rate EditText
+            rateEditText?.isEnabled = false
+
+            // Hide task scope views
+            view?.findViewById<TextView>(R.id.tvScope)?.visibility = View.GONE
+            view?.findViewById<Spinner>(R.id.spinnerScope)?.visibility = View.GONE
+
+            // Highlight selected tab
+            highlightSelectedTab(perHourTab, perTaskTab)
+        }
+    }
+
+
+    private fun handlePerTaskTabClick() {
+        if (isPerHourSelected) {
+            // Switch to per task mode
+            isPerHourSelected = false
+
+            // Enable the etRate EditText and set it to display only a hint
+            etRate.isEnabled = true
+            etRate.setText("") // Clear any existing value
+            etRate.hint = "Enter task rate" // Set hint text (customize as needed)
+
+            // Show task scope views
+            tvScope.visibility = View.VISIBLE
+            spinnerScope.visibility = View.VISIBLE
+
+            // Reset spinner to first item
+            spinnerScope.setSelection(0)
+
+            // Highlight selected tab
+            highlightSelectedTab(perTaskTab, perHourTab)
+        }
+    }
+
+
+    private fun setupPerHourView() {
+        isPerHourSelected = true
+        etRate.setText(originalRateValue.toString())
+        etRate.isEnabled = false
+
+        // Hide task scope views
+        tvScope.visibility = View.GONE
+        spinnerScope.visibility = View.GONE
+
+        // Highlight per hour tab
+        highlightSelectedTab(perHourTab, perTaskTab)
+    }
+
+    private fun highlightSelectedTab(selectedTab: TextView, vararg unselectedTabs: TextView) {
+        // Set selected tab style based on the tab text
+        when (selectedTab.text.toString()) {
+            "Hour Based" -> {
+                selectedTab.setTextColor(ContextCompat.getColor(requireContext(), R.color.green))
+                selectedTab.background = ContextCompat.getDrawable(requireContext(), R.drawable.custom_underline)
+            }
+
+            "Task Based" -> {
+                selectedTab.setTextColor(ContextCompat.getColor(requireContext(), R.color.green))
+                selectedTab.background = ContextCompat.getDrawable(requireContext(), R.drawable.custom_underline)
+            }
+
+            else -> {
+                selectedTab.setTextColor(ContextCompat.getColor(requireContext(), R.color.black))
+                selectedTab.background = ContextCompat.getDrawable(requireContext(), R.drawable.custom_underline)
+            }
+        }
+
+        selectedTab.typeface = ResourcesCompat.getFont(requireContext(), R.font.bold_poppins)
+        selectedTab.paintFlags = selectedTab.paintFlags and android.graphics.Paint.UNDERLINE_TEXT_FLAG.inv()
+
+        // Set unselected tabs style
+        unselectedTabs.forEach { tab ->
+            tab.setTextColor(ContextCompat.getColor(requireContext(), R.color.black))
+            tab.typeface = ResourcesCompat.getFont(requireContext(), R.font.bold_poppins)
+            tab.background = null
+            tab.paintFlags = tab.paintFlags and android.graphics.Paint.UNDERLINE_TEXT_FLAG.inv()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -100,13 +253,6 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         val view = inflater.inflate(R.layout.fragment_activity_client__book_details, container, false)
 
         serviceOffered = arguments?.getString("SERVICE_OFFERED") ?: ""
-
-        arguments.let {
-            bookDay = arguments?.getString("bookDay") ?: ""
-            startTime = arguments?.getString("startTime") ?: ""
-            endTime = arguments?.getString("endTime") ?: ""
-        }
-
 
         // Initialize views
         dateIcon = view.findViewById(R.id.dateIcon)
@@ -132,17 +278,11 @@ class ActivityFragmentClient_BookDetails : Fragment() {
             .into(btnAddImages)
         locationEditText = view.findViewById(R.id.etSelectLocation)
 
-        // Set initial values from arguments
-        dateEditText.setText(bookDay?.ifEmpty { "" } ?: "")
-        startTimeEditText.setText(startTime?.ifEmpty { "" } ?: "")
-        endTimeEditText.setText(endTime?.ifEmpty { "" } ?: "")
 
-        //save booking
         bookNow = view.findViewById(R.id.btnBookNow)
         bookNow.setOnClickListener {
             initiatePayment()
         }
-
 
 
         //for the upload image
@@ -156,7 +296,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
 
 
         // Get address by email
-        val email = arguments?.getString("EMAIL")
+        val email = auth.currentUser?.email ?: ""
         email?.let { getAddressByEmail(it) }
 
         val btnBackClient: ImageButton = view.findViewById(R.id.btnBackClient)
@@ -174,7 +314,11 @@ class ActivityFragmentClient_BookDetails : Fragment() {
 
         fetchSkillRate()
 
+        val currentDate = Calendar.getInstance().time
+        val dateFormat = SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
+        val formattedDate = dateFormat.format(currentDate)
 
+        dateEditText.setText(formattedDate)
 
 
         // Date and time pickers
@@ -185,9 +329,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
                 }
                 val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                 val formattedDate = dateFormat.format(calendar.time)
-                dateEditText.setText(formattedDate)
                 bookDay = formattedDate // Update the stored bookDay
-
                 // Clear times when date changes
                 startTimeEditText.text.clear()
                 endTimeEditText.text.clear()
@@ -197,10 +339,6 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         }
 
         startIcon.setOnClickListener {
-            if (dateEditText.text.isEmpty()) {
-                Toast.makeText(context, "Please select a date first", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
             showStartDateTimePicker { calendar ->
                 val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
                 startTimeEditText.setText(timeFormat.format(calendar.time))
@@ -284,7 +422,6 @@ class ActivityFragmentClient_BookDetails : Fragment() {
 
     private fun showStartDateTimePicker(onDateTimeSet: (Calendar) -> Unit) {
         showDatePicker { year, month, dayOfMonth ->
-            // If startTime is provided, parse it for initial time
             var initialHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
             var initialMinute = Calendar.getInstance().get(Calendar.MINUTE)
 
@@ -292,7 +429,9 @@ class ActivityFragmentClient_BookDetails : Fragment() {
                 try {
                     val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
                     val parsedTime = timeFormat.parse(startTime)
-                    val timeCalendar = Calendar.getInstance().apply { time = parsedTime }
+                    val timeCalendar = Calendar.getInstance().apply {
+                        time = parsedTime
+                    }
                     initialHour = timeCalendar.get(Calendar.HOUR_OF_DAY)
                     initialMinute = timeCalendar.get(Calendar.MINUTE)
                 } catch (e: Exception) {
@@ -301,10 +440,14 @@ class ActivityFragmentClient_BookDetails : Fragment() {
             }
 
             showTimePicker(year, month, dayOfMonth, initialHour, initialMinute) { hour, minute ->
-                startTimeCalendar = Calendar.getInstance().apply {
+                val selectedDateTime = Calendar.getInstance().apply {
                     set(year, month, dayOfMonth, hour, minute)
                 }
-                onDateTimeSet(startTimeCalendar!!)
+
+                val dateTimeFormatter = SimpleDateFormat("MM/dd/yyyy - hh:mm a", Locale.getDefault())
+                startDateTimeTextView = dateTimeFormatter.format(selectedDateTime.time)
+
+                onDateTimeSet(selectedDateTime)
             }
         }
     }
@@ -329,8 +472,8 @@ class ActivityFragmentClient_BookDetails : Fragment() {
                     selectedEndCalendar.get(Calendar.MONTH) == startTimeCalendar!!.get(Calendar.MONTH) &&
                     selectedEndCalendar.get(Calendar.DAY_OF_MONTH) == startTimeCalendar!!.get(Calendar.DAY_OF_MONTH) &&
                     selectedEndCalendar.get(Calendar.HOUR_OF_DAY) == startTimeCalendar!!.get(Calendar.HOUR_OF_DAY) &&
-                    selectedEndCalendar.get(Calendar.MINUTE) == startTimeCalendar!!.get(Calendar.MINUTE)) {
-
+                    selectedEndCalendar.get(Calendar.MINUTE) == startTimeCalendar!!.get(Calendar.MINUTE)
+                ) {
                     Toast.makeText(requireContext(), "End time cannot be the same as start time", Toast.LENGTH_SHORT).show()
                     return@showTimePicker
                 }
@@ -341,6 +484,8 @@ class ActivityFragmentClient_BookDetails : Fragment() {
                     return@showTimePicker
                 }
 
+                val dateTimeFormatter = SimpleDateFormat("MM/dd/yyyy - hh:mm a", Locale.getDefault())
+                endDateTimeTextView = dateTimeFormatter.format(selectedEndCalendar.time)
                 endTimeCalendar = selectedEndCalendar
                 onDateTimeSet(endTimeCalendar!!)
             }
@@ -406,7 +551,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         }
 
         // Check for duplicate booking first
-        checkForDuplicateBooking(userEmail.toString(), providerEmail, bookingDay, bookingStartTime, bookingEndTime, serviceOffered.toString()) { duplicateFound ->
+        checkForDuplicateBooking(userEmail, providerEmail, bookingDay, bookingStartTime, bookingEndTime, serviceOffered.toString()) { duplicateFound ->
             if (duplicateFound) {
                 requireContext().let {
                     dismissLoadingDialog()
@@ -450,19 +595,16 @@ class ActivityFragmentClient_BookDetails : Fragment() {
     }
 
 
-    // checkForDuplicateBooking now also checks for pending status
     private fun checkForDuplicateBooking(
         userEmail: String,
         providerEmail: String,
-        bookingDay: String, // Add bookingDay here
+        bookingDay: String,
         bookingStartTime: String,
         bookingEndTime: String,
         serviceOffered: String,
         onResult: (Boolean) -> Unit
     ) {
         val bookingReference = FirebaseDatabase.getInstance().getReference("bookings")
-
-        // Convert booking times into minutes since midnight for easier comparison
         val currentBookingStartMinutes = convertToMinutesSinceMidnight(bookingStartTime)
         val currentBookingEndMinutes = convertToMinutesSinceMidnight(bookingEndTime)
 
@@ -478,16 +620,15 @@ class ActivityFragmentClient_BookDetails : Fragment() {
                             existingBooking.serviceOffered == serviceOffered &&
                             existingBooking.bookingStatus == "Pending"
                         ) {
-                            // Convert the existing booking times to minutes since midnight for comparison
+                            val existingBookingDay = existingBooking.bookingDay
                             val existingStartMinutes = convertToMinutesSinceMidnight(existingBooking.bookingStartTime)
                             val existingEndMinutes = convertToMinutesSinceMidnight(existingBooking.bookingEndTime)
 
-                            // Check for time overlap
-                            if (isTimeOverlap(
-                                    currentBookingStartMinutes,
-                                    currentBookingEndMinutes,
-                                    existingStartMinutes,
-                                    existingEndMinutes
+                            // Check for same-day overlapping bookings
+                            if (bookingDay == existingBookingDay &&
+                                isTimeOverlap(
+                                    currentBookingStartMinutes, currentBookingEndMinutes,
+                                    existingStartMinutes, existingEndMinutes
                                 )
                             ) {
                                 duplicateFound = true
@@ -495,11 +636,16 @@ class ActivityFragmentClient_BookDetails : Fragment() {
                             }
                         }
                     }
+
                     onResult(duplicateFound)
                 }
 
                 override fun onCancelled(databaseError: DatabaseError) {
-                    Toast.makeText(requireContext(), "Error checking for duplicate: ${databaseError.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "Error checking for duplicate: ${databaseError.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
                     onResult(false)
                 }
             })
@@ -511,8 +657,8 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         existingStart: Int,
         existingEnd: Int
     ): Boolean {
-        // Handle cross-day bookings (e.g., 11:45 PM to 12:00 AM)
-        val currentEndAdjusted = if (currentStart > currentEnd) currentEnd + 1440 else currentEnd // Add 1440 min (24 hours) if crossing day
+        // Handle cross-day bookings
+        val currentEndAdjusted = if (currentStart > currentEnd) currentEnd + 1440 else currentEnd
         val existingEndAdjusted = if (existingStart > existingEnd) existingEnd + 1440 else existingEnd
 
         // Check for overlap
@@ -522,19 +668,34 @@ class ActivityFragmentClient_BookDetails : Fragment() {
     private fun convertToMinutesSinceMidnight(timeString: String): Int {
         if (timeString.isEmpty()) {
             Log.e(TAG, "Time string is empty, cannot convert to minutes.")
-            return -1 // Return a default value or handle this case appropriately
+            return -1
         }
 
-        val dateFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
-        val date = dateFormat.parse(timeString)
-        val calendar = Calendar.getInstance()
-        calendar.time = date
+        val formats = arrayOf(
+            "MM/dd/yyyy - hh:mm a",
+            "hh:mm a",
+            "h:mm a"
+        )
 
-        val hours = calendar.get(Calendar.HOUR_OF_DAY)
-        val minutes = calendar.get(Calendar.MINUTE)
+        for (formatString in formats) {
+            try {
+                val dateFormat = SimpleDateFormat(formatString, Locale.getDefault())
+                val date = dateFormat.parse(timeString)
+                val calendar = Calendar.getInstance()
+                calendar.time = date
+                val hours = calendar.get(Calendar.HOUR_OF_DAY)
+                val minutes = calendar.get(Calendar.MINUTE)
+                return hours * 60 + minutes
+            } catch (e: ParseException) {
+                // Continue to next format if parsing fails
+                continue
+            }
+        }
 
-        return hours * 60 + minutes
+        Log.e(TAG, "Unable to parse time string: $timeString")
+        return -1
     }
+
 
 
     fun saveBooking(
@@ -591,6 +752,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         providerEmail: String
     ) {
         val validImageUris = imageUris.filterNotNull()
+        val selectedScope = spinnerScope.selectedItem.toString()
 
         uploadImagesToFirebase(userEmail, validImageUris, bookingId) { imageUrls ->
             val booking = Bookings(
@@ -599,12 +761,13 @@ class ActivityFragmentClient_BookDetails : Fragment() {
                 providerEmail = providerEmail,
                 bookingStatus = "Pending",
                 serviceOffered = serviceOffered,
-                bookingStartTime = startTimeEditText.text.toString(),
-                bookingEndTime = endTimeEditText.text.toString(),
+                bookingStartTime = startDateTimeTextView.toString(),
+                bookingEndTime = endDateTimeTextView.toString(),
                 bookingDescription = descEditText.text.toString(),
                 bookingDay = dateEditText.text.toString(),
                 bookingLocation = locationEditText.text.toString(),
                 bookingAmount = payment.originalAmount,
+                bookingScope = selectedScope,
                 bookingCommissionAmount = payment.commissionAmount,
                 bookingTotalAmount = payment.paymentAmount,
                 bookingPaymentMethod = payment.paymentMethod,
@@ -664,7 +827,6 @@ class ActivityFragmentClient_BookDetails : Fragment() {
                 sendBookingNotificationToProvider(booking)
 
                 dismissLoadingDialog()
-                Toast.makeText(requireContext(), "Booking saved successfully", Toast.LENGTH_SHORT).show()
 
                 // Navigate back to ActivityFragmentClient
                 val activityFragment = ActivityFragmentClient.newInstance(userEmail ?: "")
@@ -996,7 +1158,6 @@ class ActivityFragmentClient_BookDetails : Fragment() {
     private fun fetchSkillRate() {
         val providerName = arguments?.getString("NAME") ?: ""
         val currentService = arguments?.getString("SERVICE_OFFERED") ?: ""
-        Log.d("SkillRate", "Fetching skill rate for provider: $providerName, service: $currentService")
 
         val usersRef = FirebaseDatabase.getInstance().getReference("users")
         usersRef.orderByChild("name").equalTo(providerName)
@@ -1006,7 +1167,6 @@ class ActivityFragmentClient_BookDetails : Fragment() {
                     if (snapshot.exists()) {
                         for (userSnapshot in snapshot.children) {
                             providerEmailFetched = userSnapshot.child("email").getValue(String::class.java) ?: ""
-                            Log.d("SkillRate", "Found provider email: $providerEmailFetched")
                             if (providerEmailFetched.isNotEmpty()) {
                                 fetchSkillRateWithEmail(providerEmailFetched, currentService)
                             }
