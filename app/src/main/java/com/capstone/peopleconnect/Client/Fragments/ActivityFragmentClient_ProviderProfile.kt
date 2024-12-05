@@ -19,6 +19,8 @@ import com.capstone.peopleconnect.Adapters.ProviderServicesAdapter
 import com.capstone.peopleconnect.Adapters.RatingsAdapter
 import com.capstone.peopleconnect.Classes.Category
 import com.capstone.peopleconnect.R
+import com.capstone.peopleconnect.SPrvoider.Fragments.SkillsPostFragmentSProvider
+import com.capstone.peopleconnect.SPrvoider.Fragments.YourProjectsFragmentSProvider
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -40,6 +42,7 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
     private var startTime: String? = null
     private var endTime: String? = null
     private var serviceOffered: String = ""
+    private lateinit var viewAllBtn: TextView
     private lateinit var servicesAdapter: ProviderServicesAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,6 +58,7 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
             inflater.inflate(R.layout.fragment_activity_client__provider_profile, container, false)
 
         // Find views by ID
+        viewAllBtn = view.findViewById(R.id.viewAll)
         providerNameTextView = view.findViewById(R.id.providerName)
         providerRatingTextView = view.findViewById(R.id.providerRating)
         profileImageView = view.findViewById(R.id.profileImage)
@@ -152,6 +156,20 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
                             if (email != null) {
                                 fetchSkills(email)
                                 fetchWorks(email)
+                                viewAllBtn.setOnClickListener {
+
+                                    val skillPostFragment = YourProjectsFragmentSProvider.newInstance(
+                                        email = email,
+                                        tag = "isClient"
+                                    )
+
+                                    // Navigate to the ClientChooseProvider fragment
+                                    requireActivity().supportFragmentManager.beginTransaction()
+                                        .replace(R.id.frame_layout, skillPostFragment) // Adjust the container ID as necessary
+                                        .addToBackStack(null)
+                                        .commit()
+
+                                }
                             }
                         }
                     } else {

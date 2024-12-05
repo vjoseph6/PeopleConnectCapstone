@@ -9,10 +9,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.capstone.peopleconnect.Adapters.CategoryAdapter
 import com.capstone.peopleconnect.Classes.Category
+import com.capstone.peopleconnect.Client.Fragments.ActivityFragmentClient_ProviderProfile
 import com.capstone.peopleconnect.R
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -22,6 +24,7 @@ import com.google.firebase.database.ValueEventListener
 class YourProjectsFragmentSProvider : Fragment() {
 
     private var email: String? = null
+    private var tag: String? = null
     private lateinit var categoryAdapter: CategoryAdapter
     private lateinit var recyclerView: RecyclerView
 
@@ -29,6 +32,7 @@ class YourProjectsFragmentSProvider : Fragment() {
         super.onCreate(savedInstanceState)
         arguments?.let {
             email = it.getString("EMAIL")
+            tag = it.getString("isClient")
         }
 
     }
@@ -38,11 +42,20 @@ class YourProjectsFragmentSProvider : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_your_projects_s_provider, container, false) // Use your layout file here
+
+        val layout1: ConstraintLayout = view.findViewById(R.id.layout1)
+        if (tag.equals("isClient", ignoreCase = true)) {  // Use case-insensitive comparison to avoid mismatches
+            val btnBack :ImageButton = view.findViewById(R.id.btnBack)
+            btnBack.setImageResource(R.drawable.backbtn2_client_)
+            layout1.setBackgroundResource(R.color.green)
+        }
+
         recyclerView = view.findViewById(R.id.skills)
         categoryAdapter = CategoryAdapter(mutableListOf()) { category ->
             val skillPostFragment = SkillsPostFragmentSProvider.newInstance(
                 email = email.toString(),
-                categoryName = category.name
+                categoryName = category.name,
+                isFromClient = tag
             )
 
             // Navigate to the ClientChooseProvider fragment
@@ -151,10 +164,11 @@ class YourProjectsFragmentSProvider : Fragment() {
     companion object {
 
         @JvmStatic
-        fun newInstance(email:String?) = YourProjectsFragmentSProvider().apply {
+        fun newInstance(email:String?, tag:String? = null ) = YourProjectsFragmentSProvider().apply {
                 arguments = Bundle().apply {
                     putString("EMAIL", email)
+                    tag?.let { putString("isClient", it) }
                 }
-            }
+        }
     }
 }

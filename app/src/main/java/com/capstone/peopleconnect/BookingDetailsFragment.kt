@@ -27,6 +27,7 @@ import androidx.core.content.ContextCompat
 import androidx.constraintlayout.widget.ConstraintLayout
 import android.content.Intent
 import android.net.Uri
+import android.view.View.GONE
 import com.bumptech.glide.Glide
 import com.capstone.peopleconnect.Client.Fragments.ActivityFragmentClient_ProviderProfile
 import com.capstone.peopleconnect.Helper.StripeHelper
@@ -58,6 +59,7 @@ class BookingDetailsFragment : Fragment() {
     private lateinit var btnBackClient: ImageButton
     private lateinit var clientRatingTextView: TextView
     private lateinit var providerRatingTextView: TextView
+    private lateinit var layoutHide: RelativeLayout
     private  var bookByEmail: String? =  null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -107,6 +109,7 @@ class BookingDetailsFragment : Fragment() {
         bookingDescriptionTextView = view.findViewById(R.id.tvBookingDescription)
         bookingDayTextView = view.findViewById(R.id.tvBookingDay)
         bookingAmountTextView = view.findViewById(R.id.tvBookingAmount)
+        layoutHide = view.findViewById(R.id.layoutHide)
         bookingTotalTextView = view.findViewById(R.id.tvBookingTotals)
         paymentMethodTextView = view.findViewById(R.id.tvPaymentMethod)
         providerProfileImage = view.findViewById(R.id.imgProviderProfile)
@@ -123,6 +126,13 @@ class BookingDetailsFragment : Fragment() {
         }
 
         val viewProfileTextView: TextView = view.findViewById(R.id.tvViewProfile)
+
+        if (!isClient){
+            viewProfileTextView.text = "Visit Client"
+        }else{
+            val viewLocationBtn: ImageButton = view.findViewById(R.id.viewLocationBtn)
+            viewLocationBtn.visibility = GONE
+            viewProfileTextView.text = "Visit Provider"}
 
         // Set click listener for the view profile TextView
         viewProfileTextView.setOnClickListener {
@@ -179,9 +189,14 @@ class BookingDetailsFragment : Fragment() {
                 bookingEndTimeTextView.text = booking.bookingEndTime
                 bookingDescriptionTextView.text = "Description: ${booking.bookingDescription}"
                 bookingDayTextView.text = booking.bookingDay
-                bookingAmountTextView.text = booking.bookingAmount.toString()
+                bookingAmountTextView.text = booking.bookingScope
                 bookingTotalTextView.text = "${booking.bookingAmount} PHP"
                 paymentMethodTextView.text = booking.bookingPaymentMethod
+
+                if (booking.bookingScope == "Select Task Scope") {
+                    // Ensure view is not null before accessing it
+                    view?.findViewById<RelativeLayout>(R.id.layoutHide)?.visibility = View.GONE
+                }
 
                 // Set up RecyclerView for displaying images
                 setupImageRecyclerView(booking.bookingUploadImages)

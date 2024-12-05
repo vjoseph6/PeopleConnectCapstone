@@ -15,6 +15,7 @@ import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.RelativeLayout
 import android.widget.TextView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -34,6 +35,7 @@ class SkillsPostFragmentSProvider : Fragment() {
     private lateinit var categoryName: String
     private lateinit var recyclerView: RecyclerView
     private val postImages = mutableListOf<String>()
+    private var tag: String? = null
     private lateinit var adapter: SkillsPostsAdapter
     private lateinit var emptyView: RelativeLayout
 
@@ -42,6 +44,7 @@ class SkillsPostFragmentSProvider : Fragment() {
         arguments?.let {
             email = it.getString("EMAIL").toString()
             categoryName = it.getString("CATEGORY_NAME").toString()
+            tag = it.getString("isClient")
         }
     }
 
@@ -51,10 +54,23 @@ class SkillsPostFragmentSProvider : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_skills_post_s_provider, container, false)
 
+
+
         val textView: TextView = view.findViewById(R.id.tvSkills)
         textView.text = categoryName
 
         val addPost: ImageButton = view.findViewById(R.id.addPostBtn)
+        val layout: ConstraintLayout = view.findViewById(R.id.pLayout)
+
+        if (tag.equals("isClient", ignoreCase = true)) {  // Use case-insensitive comparison to avoid mismatches
+            layout.setBackgroundResource(R.color.green)
+            addPost.visibility = View.GONE
+
+            val btnBack: ImageButton = view.findViewById(R.id.btnBack)
+            btnBack.setImageResource(R.drawable.backbtn2_client_)  // Set the resource for the image
+        }
+
+
         addPost.setOnClickListener {
             val newFragment = AddPostFragment.newInstance(email, categoryName)
             val transaction = parentFragmentManager.beginTransaction()
@@ -134,17 +150,19 @@ class SkillsPostFragmentSProvider : Fragment() {
             putExtra("IMAGE_URL", imageUrl)
             putExtra("EMAIL", email)
             putExtra("CATEGORY_NAME", categoryName)
+            putExtra("ISCLIENT", tag)
         }
         startActivity(intent)
     }
     companion object {
 
         @JvmStatic
-        fun newInstance(email: String?, categoryName: String?) =
+        fun newInstance(email: String?, categoryName: String?, isFromClient: String? = null) =
             SkillsPostFragmentSProvider().apply {
                 arguments = Bundle().apply {
                     putString("EMAIL", email)
                     putString("CATEGORY_NAME", categoryName)
+                    isFromClient?.let { putString("isClient", it) }
                 }
             }
     }
