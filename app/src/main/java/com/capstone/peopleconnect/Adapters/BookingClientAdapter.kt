@@ -182,7 +182,7 @@ class BookingClientAdapter(
         when (booking.bookingStatus) {
             "Accepted" -> holder.btnAccept.backgroundTintList =
                 ContextCompat.getColorStateList(holder.itemView.context, R.color.green)
-            "Failed" -> holder.btnAccept.backgroundTintList =
+            "Canceled" -> holder.btnAccept.backgroundTintList =
                 ContextCompat.getColorStateList(holder.itemView.context, R.color.red)
             "Complete", "Completed" -> holder.btnAccept.backgroundTintList =
                 ContextCompat.getColorStateList(holder.itemView.context, R.color.green)

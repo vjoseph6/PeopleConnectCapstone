@@ -276,9 +276,9 @@ class ActivityFragmentClient : Fragment() {
     // Filters bookings based on status
     private fun filterBookings(statusFilter: String) {
         val filteredBookings = when (statusFilter) {
-            "Booking" -> allBookings.filter { it.second.bookingStatus != "Canceled" && it.second.bookingStatus != "Complete" && it.second.bookingStatus != "Completed" }
-            "Successful" -> allBookings.filter { it.second.bookingStatus == "Complete" || it.second.bookingStatus == "Completed" }
-            "Failed" -> allBookings.filter { it.second.bookingStatus == "Failed" }
+            "Booking" -> allBookings.filter { it.second.bookingStatus == "Pending" }
+            "Successful" -> allBookings.filter { it.second.bookingStatus == "Accepted"}
+            "Failed" -> allBookings.filter { it.second.bookingStatus == "Canceled" || it.second.bookingStatus == "Complete" || it.second.bookingStatus == "Completed"}
             else -> allBookings
         }
 

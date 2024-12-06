@@ -29,6 +29,7 @@ import java.net.URL
 class RateFragmentClient : Fragment() {
     private var bookingId: String? = null
     private var providerEmail: String? = null
+    private var serviceOffered: String? = null
     private var email: String? = null  // Add this line
     private lateinit var binding: FragmentRateClientBinding
 
@@ -164,6 +165,7 @@ class RateFragmentClient : Fragment() {
                             bookingId = id,
                             raterEmail = email ?: "",
                             ratedEmail = providerEmail ?: "",
+                            serviceOffered = serviceOffered.toString(),
                             rating = binding.ratingBar.rating,
                             feedback = customFeedback.ifEmpty { binding.ratingDescription.text.toString() },
                             timestamp = System.currentTimeMillis()
@@ -256,9 +258,9 @@ class RateFragmentClient : Fragment() {
                         Log.d("UpdateUserRating", "Booking found for ID: $bookingId")
 
                         for (booking in bookingSnapshot.children) {
-                            val serviceOffered = booking.child("serviceOffered").getValue(String::class.java) ?: ""
-                            Log.d("UpdateUserRating", "Service offered: $serviceOffered")
-
+                            val serviceOffered1 = booking.child("serviceOffered").getValue(String::class.java) ?: ""
+                            Log.d("UpdateUserRating", "Service offered: $serviceOffered1")
+                            serviceOffered = serviceOffered1
                             // Step 2: Iterate over skills to find matching skill and user
                             skillsRef.addListenerForSingleValueEvent(object : ValueEventListener {
                                 override fun onDataChange(skillSnapshot: DataSnapshot) {
@@ -286,12 +288,18 @@ class RateFragmentClient : Fragment() {
                                                     if (skillItem != null) {
                                                         Log.d("UpdateUserRating", "Skill item found: $skillItem")
 
-                                                        // Update skill item properties
-                                                        skillItem.noOfBookings += 1
-                                                        skillItem.totalRating += binding.ratingBar.rating
-                                                        val skillItemRating = skillItem.totalRating / skillItem.noOfBookings
-                                                        val roundedRating = String.format("%.1f", skillItemRating).toFloat()
+                                                        val previousNoOfBookings = skillItem.noOfBookings ?: 0
+                                                        val previousTotalRating = skillItem.totalRating ?: 0.0f
+
+                                                        val newNoOfBookings = previousNoOfBookings + 1
+                                                        val newTotalRating = previousTotalRating + binding.ratingBar.rating
+                                                        val newUserRating = newTotalRating / newNoOfBookings // Calculate average rating
+                                                        val roundedRating = String.format("%.1f", newUserRating).toFloat()
+
+                                                        skillItem.noOfBookings = newNoOfBookings
+                                                        skillItem.totalRating = newTotalRating
                                                         skillItem.rating = roundedRating
+
                                                         Log.d("UpdateUserRating", "Updated skill item: $skillItem")
 
                                                         // Save updated skill item back to Firebase

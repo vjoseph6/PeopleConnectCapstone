@@ -125,7 +125,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="24dp"
             android:fontFamily="@font/bold_poppins"
-            android:text="Successful"
+            android:text="Ongoing"
             android:textColor="@color/black"
             android:textSize="16sp" />
 
@@ -134,7 +134,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="@font/bold_poppins"
-            android:text="Failed"
+            android:text="Completed"
             android:textColor="@color/black"
             android:textSize="16sp" />
     </LinearLayout>
@@ -148,6 +148,7 @@
         tools:listitem="@layout/present_item_booking"
         app:layout_constraintTop_toBottomOf="@id/subBookingsLayout"
         app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginBottom="60dp"
         android:layout_marginTop="16dp"/>
 
     <RelativeLayout

@@ -135,7 +135,7 @@
                     android:id="@+id/tvSuccessful_Present"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Successful"
+                    android:text="Ongoing"
                     android:textSize="16sp"
                     android:textColor="@color/black"
                     android:fontFamily="@font/bold_poppins"
@@ -145,7 +145,7 @@
                     android:id="@+id/tvFailed_Present"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Failed"
+                    android:text="Completed"
                     android:textSize="16sp"
                     android:textColor="@color/black"
                     android:fontFamily="@font/bold_poppins"/>
