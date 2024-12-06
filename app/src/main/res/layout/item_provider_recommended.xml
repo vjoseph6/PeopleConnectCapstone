@@ -38,6 +38,22 @@
             android:textColor="@color/black"
             android:textSize="14sp" />
 
+        <!-- Location -->
+        <TextView
+            android:id="@+id/providerLocation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/providerRating"
+            android:layout_alignStart="@id/providerDescription"
+            android:fontFamily="@font/regular_poppins"
+            android:layout_below="@id/providerDescription"
+            android:layout_marginTop="5dp"
+            android:text="8WMP+WHV, L. Jayme St, Mandaue City, 6014 Cebu, Philippines"
+            android:textColor="@color/green"
+            android:textSize="10sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
         <!-- Provider Rating -->
         <RatingBar
             android:id="@+id/providerRating"
@@ -84,6 +100,7 @@
             android:maxLines="1"
             android:ellipsize="end"
             android:layout_marginTop="4dp" />
+
 
         <!-- Price -->
         <TextView

@@ -8,5 +8,6 @@ data class ProviderData(
     val imageUrl: String?,
     val rating: Float?,
     val noOfBookings: Int?,
-    val lastBookingDate: String?
+    val lastBookingDate: String?,
+    val location: String?
 )

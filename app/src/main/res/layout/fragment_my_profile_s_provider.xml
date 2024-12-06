@@ -199,6 +199,7 @@
                     android:background="@drawable/sprovider_edit_text_rounded_corner"
                     android:fontFamily="@font/regular_poppins"
                     android:hint="Address"
+                    android:enabled="false"
                     android:paddingStart="16dp"
                     android:singleLine="true"
                     android:textSize="12sp" />

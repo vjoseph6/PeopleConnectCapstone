@@ -1,13 +1,18 @@
 package com.capstone.peopleconnect.Client.Fragments
 
+import android.app.Dialog
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.RadioGroup
 import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
@@ -18,6 +23,8 @@ import com.capstone.peopleconnect.Classes.ProviderData
 import com.capstone.peopleconnect.R
 import com.google.firebase.database.*
 import com.bumptech.glide.Glide
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 
 class ClientChooseProvider : Fragment() {
     private lateinit var skillName: String
@@ -46,6 +53,7 @@ class ClientChooseProvider : Fragment() {
             startTime = it.getString("startTime")
             endTime = it.getString("endTime")
         }
+
     }
 
     override fun onCreateView(
@@ -58,6 +66,7 @@ class ClientChooseProvider : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
 
         emptyView = view.findViewById(R.id.emptyView)
         recyclerView = view.findViewById(R.id.categoryRecyclerView)
@@ -174,7 +183,7 @@ class ClientChooseProvider : Fragment() {
 
     private fun retrieveAllProviders(previouslyBookedEmails: Map<String, String>) {
         val skillsRef = FirebaseDatabase.getInstance().getReference("skills")
-        
+
         skillsRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 providerList.clear()
@@ -182,7 +191,7 @@ class ClientChooseProvider : Fragment() {
 
                 for (skillSetSnapshot in snapshot.children) {
                     val user = skillSetSnapshot.child("user").getValue(String::class.java)
-                    
+
                     if (user == email) continue
 
                     processSkillSnapshot(skillSetSnapshot, user, previouslyBookedEmails)
@@ -201,12 +210,12 @@ class ClientChooseProvider : Fragment() {
     }
 
     private fun processSkillSnapshot(
-        skillSetSnapshot: DataSnapshot, 
-        userEmail: String?, 
+        skillSetSnapshot: DataSnapshot,
+        userEmail: String?,
         previouslyBookedEmails: Map<String, String>
     ) {
         val skillItemsSnapshot = skillSetSnapshot.child("skillItems")
-        
+
         if (skillItemsSnapshot.exists()) {
             for (skillSnapshot in skillItemsSnapshot.children) {
                 val skillName = skillSnapshot.child("name").getValue(String::class.java)
@@ -216,7 +225,7 @@ class ClientChooseProvider : Fragment() {
                         // Log the skill rate for debugging
                         val rate = skillSnapshot.child("skillRate").getValue(Int::class.java)
                         Log.d("SkillRate", "SkillRate for $skillName: $rate")
-                        
+
                         userEmail?.let { email ->
                             retrieveUserDetails(
                                 email,
@@ -306,7 +315,8 @@ class ClientChooseProvider : Fragment() {
             description = skillSnapshot.child("description").getValue(String::class.java),
             rating = skillSnapshot.child("rating").getValue(Float::class.java) ?: 0f,
             noOfBookings = userSnapshot.child("noOfBookings").getValue(Int::class.java) ?: 0,
-            lastBookingDate = lastBookingDate
+            lastBookingDate = lastBookingDate,
+            location = userSnapshot.child("address").getValue(String::class.java)
         )
     }
 

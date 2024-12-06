@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+import android.os.Handler
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -32,6 +34,7 @@ class ProfileFragmentClient : Fragment() {
     private var lastName: String? = null
     private var userAddress: String? = null
     private var email: String? = null
+    private var serviceType: String? = null
     private var profileImageUrl: String? = null
     private lateinit var userQuery: Query
     private lateinit var valueEventListener: ValueEventListener
@@ -65,6 +68,41 @@ class ProfileFragmentClient : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupProfile(view)
+
+        arguments?.let { args ->
+            val target = args.getString("target")
+            serviceType = args.getString("serviceType")
+            Log.d("SERVICE FCKING OFFERED 2 ", "$serviceType")
+            val intent = args.getString("intent")
+
+            if (intent == "add_post") {
+                Handler().postDelayed({
+                    if (serviceType.isNullOrEmpty() || serviceType == "Service Type not found") {
+                        navigateToPost()
+                    } else if (target == "add_post") {
+                        Handler().postDelayed({
+                            if (serviceType.isNullOrEmpty() || serviceType == "Service Type not found") {
+                                navigateToPost()
+                            } else {
+                                navigateToPost()
+                            }
+                        }, 500)
+                    }
+                }, 500)
+            }
+        }
+    }
+
+    private fun navigateToPost() {
+
+        val email = email
+        val intent = arguments?.getString("intent") ?: arguments?.getString("target")
+
+        val securityFragment = ManagePostFragment.newInstance(email, serviceType, intent)
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.frame_layout, securityFragment)
+            .addToBackStack(null)
+            .commit()
     }
 
     override fun onStart() {
@@ -128,7 +166,8 @@ class ProfileFragmentClient : Fragment() {
         // Security icons
         val postIcons: LinearLayout = view.findViewById(R.id.postMenuLayout_client)
         postIcons.setOnClickListener {
-            val securityFragment = ManagePostFragment.newInstance(email = email)
+            val securityFragment = ManagePostFragment.newInstance(email = email,
+                serviceType = arguments?.getString("serviceType").toString(), intent = arguments?.getString("intent").toString())
             parentFragmentManager.beginTransaction()
                 .replace(R.id.frame_layout, securityFragment)
                 .addToBackStack(null)
