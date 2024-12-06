@@ -1,6 +1,7 @@
 package com.capstone.peopleconnect.Client.Fragments
 
 import android.os.Bundle
+import android.os.Handler
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -25,6 +26,7 @@ import com.bumptech.glide.Glide
 class ManagePostFragment : Fragment() {
 
     private var email: String? = null
+    private var serviceType: String? = null
     private lateinit var recyclerView: RecyclerView
     private lateinit var emptyView: RelativeLayout
     private lateinit var adapter: ClientPostAdapter
@@ -34,6 +36,32 @@ class ManagePostFragment : Fragment() {
         arguments?.let {
             email = it.getString("EMAIL").toString()
         }
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        arguments?.let { args ->
+            serviceType = args.getString("serviceType")
+            val intent = args.getString("intent")
+
+            if (intent == "add_post") {
+                Handler().postDelayed({
+                    if (serviceType.isNullOrEmpty() || serviceType == "Service Type not found") {
+                        navigateToAddPost()
+                    } else { navigateToAddPost()}
+                }, 500)
+            }
+        }
+    }
+
+    private fun navigateToAddPost() {
+        val email = email
+        val addPostFragment = AddPostClientFragment.newInstance(email.toString(), serviceType = serviceType)
+        requireActivity().supportFragmentManager.beginTransaction()
+            .replace(R.id.frame_layout, addPostFragment)
+            .addToBackStack(null)
+            .commit()
     }
 
     override fun onCreateView(
@@ -107,11 +135,9 @@ class ManagePostFragment : Fragment() {
                     }
 
                     if (posts.isEmpty()) {
-                        Log.d("FIREBASE", "No posts found for email: $email")
                         recyclerView.visibility = View.GONE
                         emptyView.visibility = View.VISIBLE
                     } else {
-                        Log.d("FIREBASE", "Posts found: ${posts.size}")
                         recyclerView.visibility = View.VISIBLE
                         emptyView.visibility = View.GONE
                         adapter.updatePosts(posts)
@@ -128,10 +154,12 @@ class ManagePostFragment : Fragment() {
     companion object {
 
         @JvmStatic
-        fun newInstance(email: String?) =
+        fun newInstance(email: String?, serviceType:String?, intent:String?) =
             ManagePostFragment().apply {
                 arguments = Bundle().apply {
                     putString("EMAIL", email)
+                    serviceType?.let { putString("serviceType", it) }
+                    intent?.let { putString("intent", it) }
                 }
             }
     }

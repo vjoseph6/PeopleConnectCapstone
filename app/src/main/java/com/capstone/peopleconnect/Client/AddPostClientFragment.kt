@@ -116,10 +116,14 @@ class AddPostClientFragment : Fragment() {
         }
 
         arguments?.let {
+            val serviceType = it.getString("SERVICE_TYPE")
             val category = it.getString("CATEGORY")
-            fetchCategories(category)
-            if (category != null && category.isNotBlank() && categories.contains(category)) {
-                // Set the spinner to the correct category
+
+            if (serviceType != null && serviceType.isNotBlank()) {
+                fetchCategories(serviceType)
+                setSpinnerSelection(categorySpinner, serviceType)
+            } else if (category != null && category.isNotBlank() && categories.contains(category)) {
+                fetchCategories(category)
                 setSpinnerSelection(categorySpinner, category)
             } else {
                 // If no valid category, default to "Select Category" or show all categories
@@ -809,7 +813,7 @@ class AddPostClientFragment : Fragment() {
 
     companion object {
         @JvmStatic
-        fun newInstance(email: String, post: Post? = null) =
+        fun newInstance(email: String, post: Post? = null, serviceType: String? = null) =
             AddPostClientFragment().apply {
                 arguments = Bundle().apply {
                     putString("EMAIL", email) // Always pass the email
@@ -823,6 +827,11 @@ class AddPostClientFragment : Fragment() {
                         putBoolean("IS_FROM_CLIENT_ADAPTER", true) // Tag to indicate editing
                         putString("POST_ID", post.postId) // Pass the post ID for editing
                     }
+
+                    if (!serviceType.isNullOrEmpty()) {
+                        putString("SERVICE_TYPE", serviceType) // Pass service type if provided
+                    }
+
                 }
             }
 

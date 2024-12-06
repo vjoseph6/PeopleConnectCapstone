@@ -298,10 +298,20 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
                                 approvedImages.addAll(imagesList) // Add all approved images
                             }
                         }
-                        // Pass the collected images to the RecyclerView adapter
-                        setupRecyclerView(approvedImages)
+                        if (approvedImages.isEmpty()) {
+                            // Hide viewAll and show noItemsTextView
+                            view?.findViewById<TextView>(R.id.viewAll)?.visibility = View.GONE
+                            view?.findViewById<TextView>(R.id.noItemsTextView)?.visibility = View.VISIBLE
+                        } else {
+                            // Show viewAll and hide noItemsTextView
+                            view?.findViewById<TextView>(R.id.viewAll)?.visibility = View.VISIBLE
+                            view?.findViewById<TextView>(R.id.noItemsTextView)?.visibility = View.GONE
+                            setupRecyclerView(approvedImages)
+                        }
                     } else {
-                        Log.d(TAG, "No approved posts found for email: $email")
+                        // No posts exist
+                        view?.findViewById<TextView>(R.id.viewAll)?.visibility = View.GONE
+                        view?.findViewById<TextView>(R.id.noItemsTextView)?.visibility = View.VISIBLE
                     }
                 }
 
@@ -310,6 +320,7 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
                 }
             })
     }
+
 
     private fun setupRecyclerView(postImages: List<String>) {
         val recyclerView = view?.findViewById<RecyclerView>(R.id.worksRecyclerView)
@@ -321,6 +332,9 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
 
             // Load the image into the full-screen view using Picasso
             Picasso.get().load(imageUrl).into(fullScreenImageView)
+
+            val btnClose: ImageButton = fullScreenDialog.findViewById(R.id.btnClose)
+            btnClose.setOnClickListener { fullScreenDialog.dismiss() }
 
             // Show the full-screen dialog
             fullScreenDialog.show()

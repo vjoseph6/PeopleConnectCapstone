@@ -231,10 +231,23 @@ class ClientMainActivity : AppCompatActivity() {
                     return@runOnUiThread
                 }
 
+                intent == "add_post"  -> {
+                    // High confidence book service intent
+                    handleAddPost(target, serviceType, intent)
+
+                    if (target == "add_post") {
+                        // High confidence add post intent
+                        handleAddPost(target, serviceType, intent)
+                    }
+
+                    return@runOnUiThread
+                }
+
                 // If no recognizable intent, fall back to target
                 target == "cancel_booking" -> {
                     handleCancelBooking(target, serviceType, intent)
                 }
+
                 target == "book_service" -> {
                     handleBookService(bookDay, startTime, endTime, rating, serviceType, intent)
                 }
@@ -250,6 +263,17 @@ class ClientMainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun handleAddPost(target: String, serviceType: String, intent: String) {
+
+        val additionalParams = Bundle().apply {
+            putString("target", target)
+            putString("serviceType", serviceType)
+            putString("intent", intent)
+        }
+        loadFragment(ProfileFragmentClient(), "profile", firstName, middleName, lastName, userName, address, email, profileImage, additionalParams)
+        bottomNavigationView.selectedItemId = R.id.profile
     }
 
     private fun handleBookService(bookDay: String, startTime: String, endTime: String, rating: String, serviceType: String, intent: String) {

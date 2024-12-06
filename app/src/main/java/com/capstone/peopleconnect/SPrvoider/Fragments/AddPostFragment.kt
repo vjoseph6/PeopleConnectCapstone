@@ -29,6 +29,9 @@ import com.capstone.peopleconnect.R
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 class AddPostFragment : Fragment() {
     private var email: String? = null
@@ -166,6 +169,7 @@ class AddPostFragment : Fragment() {
             postId = postId,
             postDescription = postDesc,
             email = email,
+            bookDay = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Calendar.getInstance().time),
             categoryName = categoryName.toString(),
             postImages = imageUrls,
             postStatus = "Pending"
