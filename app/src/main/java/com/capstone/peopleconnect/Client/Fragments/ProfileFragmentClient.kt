@@ -18,6 +18,7 @@ import com.capstone.peopleconnect.Classes.User
 import com.capstone.peopleconnect.R
 import com.capstone.peopleconnect.SPrvoider.Fragments.LocationFragmentSProvider
 import com.capstone.peopleconnect.SelectAccount
+import com.capstone.peopleconnect.SiriScopeFragment
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
@@ -72,7 +73,6 @@ class ProfileFragmentClient : Fragment() {
         arguments?.let { args ->
             val target = args.getString("target")
             serviceType = args.getString("serviceType")
-            Log.d("SERVICE FCKING OFFERED 2 ", "$serviceType")
             val intent = args.getString("intent")
 
             if (intent == "add_post") {
@@ -178,6 +178,15 @@ class ProfileFragmentClient : Fragment() {
         val securityIcons: LinearLayout = view.findViewById(R.id.securityMenuLayout_client)
         securityIcons.setOnClickListener {
             val securityFragment = SettingsSecurityFragmentClient.newInstance(email = email)
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, securityFragment)
+                .addToBackStack(null)
+                .commit()
+        }
+
+        val scopeIcons: LinearLayout = view.findViewById(R.id.scopeLayout_client)
+        scopeIcons.setOnClickListener {
+            val securityFragment = SiriScopeFragment.newInstance(email = email)
             parentFragmentManager.beginTransaction()
                 .replace(R.id.frame_layout, securityFragment)
                 .addToBackStack(null)

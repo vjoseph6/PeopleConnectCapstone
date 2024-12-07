@@ -34,6 +34,7 @@ class BookingClientAdapter(
         val btnAccept: Button = itemView.findViewById(R.id.btnAccept_Present)
         val btnCancel: Button = itemView.findViewById(R.id.btnCancel_Present)
         val serviceTextView: TextView = itemView.findViewById(R.id.serviceOffered)
+        val negotiateTextView: TextView = itemView.findViewById(R.id.tvNegotiation)
 
         init {
             // Existing click listener
@@ -176,7 +177,7 @@ class BookingClientAdapter(
 
         // Set the status of the booking
         holder.btnAccept.text = when (booking.bookingStatus) {
-            "Complete" -> "Completed"  // Convert "Complete" to "Completed"
+            "Complete" -> "Completed"
             else -> booking.bookingStatus
         }
         when (booking.bookingStatus) {

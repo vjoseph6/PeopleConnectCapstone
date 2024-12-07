@@ -9,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -25,6 +26,7 @@ class YourProjectsFragmentSProvider : Fragment() {
 
     private var email: String? = null
     private var tag: String? = null
+    private var serviceType: String? = null
     private lateinit var categoryAdapter: CategoryAdapter
     private lateinit var recyclerView: RecyclerView
 
@@ -33,6 +35,10 @@ class YourProjectsFragmentSProvider : Fragment() {
         arguments?.let {
             email = it.getString("EMAIL")
             tag = it.getString("isClient")
+            serviceType = it.getString("serviceType")
+        }
+        if (serviceType.isNullOrBlank()) {
+            Toast.makeText(requireContext(), "Please choose a service type", Toast.LENGTH_SHORT).show()
         }
 
     }
@@ -115,6 +121,29 @@ class YourProjectsFragmentSProvider : Fragment() {
                                 // Update the adapter only after all items have been fetched
                                 if (fetchedItems == totalItems) {
                                     categoryAdapter.updateCategories(categories)
+
+                                    // Check if serviceType matches any category
+                                    serviceType?.let { type ->
+                                        val matchingCategory = categories.find {
+                                            it.name.equals(type, ignoreCase = true)
+                                        }
+
+                                        matchingCategory?.let { category ->
+                                            // Automatically trigger the category click
+                                            val skillPostFragment = SkillsPostFragmentSProvider.newInstance(
+                                                email = email,
+                                                categoryName = category.name,
+                                                isFromClient = tag,
+                                                serviceType = category.name
+                                            )
+
+                                            // Navigate to the SkillsPostFragment
+                                            requireActivity().supportFragmentManager.beginTransaction()
+                                                .replace(R.id.frame_layout, skillPostFragment)
+                                                .addToBackStack(null)
+                                                .commit()
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -164,10 +193,11 @@ class YourProjectsFragmentSProvider : Fragment() {
     companion object {
 
         @JvmStatic
-        fun newInstance(email:String?, tag:String? = null ) = YourProjectsFragmentSProvider().apply {
+        fun newInstance(email:String?,  tag:String? = null, serviceType:String? = null) = YourProjectsFragmentSProvider().apply {
                 arguments = Bundle().apply {
                     putString("EMAIL", email)
                     tag?.let { putString("isClient", it) }
+                    serviceType?.let { putString("serviceType", it) }
                 }
         }
     }

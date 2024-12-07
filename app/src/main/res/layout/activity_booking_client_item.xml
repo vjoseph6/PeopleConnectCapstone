@@ -9,6 +9,21 @@
     app:cardElevation="4dp"
     app:cardCornerRadius="12dp">
 
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TextView
+            android:id="@+id/tvNegotiation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Negotiate"
+            android:textSize="14sp"
+            android:layout_alignParentEnd="true"
+            android:layout_margin="5dp"
+            android:textColor="@color/orange"
+            android:fontFamily="@font/bold_poppins"/>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="150dp"
@@ -87,5 +102,7 @@
             </RelativeLayout>
         </LinearLayout>
     </LinearLayout>
+
+    </RelativeLayout>
 
 </androidx.cardview.widget.CardView>
