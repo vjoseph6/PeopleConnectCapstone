@@ -36,6 +36,7 @@ class SkillsPostFragmentSProvider : Fragment() {
     private lateinit var recyclerView: RecyclerView
     private val postImages = mutableListOf<String>()
     private var tag: String? = null
+    private var serviceType: String? = null
     private lateinit var adapter: SkillsPostsAdapter
     private lateinit var emptyView: RelativeLayout
 
@@ -45,6 +46,7 @@ class SkillsPostFragmentSProvider : Fragment() {
             email = it.getString("EMAIL").toString()
             categoryName = it.getString("CATEGORY_NAME").toString()
             tag = it.getString("isClient")
+            serviceType = it.getString("serviceType")
         }
     }
 
@@ -69,6 +71,17 @@ class SkillsPostFragmentSProvider : Fragment() {
             val btnBack: ImageButton = view.findViewById(R.id.btnBack)
             btnBack.setImageResource(R.drawable.backbtn2_client_)  // Set the resource for the image
         }
+
+        if (!serviceType.isNullOrBlank() && serviceType.equals(categoryName, ignoreCase = true)) {
+
+            val newFragment = AddPostFragment.newInstance(email, categoryName)
+            val transaction = parentFragmentManager.beginTransaction()
+            transaction.replace(R.id.frame_layout, newFragment) // Replace 'frame_layout' with the actual container ID
+            transaction.addToBackStack(null) // This allows the user to navigate back to the current fragment
+            transaction.commit()
+
+        }
+
 
 
         addPost.setOnClickListener {
@@ -157,12 +170,13 @@ class SkillsPostFragmentSProvider : Fragment() {
     companion object {
 
         @JvmStatic
-        fun newInstance(email: String?, categoryName: String?, isFromClient: String? = null) =
+        fun newInstance(email: String?, categoryName: String?, isFromClient: String? = null, serviceType: String? = null) =
             SkillsPostFragmentSProvider().apply {
                 arguments = Bundle().apply {
                     putString("EMAIL", email)
                     putString("CATEGORY_NAME", categoryName)
                     isFromClient?.let { putString("isClient", it) }
+                    serviceType?.let { putString("serviceType", it) }
                 }
             }
     }

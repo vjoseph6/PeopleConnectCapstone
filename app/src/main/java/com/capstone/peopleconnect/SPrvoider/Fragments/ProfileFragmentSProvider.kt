@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+import android.os.Handler
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,12 +15,15 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import com.capstone.peopleconnect.Classes.User
+import com.capstone.peopleconnect.Client.Fragments.ManagePostFragment
 import com.capstone.peopleconnect.Client.Fragments.ProfileFragmentClient
 import com.capstone.peopleconnect.R
 import com.capstone.peopleconnect.SPrvoider.Fragments.LocationFragmentSProvider
 import com.capstone.peopleconnect.SPrvoider.Fragments.SettingsSecurityFragmentSProvider
 import com.capstone.peopleconnect.SPrvoider.Fragments.YourProjectsFragmentSProvider
 import com.capstone.peopleconnect.SelectAccount
+import com.capstone.peopleconnect.SiriScopeFragment
+import com.capstone.peopleconnect.SiriScopeFragmentProvider
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
@@ -35,6 +40,7 @@ class ProfileFragmentSProvider : Fragment() {
     private var lastName: String? = null
     private var userAddress: String? = null
     private var email: String? = null
+    private var serviceType: String? = null
     private var profileImageUrl: String? = null
     private lateinit var auth: FirebaseAuth
 
@@ -71,7 +77,44 @@ class ProfileFragmentSProvider : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupProfile(view)
+
+        arguments?.let { args ->
+            val target = args.getString("target")
+            serviceType = args.getString("serviceType")
+            val intent = args.getString("intent")
+
+            if (intent == "add_post") {
+                Handler().postDelayed({
+                    if (serviceType.isNullOrEmpty() || serviceType == "Service Type not found") {
+                        navigateToPost()
+                    } else if (target == "add_post") {
+                        Handler().postDelayed({
+                            if (serviceType.isNullOrEmpty() || serviceType == "Service Type not found") {
+                                navigateToPost()
+                            } else {
+                                navigateToPost()
+                            }
+                        }, 500)
+                    }
+                }, 500)
+            }
+        }
+
     }
+
+    private fun navigateToPost() {
+
+        val email = email
+        val intent = arguments?.getString("intent") ?: arguments?.getString("target")
+
+        val securityFragment = YourProjectsFragmentSProvider.newInstance(email = email, tag = null, serviceType = serviceType.toString())
+        Log.d("SERVICE OFFERED IN PROVIDER", "${serviceType.toString()}")
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.frame_layout, securityFragment)
+            .addToBackStack(null)
+            .commit()
+    }
+
 
     override fun onStart() {
         super.onStart()
@@ -101,6 +144,8 @@ class ProfileFragmentSProvider : Fragment() {
         super.onStop()
         userQuery.removeEventListener(valueEventListener)
     }
+
+
 
     private fun setupProfile(view: View) {
         val tvName: TextView = view.findViewById(R.id.tvName_sprovider)
@@ -135,6 +180,15 @@ class ProfileFragmentSProvider : Fragment() {
         val securityIcons: LinearLayout = view.findViewById(R.id.securityMenuLayout_sprovider)
         securityIcons.setOnClickListener {
             val securityFragment = SettingsSecurityFragmentSProvider.newInstance(email = email)
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, securityFragment)
+                .addToBackStack(null)
+                .commit()
+        }
+
+        val scopeIcons: LinearLayout = view.findViewById(R.id.scopeLayout_provider)
+        scopeIcons.setOnClickListener {
+            val securityFragment = SiriScopeFragmentProvider.newInstance(email = email)
             parentFragmentManager.beginTransaction()
                 .replace(R.id.frame_layout, securityFragment)
                 .addToBackStack(null)

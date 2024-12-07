@@ -49,8 +49,8 @@ class ActivityFragmentClient : Fragment() {
     private lateinit var recyclerView: RecyclerView
     private val bookings = mutableListOf<Pair<String, Bookings>>()  // Store Pair of key and booking
     private var email: String? = null
-    private val allBookings = mutableListOf<Pair<String, Bookings>>()// Store all bookings for filtering
-    private var currentFilter: String = "Booking"  // Track the current tab/filter
+    private val allBookings = mutableListOf<Pair<String, Bookings>>()
+    private var currentFilter: String = "Booking"
     private lateinit var notificationBadge: TextView
     private var lastSelectedTab: String = "Booking"  // Track the last selected tab
 
@@ -181,7 +181,6 @@ class ActivityFragmentClient : Fragment() {
 
         updateDateText(view)
 
-        // Check if we need to auto-cancel bookings
         // Check if we need to auto-cancel bookings
         arguments?.let { args ->
             val target = args.getString("target")

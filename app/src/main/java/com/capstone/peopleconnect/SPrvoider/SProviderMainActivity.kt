@@ -70,8 +70,26 @@ class SProviderMainActivity : AppCompatActivity() {
                         intent: String
                     ) {
                         runOnUiThread {
-                            // First, check the intent
+                          // First, check the intent
                             when {
+
+                                intent == "cancel_booking"  -> {
+                                    handleCancelBooking(target, serviceType, intent)
+                                    return@runOnUiThread
+                                }
+
+                                intent == "add_post"  -> {
+                                    // High confidence book service intent
+                                    handleAddPost(target, serviceType, intent)
+
+                                    if (target == "add_post") {
+                                        // High confidence add post intent
+                                        handleAddPost(target, serviceType, intent)
+                                    }
+
+                                    return@runOnUiThread
+                                }
+
                                 intent == "cancel_booking"  -> {
                                     val additionalParams = Bundle().apply {
                                         putString("target", "cancel_booking")
@@ -337,6 +355,27 @@ class SProviderMainActivity : AppCompatActivity() {
                 else -> false
             }
         }
+    }
+
+    private fun handleCancelBooking(target: String, serviceType: String, intent: String) {
+        val additionalParams = Bundle().apply {
+            putString("target", target)
+            putString("serviceType", serviceType)
+            putString("intent", intent)
+        }
+        loadFragment(ActivityFragmentSProvider(), "activities", firstName, middleName, lastName, userName, address, email, profileImage, additionalParams)
+        bottomNavigationView.selectedItemId = R.id.activities
+    }
+
+    private fun handleAddPost(target: String, serviceType: String, intent: String) {
+
+        val additionalParams = Bundle().apply {
+            putString("target", target)
+            putString("serviceType", serviceType)
+            putString("intent", intent)
+        }
+        loadFragment(ProfileFragmentSProvider(), "profile", firstName, middleName, lastName, userName, address, email, profileImage, additionalParams)
+        bottomNavigationView.selectedItemId = R.id.profile
     }
 
     override fun onBackPressed() {

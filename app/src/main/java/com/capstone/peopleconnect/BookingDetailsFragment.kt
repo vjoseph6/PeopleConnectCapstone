@@ -40,7 +40,6 @@ class BookingDetailsFragment : Fragment() {
     private var isClient: Boolean = false
     private lateinit var stripeHelper: StripeHelper  // Add this line (Mao rani ako gi add/modify)
 
-    // Views for displaying booking details
     private lateinit var providerEmailTextView: TextView
     private lateinit var bookingStatusTextView: TextView
     private lateinit var serviceOfferedTextView: TextView

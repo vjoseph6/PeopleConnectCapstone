@@ -64,7 +64,17 @@ class AddPostFragment : Fragment() {
         postDesc = postDescEditText.text.toString()
 
         val btnBack: ImageButton = view.findViewById(R.id.btnBackSProviderSKills)
-        btnBack.setOnClickListener { requireActivity().supportFragmentManager.popBackStack() }
+        btnBack.setOnClickListener {
+
+            val previousFragment = YourProjectsFragmentSProvider.newInstance(
+                email = email,
+                tag = tag,
+                serviceType = null
+            )
+
+            requireActivity().supportFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, previousFragment)
+                .commit()}
 
         // Load placeholder image with Glide
         Glide.with(this)

@@ -1,8 +1,10 @@
 package com.capstone.peopleconnect.SPrvoider.Fragments
 
 import android.app.AlertDialog
+import android.graphics.drawable.ColorDrawable
 import com.capstone.peopleconnect.Notifications.model.NotificationModel
 import android.os.Bundle
+import android.os.Handler
 import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -66,9 +68,208 @@ class ActivityFragmentSProvider : Fragment(){
         return inflater.inflate(R.layout.fragment_activity_s_provider, container, false)
     }
 
+    private fun cancelAllPendingBookings() {
+        val pendingBookings = allBookings.filter {
+            it.second.bookingStatus != "Canceled" &&
+                    it.second.bookingStatus != "Completed" &&
+                    it.second.bookingStatus != "COMPLETED" &&
+                    it.second.bookingStatus != "COMPLETE" &&
+                    it.second.bookingStatus != "Failed" &&
+                    it.second.bookingStatus != "Accepted"
+        }
+
+        if (pendingBookings.isEmpty()) {
+            Toast.makeText(context, "No pending bookings to cancel", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.client_dialog_logout, null)
+        val tvTitle: TextView = dialogView.findViewById(R.id.tvLogoutTitle)
+        val btnDelete: Button = dialogView.findViewById(R.id.btnLogout)
+        val tvCancel: TextView = dialogView.findViewById(R.id.tvCancel)
+
+        // Customize dialog text for delete confirmation
+        tvTitle.text = " Are you sure you want to cancel all pending bookings?"
+        btnDelete.text = "Yes, cancel it"
+
+        // Create and display the AlertDialog
+        val alertDialog = androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .setCancelable(true)
+            .create()
+        alertDialog.window?.setBackgroundDrawable(ColorDrawable(0)) // Make background transparent
+        alertDialog.window?.attributes?.windowAnimations = R.style.DialogAnimation // Apply animations
+        alertDialog.show()
+
+        tvCancel.setOnClickListener {
+            alertDialog.dismiss()
+        }
+
+        btnDelete.setOnClickListener {
+            showCancellationDialog(pendingBookings)
+            alertDialog.dismiss()
+        }
+
+        alertDialog.show()
+    }
+
+    private fun cancelBookingsByService(targetServiceType: String) {
+        val pendingBookings = allBookings.filter {
+            it.second.bookingStatus != "Canceled" &&
+                    it.second.bookingStatus != "Completed" &&
+                    it.second.bookingStatus != "COMPLETED" &&
+                    it.second.bookingStatus != "COMPLETE" &&
+                    it.second.bookingStatus != "Failed" &&
+                    it.second.bookingStatus != "Accepted" &&
+                    it.second.serviceOffered == targetServiceType
+        }
+
+        if (pendingBookings.isEmpty()) {
+            Toast.makeText(
+                context,
+                "No pending bookings found for $targetServiceType",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.client_dialog_logout, null)
+        val tvTitle: TextView = dialogView.findViewById(R.id.tvLogoutTitle)
+        val btnDelete: Button = dialogView.findViewById(R.id.btnLogout)
+        val tvCancel: TextView = dialogView.findViewById(R.id.tvCancel)
+
+        // Customize dialog text for delete confirmation
+        tvTitle.text = " Are you sure you want to cancel all pending bookings for $targetServiceType?"
+        btnDelete.text = "Yes, cancel it"
+
+        // Create and display the AlertDialog
+        val alertDialog = androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .setCancelable(true)
+            .create()
+        alertDialog.window?.setBackgroundDrawable(ColorDrawable(0)) // Make background transparent
+        alertDialog.window?.attributes?.windowAnimations = R.style.DialogAnimation // Apply animations
+        alertDialog.show()
+
+        tvCancel.setOnClickListener {
+            alertDialog.dismiss()
+        }
+
+        alertDialog.show()
+
+        btnDelete.setOnClickListener {
+            showCancellationDialog(pendingBookings)
+            alertDialog.dismiss()
+        }
+
+    }
+
+    private fun showCancellationDialog(bookingsToCancel: List<Pair<String, Bookings>>) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_cancel_booking_sprovider, null)
+        val builder = AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .setCancelable(true)
+
+        val alertDialog = builder.create()
+        val btnYes: Button = dialogView.findViewById(R.id.btnYes)
+        val btnNo: TextView = dialogView.findViewById(R.id.btnNo)
+        val radioGroup: RadioGroup = dialogView.findViewById(R.id.optionsRadioGroup)
+
+
+        btnYes.setOnClickListener {
+            val selectedOptionId = radioGroup.checkedRadioButtonId
+            if (selectedOptionId != -1) {
+                val selectedRadioButton: RadioButton = dialogView.findViewById(selectedOptionId)
+                val cancellationReason = selectedRadioButton.text.toString()
+
+                var successCount = 0
+                bookingsToCancel.forEach { (bookingKey, _) ->
+                    val databaseReference = FirebaseDatabase.getInstance()
+                        .getReference("bookings/$bookingKey")
+
+                    val updates = mapOf(
+                        "bookingCancelProvider" to cancellationReason
+                    )
+
+                    databaseReference.updateChildren(updates).addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            databaseReference.removeValue().addOnCompleteListener { removeTask ->
+                                if (removeTask.isSuccessful) {
+                                    successCount++
+                                    if (successCount == bookingsToCancel.size) {
+                                        Toast.makeText(
+                                            context,
+                                            "Successfully canceled ${bookingsToCancel.size} booking(s)",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        email?.let { fetchBookingsForProvider(it) }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                alertDialog.dismiss()
+            } else {
+                Toast.makeText(
+                    context,
+                    "Please select a reason for canceling",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
+        btnNo.setOnClickListener {
+            alertDialog.dismiss()
+        }
+
+        alertDialog.window?.attributes?.windowAnimations = R.style.DialogAnimation
+        alertDialog.show()
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+
+        arguments?.let { args ->
+            val target = args.getString("target")
+            val serviceType = args.getString("serviceType")
+            val intent = args.getString("intent")
+
+            // First, check the intent
+            if (intent == "cancel_booking") {
+                val tvBooking = view.findViewById<TextView>(R.id.tvBooking_Present)
+                tvBooking.performClick()
+
+                Handler().postDelayed({
+                    // If intent matches, proceed with cancellation
+                    if (serviceType.isNullOrEmpty() || serviceType == "Service Type not found") {
+                        // Cancel all pending bookings
+                        cancelAllPendingBookings()
+                    } else {
+                        // Cancel specific service type bookings
+                        cancelBookingsByService(serviceType)
+                    }
+                }, 500)
+            }
+            // If intent doesn't match, check target as a fallback
+            else if (target == "cancel_booking") {
+                val tvBooking = view.findViewById<TextView>(R.id.tvBooking_Present)
+                tvBooking.performClick()
+
+                Handler().postDelayed({
+                    if (serviceType.isNullOrEmpty() || serviceType == "Service Type not found") {
+                        // Cancel all pending bookings
+                        cancelAllPendingBookings()
+                    } else {
+                        // Cancel specific service type bookings
+                        cancelBookingsByService(serviceType)
+                    }
+                }, 500)
+            } else {
+
+            }
+        }
 
         // Add after existing view initialization
         notificationBadgeSProvider = view.findViewById(R.id.notificationBadge_sprovider)
