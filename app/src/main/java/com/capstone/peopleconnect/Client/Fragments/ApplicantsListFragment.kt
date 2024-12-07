@@ -24,8 +24,10 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.bumptech.glide.Glide
 import android.util.Log
+import com.capstone.peopleconnect.Notifications.model.NotificationModel
+import com.google.firebase.auth.FirebaseAuth
 
-class ApplicantsListFragment : Fragment() {
+class   ApplicantsListFragment : Fragment() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: ApplicantsAdapter
     private lateinit var database: DatabaseReference
@@ -205,7 +207,6 @@ class ApplicantsListFragment : Fragment() {
 
         // Set click listeners
         btnConfirm.setOnClickListener {
-            // Proceed with acceptance
             database.child("post_applicants")
                 .orderByChild("postId")
                 .equalTo(postId)
@@ -215,13 +216,16 @@ class ApplicantsListFragment : Fragment() {
                             val currentApp = applicationSnapshot.getValue(PostApplication::class.java)
                             if (currentApp?.providerEmail == application.providerEmail) {
                                 applicationSnapshot.ref.child("status").setValue("Accepted")
+
+                                // Send notification to service provider
+                                sendAcceptanceNotification(application.providerEmail)
+
                                 Toast.makeText(context, "Application accepted", Toast.LENGTH_SHORT).show()
                                 break
                             }
                         }
                         dialog.dismiss()
                     }
-
                     override fun onCancelled(error: DatabaseError) {
                         Toast.makeText(context, "Failed to accept application", Toast.LENGTH_SHORT).show()
                         dialog.dismiss()
@@ -248,6 +252,10 @@ class ApplicantsListFragment : Fragment() {
                         val currentApp = applicationSnapshot.getValue(PostApplication::class.java)
                         if (currentApp?.providerEmail == application.providerEmail) {
                             applicationSnapshot.ref.child("status").setValue("Rejected")
+
+                            // Send notification to service provider
+                            sendRejectionNotification(application.providerEmail)
+
                             Toast.makeText(context, "Application rejected", Toast.LENGTH_SHORT).show()
                             break
                         }
@@ -258,6 +266,106 @@ class ApplicantsListFragment : Fragment() {
                     Toast.makeText(context, "Failed to reject application", Toast.LENGTH_SHORT).show()
                 }
             })
+    }
+    private fun sendAcceptanceNotification(providerEmail: String) {
+        // Get client's name
+        FirebaseAuth.getInstance().currentUser?.let { currentUser ->
+            FirebaseDatabase.getInstance().reference
+                .child("users")
+                .child(currentUser.uid)
+                .child("name")
+                .get()
+                .addOnSuccessListener { nameSnapshot ->
+                    val clientName = nameSnapshot.getValue(String::class.java) ?: "Client"
+
+                    // Get provider's user ID
+                    FirebaseDatabase.getInstance().reference
+                        .child("users")
+                        .orderByChild("email")
+                        .equalTo(providerEmail)
+                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(snapshot: DataSnapshot) {
+                                val providerId = snapshot.children.firstOrNull()?.key ?: return
+                                // Create notification
+                                val notification = NotificationModel(
+                                    id = FirebaseDatabase.getInstance().reference.push().key
+                                        ?: return,
+                                    title = "Application Accepted",
+                                    description = "$clientName has accepted your application. Please wait for them to book your service.",
+                                    type = "application_status",
+                                    senderId = currentUser.uid,
+                                    senderName = clientName,
+                                    timestamp = System.currentTimeMillis(),
+                                    postId = postId,
+                                    isRead = false
+                                )
+
+                                // Save notification
+                                FirebaseDatabase.getInstance().reference
+                                    .child("notifications")
+                                    .child(providerId)
+                                    .child(notification.id)
+                                    .setValue(notification)
+                            }
+
+                            override fun onCancelled(error: DatabaseError) {
+                                Log.e(
+                                    "ApplicantsList",
+                                    "Error finding provider",
+                                    error.toException()
+                                )
+                            }
+                        })
+                }
+        }
+    }
+
+    private fun sendRejectionNotification(providerEmail: String) {
+        // Get client's name
+        FirebaseAuth.getInstance().currentUser?.let { currentUser ->
+            FirebaseDatabase.getInstance().reference
+                .child("users")
+                .child(currentUser.uid)
+                .child("name")
+                .get()
+                .addOnSuccessListener { nameSnapshot ->
+                    val clientName = nameSnapshot.getValue(String::class.java) ?: "Client"
+
+                    // Get provider's user ID
+                    FirebaseDatabase.getInstance().reference
+                        .child("users")
+                        .orderByChild("email")
+                        .equalTo(providerEmail)
+                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(snapshot: DataSnapshot) {
+                                val providerId = snapshot.children.firstOrNull()?.key ?: return
+                                // Create notification
+                                val notification = NotificationModel(
+                                    id = FirebaseDatabase.getInstance().reference.push().key ?: return,
+                                    title = "Application Rejected",
+                                    description = "Sorry, $clientName has rejected your application. Perhaps they've already accepted someone else. Don't worry, there are more clients who might post services similar to what you offer.",
+                                    type = "application_status",
+                                    senderId = currentUser.uid,
+                                    senderName = clientName,
+                                    timestamp = System.currentTimeMillis(),
+                                    postId = postId,
+                                    isRead = false
+                                )
+
+                                // Save notification
+                                FirebaseDatabase.getInstance().reference
+                                    .child("notifications")
+                                    .child(providerId)
+                                    .child(notification.id)
+                                    .setValue(notification)
+                            }
+
+                            override fun onCancelled(error: DatabaseError) {
+                                Log.e("ApplicantsList", "Error finding provider", error.toException())
+                            }
+                        })
+                }
+        }
     }
     companion object {
         @JvmStatic

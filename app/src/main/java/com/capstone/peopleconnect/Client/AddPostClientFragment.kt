@@ -28,8 +28,10 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
 import com.capstone.peopleconnect.Classes.Post
+import com.capstone.peopleconnect.Notifications.model.NotificationModel
 import com.capstone.peopleconnect.R
 import com.capstone.peopleconnect.SPrvoider.Fragments.AddPostFragment
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -474,32 +476,147 @@ class AddPostClientFragment : Fragment() {
                 .setValue(post)
                 .addOnSuccessListener {
                     try {
-                        if (isAdded && context != null) {  // Ensure fragment is still attached
+                        if (isAdded && context != null) {
+                            // Send notification to admin
+                            sendPostNotificationToAdmin(post, postId)
+
+                            // Add listener for post status changes
+                            setupPostStatusListener(postId)
+
                             dismissLoadingDialog()
                             Toast.makeText(requireContext(), "Post saved successfully", Toast.LENGTH_SHORT).show()
                             requireActivity().supportFragmentManager.popBackStack()
                         }
                     } catch (e: Exception) {
-                        e.printStackTrace() // Ensure you catch any issues here
-                        dismissLoadingDialog() // Make sure dialog is closed in case of errors
+                        e.printStackTrace()
+                        dismissLoadingDialog()
                         Toast.makeText(requireContext(), "Error occurred during cleanup: ${e.message}", Toast.LENGTH_SHORT).show()
                     }
                 }
                 .addOnFailureListener { e ->
                     try {
-                        if (isAdded && context != null) {  // Ensure fragment is still attached
+                        if (isAdded && context != null) {
                             dismissLoadingDialog()
                             Toast.makeText(requireContext(), "Failed to save post: ${e.message}", Toast.LENGTH_SHORT).show()
                         }
                     } catch (e: Exception) {
-                        e.printStackTrace() // Ensure you catch any issues here
-                        dismissLoadingDialog() // Make sure dialog is closed in case of errors
+                        e.printStackTrace()
+                        dismissLoadingDialog()
                     }
                 }
         } catch (e: Exception) {
             dismissLoadingDialog()
             Toast.makeText(requireContext(), "An error occurred: ${e.message}", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun setupPostStatusListener(postId: String) {
+        FirebaseDatabase.getInstance().reference
+            .child("posts")
+            .child(postId)
+            .child("postStatus")
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val status = snapshot.getValue(String::class.java)
+                    val currentUser = FirebaseAuth.getInstance().currentUser ?: return
+
+                    when (status) {
+                        "Approved" -> {
+                            // Create approval notification
+                            val notification = NotificationModel(
+                                id = FirebaseDatabase.getInstance().reference.push().key ?: return,
+                                title = "Post Approved",
+                                description = "Your post has been approved by the admin",
+                                type = "post_status",
+                                senderId = "admin",
+                                senderName = "Admin",
+                                timestamp = System.currentTimeMillis(),
+                                postId = postId,
+                                isRead = false
+                            )
+
+                            // Save notification for client
+                            FirebaseDatabase.getInstance().reference
+                                .child("notifications")
+                                .child(currentUser.uid)
+                                .child(notification.id)
+                                .setValue(notification)
+                        }
+                        "Rejected" -> {
+                            // Create rejection notification
+                            val notification = NotificationModel(
+                                id = FirebaseDatabase.getInstance().reference.push().key ?: return,
+                                title = "Post Rejected",
+                                description = "Your post has been rejected by the admin. Please double-check the files you uploaded.",
+                                type = "post_status",
+                                senderId = "admin",
+                                senderName = "Admin",
+                                timestamp = System.currentTimeMillis(),
+                                postId = postId,
+                                isRead = false
+                            )
+
+                            // Save notification for client
+                            FirebaseDatabase.getInstance().reference
+                                .child("notifications")
+                                .child(currentUser.uid)
+                                .child(notification.id)
+                                .setValue(notification)
+                        }
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("AddPostClient", "Error monitoring post status", error.toException())
+                }
+            })
+    }
+
+    private fun sendPostNotificationToAdmin(post: Post, postId: String) {
+        // Get admin user ID
+        FirebaseDatabase.getInstance().reference.child("admin_users")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    for (adminSnapshot in snapshot.children) {
+                        val adminId = adminSnapshot.key ?: continue
+
+                        // Get client's name
+                        FirebaseAuth.getInstance().currentUser?.uid?.let { userId ->
+                            FirebaseDatabase.getInstance().reference.child("users")
+                                .child(userId)
+                                .child("name")
+                                .get()
+                                .addOnSuccessListener { nameSnapshot ->
+                                    val clientName = nameSnapshot.getValue(String::class.java) ?: "Client"
+
+                                    // Create notification for admin
+                                    val notification = NotificationModel(
+                                        id = FirebaseDatabase.getInstance().reference.push().key ?: return@addOnSuccessListener,
+                                        title = "New Post Requires Approval",
+                                        description = "$clientName posted in ${post.categoryName} category",
+                                        type = "post_approval",
+                                        senderId = FirebaseAuth.getInstance().currentUser?.uid ?: "",
+                                        senderName = clientName,
+                                        timestamp = System.currentTimeMillis(),
+                                        postId = postId,
+                                        isRead = false
+                                    )
+
+                                    // Save notification for admin
+                                    FirebaseDatabase.getInstance().reference
+                                        .child("notifications")
+                                        .child(adminId)
+                                        .child(notification.id)
+                                        .setValue(notification)
+                                }
+                        }
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("AddPostClient", "Error sending admin notification", error.toException())
+                }
+            })
     }
 
 

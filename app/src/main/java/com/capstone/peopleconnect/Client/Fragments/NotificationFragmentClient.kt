@@ -30,6 +30,7 @@ import com.google.firebase.database.ValueEventListener
 import androidx.appcompat.app.AlertDialog
 import com.capstone.peopleconnect.Classes.BookingProgress
 import com.capstone.peopleconnect.Helper.DatabaseHelper
+import com.capstone.peopleconnect.Classes.Post
 
 
 class NotificationFragmentClient : Fragment() {
@@ -38,6 +39,11 @@ class NotificationFragmentClient : Fragment() {
     private lateinit var database: FirebaseDatabase
     private lateinit var notificationsRef: DatabaseReference
     private var notificationListener: ValueEventListener? = null
+
+
+    companion object {
+        private const val TAG = "NotificationFragmentClient"
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -84,62 +90,65 @@ class NotificationFragmentClient : Fragment() {
     }
 
     private fun loadNotifications() {
-        notificationListener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val notifications = mutableListOf<NotificationModel>()
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        currentUser?.let { user ->
+            notificationsRef = FirebaseDatabase.getInstance()
+                .getReference("notifications")
+                .child(user.uid)
 
-                // Get all notifications first
-                val allNotifications = snapshot.children.mapNotNull { notificationSnapshot ->
-                    val notification = notificationSnapshot.getValue(NotificationModel::class.java)
-                    if (notification != null) {
-                        notification.isRead = notificationSnapshot.child("isRead").getValue(Boolean::class.java) ?: false
-                        notification.id = notificationSnapshot.key ?: ""
-                        notification
-                    } else null
-                }
+            notificationListener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val notifications = mutableListOf<NotificationModel>()
 
-                // For notifications with bookingId, check booking status
-                allNotifications.forEach { notification ->
-                    if (notification.bookingId != null) {
-                        FirebaseDatabase.getInstance().getReference("bookings")
-                            .child(notification.bookingId)
-                            .child("bookingStatus")
-                            .get()
-                            .addOnSuccessListener { statusSnapshot ->
-                                val status = statusSnapshot.getValue(String::class.java)
-                                // Only add notification if booking is not completed
-                                if (status != "Completed") {
+                    snapshot.children.forEach { notificationSnapshot ->
+                        notificationSnapshot.getValue(NotificationModel::class.java)
+                            ?.let { notification ->
+                                notification.id = notificationSnapshot.key ?: ""
+                                notification.isRead = notificationSnapshot.child("isRead")
+                                    .getValue(Boolean::class.java) ?: false
+
+                                if (notification.bookingId != null) {
+                                    // Check booking status for notifications with bookingId
+                                    FirebaseDatabase.getInstance().getReference("bookings")
+                                        .child(notification.bookingId!!)
+                                        .child("bookingStatus")
+                                        .get()
+                                        .addOnSuccessListener { statusSnapshot ->
+                                            val status = statusSnapshot.getValue(String::class.java)
+                                            if (status != "Completed") {
+                                                notifications.add(notification)
+                                            } else {
+                                                // Remove completed booking notifications
+                                                notificationsRef.child(notification.id)
+                                                    .removeValue()
+                                                removeCallNotifications(notification.senderId)
+                                            }
+                                            // Update UI after status check
+                                            updateNotificationsUI(notifications.sortedByDescending { it.timestamp })
+                                        }
+                                } else if (notification.type in listOf(
+                                        "booking", "call", "chat", "ongoing",
+                                        "post_request", "post_status", "application_status",
+                                        "post_application"
+                                    )
+                                ) {
+                                    // Add non-booking related notifications of specific types
                                     notifications.add(notification)
-                                    // Update UI
-                                    updateNotificationsUI(notifications)
-                                } else {
-                                    // Remove notification if booking is completed
-                                    notificationsRef.child(notification.id).removeValue()
-                                    // Also remove any call notifications between these users
-                                    removeCallNotifications(notification.senderId)
                                 }
                             }
-                    } else {
-                        // Add non-booking related notifications directly
-                        notifications.add(notification)
                     }
+
+                    // Update UI for non-booking related notifications
+                    updateNotificationsUI(notifications.sortedByDescending { it.timestamp })
                 }
 
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                Log.e("NotificationFragment", "Error loading notifications: ${error.message}")
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("NotificationFragment", "Error loading notifications: ${error.message}")
+                }
             }
         }
-
         // Ensure we're using the correct reference path
-        val currentUser = FirebaseAuth.getInstance().currentUser
-        currentUser?.let {
-            notificationsRef = database.reference
-                .child("notifications")
-                .child(it.uid)
-            notificationsRef.addValueEventListener(notificationListener!!)
-        }
+        notificationsRef.addValueEventListener(notificationListener!!)
     }
 
     private fun removeCallNotifications(userId: String) {
@@ -240,6 +249,32 @@ class NotificationFragmentClient : Fragment() {
                         }
                         .addOnFailureListener {
                             Toast.makeText(context, "Error loading booking details", Toast.LENGTH_SHORT).show()
+                        }
+                }
+            }
+            "post_status" -> {
+                // For now, just mark as read since we don't need special handling
+                // The notification itself shows approval/rejection status
+            }
+            "post_application" -> {
+                // Navigate to applicants list when client clicks the notification
+                notification.postId?.let { postId ->
+                    FirebaseDatabase.getInstance().reference
+                        .child("posts")
+                        .child(postId)
+                        .get()
+                        .addOnSuccessListener { snapshot ->
+                            val post = snapshot.getValue(Post::class.java)
+                            if (post != null) {
+                                val applicantsFragment = ApplicantsListFragment.newInstance(
+                                    postId = postId,
+                                    serviceOffered = post.categoryName
+                                )
+                                parentFragmentManager.beginTransaction()
+                                    .replace(R.id.frame_layout, applicantsFragment)
+                                    .addToBackStack(null)
+                                    .commit()
+                            }
                         }
                 }
             }

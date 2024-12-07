@@ -19,6 +19,7 @@ import com.capstone.peopleconnect.Adapters.ClientPostAdapter
 import com.capstone.peopleconnect.Classes.Post
 import com.capstone.peopleconnect.Client.Fragments.PostDetailsFragment
 import com.capstone.peopleconnect.Helper.NotificationHelper
+import com.capstone.peopleconnect.Notifications.model.NotificationModel
 import com.capstone.peopleconnect.R
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.firebase.database.DataSnapshot
@@ -217,14 +218,19 @@ class HomeFragmentSProvider : Fragment() {
                     if (post != null &&
                         post.client &&
                         userSkills.contains(post.categoryName) &&
-                        post.email != currentEmail &&
-                        post.postStatus == "Approved"
+                        post.email != currentEmail
                     ) {
-                        matchingPosts.add(post)
+                        Log.d(TAG, "Valid post found: ${post.postId}, category: ${post.categoryName}")
+                        if (post.postStatus == "Approved") {
+                            sendNotificationToProvider(post)
+                            matchingPosts.add(post)
+                        }
+                    } else {
+                        Log.d(TAG, "Post skipped: ${post?.postId}, reason: does not meet conditions")
                     }
                 }
 
-                if (matchingPosts.isEmpty()) {
+            if (matchingPosts.isEmpty()) {
                     showEmptyView()
                 } else {
                     recyclerView.visibility = View.VISIBLE
@@ -238,6 +244,73 @@ class HomeFragmentSProvider : Fragment() {
             }
         })
     }
+
+    private fun sendNotificationToProvider(post: Post) {
+        val currentUser = FirebaseAuth.getInstance().currentUser ?: return
+
+        // Reference to notifications for the current user
+        val notificationsRef = FirebaseDatabase.getInstance().reference
+            .child("notifications")
+            .child(currentUser.uid)
+
+        // Query to check if a notification for this post already exists
+        notificationsRef.orderByChild("postId")
+            .equalTo(post.postId)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    // Count how many matching notifications exist
+                    val matchingNotifications = snapshot.children.count {
+                        it.child("postId").getValue(String::class.java) == post.postId
+                    }
+
+                    if (matchingNotifications == 0) {
+                        Log.d(TAG, "No existing notification found for postId: ${post.postId}. Creating one.")
+
+                        FirebaseDatabase.getInstance().reference
+                            .child("users")
+                            .orderByChild("email")
+                            .equalTo(post.email)
+                            .addListenerForSingleValueEvent(object : ValueEventListener {
+                                override fun onDataChange(userSnapshot: DataSnapshot) {
+                                    val clientName = userSnapshot.children.firstOrNull()
+                                        ?.child("name")?.getValue(String::class.java) ?: "Client"
+
+                                    val notification = NotificationModel(
+                                        id = notificationsRef.push().key ?: return,
+                                        title = "New Service Request",
+                                        description = "$clientName is looking for your service in ${post.categoryName}",
+                                        type = "post_request",
+                                        senderId = post.email ?: "",
+                                        senderName = clientName,
+                                        timestamp = System.currentTimeMillis(),
+                                        postId = post.postId,
+                                        isRead = false
+                                    )
+
+                                    notificationsRef.child(notification.id).setValue(notification)
+                                        .addOnSuccessListener {
+                                            Log.d(TAG, "Notification created successfully: ${notification.id}")
+                                        }
+                                        .addOnFailureListener {
+                                            Log.e(TAG, "Failed to create notification", it)
+                                        }
+                                }
+
+                                override fun onCancelled(error: DatabaseError) {
+                                    Log.e(TAG, "Error fetching client details", error.toException())
+                                }
+                            })
+                    } else {
+                        Log.d(TAG, "Notification for postId: ${post.postId} already exists. Skipping creation.")
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e(TAG, "Error checking existing notifications", error.toException())
+                }
+            })
+    }
+
 
     private fun showEmptyView() {
         if (!isAdded) {

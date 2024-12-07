@@ -21,6 +21,7 @@ import com.bumptech.glide.Glide
 import com.capstone.peopleconnect.Adapters.PostImageAdapter
 import com.capstone.peopleconnect.Classes.Post
 import com.capstone.peopleconnect.Classes.PostApplication
+import com.capstone.peopleconnect.Notifications.model.NotificationModel
 import com.capstone.peopleconnect.R
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
@@ -654,6 +655,57 @@ class PostDetailsFragment : Fragment() {
 
         database.child("post_applicants").push().setValue(application)
             .addOnSuccessListener {
+                // Get provider's name for the notification
+                FirebaseDatabase.getInstance().reference
+                    .child("users")
+                    .orderByChild("email")
+                    .equalTo(providerEmail)
+                    .addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            val providerName = snapshot.children.firstOrNull()
+                                ?.child("name")?.getValue(String::class.java) ?: "Service Provider"
+
+                            // Get client's user ID
+                            FirebaseDatabase.getInstance().reference
+                                .child("users")
+                                .orderByChild("email")
+                                .equalTo(clientEmail)
+                                .addListenerForSingleValueEvent(object : ValueEventListener {
+                                    override fun onDataChange(clientSnapshot: DataSnapshot) {
+                                        val clientId = clientSnapshot.children.firstOrNull()?.key ?: return
+
+                                        // Create notification
+                                        val notification = NotificationModel(
+                                            id = FirebaseDatabase.getInstance().reference.push().key ?: return,
+                                            title = "New Application",
+                                            description = "$providerName has applied to your post. You might be interested in them.",
+                                            type = "post_application",
+                                            senderId = providerEmail!!,
+                                            senderName = providerName,
+                                            timestamp = System.currentTimeMillis(),
+                                            postId = postId,
+                                            isRead = false
+                                        )
+
+                                        // Save notification for client
+                                        FirebaseDatabase.getInstance().reference
+                                            .child("notifications")
+                                            .child(clientId)
+                                            .child(notification.id)
+                                            .setValue(notification)
+                                    }
+
+                                    override fun onCancelled(error: DatabaseError) {
+                                        Log.e("PostDetails", "Error finding client", error.toException())
+                                    }
+                                })
+                        }
+
+                        override fun onCancelled(error: DatabaseError) {
+                            Log.e("PostDetails", "Error getting provider name", error.toException())
+                        }
+                    })
+
                 Toast.makeText(context, "Application submitted successfully", Toast.LENGTH_SHORT).show()
                 applyForPost() // Refresh the button state
             }

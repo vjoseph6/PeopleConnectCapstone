@@ -26,6 +26,8 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.capstone.peopleconnect.Classes.Post
+import com.capstone.peopleconnect.Client.Fragments.PostDetailsFragment
 
 
 class NotificationFragmentSProvider : Fragment() {
@@ -34,6 +36,10 @@ class NotificationFragmentSProvider : Fragment() {
     private lateinit var database: FirebaseDatabase
     private lateinit var notificationsRef: DatabaseReference
     private var notificationListener: ValueEventListener? = null
+
+    companion object {
+        private const val TAG = "NotificationFragmentSProvider"
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -81,55 +87,66 @@ class NotificationFragmentSProvider : Fragment() {
     }
 
     private fun loadNotifications() {
-        notificationListener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val notifications = mutableListOf<NotificationModel>()
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        currentUser?.let { user ->
+            notificationsRef = FirebaseDatabase.getInstance()
+                .getReference("notifications")
+                .child(user.uid)
 
-                // Get all notifications first
-                val allNotifications = snapshot.children.mapNotNull { notificationSnapshot ->
-                    val notification = notificationSnapshot.getValue(NotificationModel::class.java)
-                    if (notification != null) {
-                        notification.isRead = notificationSnapshot.child("isRead").getValue(Boolean::class.java) ?: false
-                        notification.id = notificationSnapshot.key ?: ""
-                        notification
-                    } else null
-                }
+            notificationListener = object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val notifications = mutableListOf<NotificationModel>()
 
-                // For notifications with bookingId, check booking status
-                allNotifications.forEach { notification ->
-                    if (notification.bookingId != null) {
-                        FirebaseDatabase.getInstance().getReference("bookings")
-                            .child(notification.bookingId)
-                            .child("bookingStatus")
-                            .get()
-                            .addOnSuccessListener { statusSnapshot ->
-                                val status = statusSnapshot.getValue(String::class.java)
-                                // Only add notification if booking is not completed
-                                if (status != "Completed") {
-                                    notifications.add(notification)
-                                    // Update UI
-                                    updateNotificationsUI(notifications)
-                                } else {
-                                    // Remove notification if booking is completed
-                                    notificationsRef.child(notification.id).removeValue()
-
-                                    // Also remove any call notifications between these users
-                                    removeCallNotifications(notification.senderId)
-                                }
-                            }
-                    } else {
-                        // Add non-booking related notifications directly
-                        notifications.add(notification)
+                    // Process all notifications
+                    val allNotifications = snapshot.children.mapNotNull { notificationSnapshot ->
+                        notificationSnapshot.getValue(NotificationModel::class.java)?.apply {
+                            id = notificationSnapshot.key ?: ""
+                            isRead = notificationSnapshot.child("isRead").getValue(Boolean::class.java) ?: false
+                        }
                     }
+
+                    // Handle notifications
+                    allNotifications.forEach { notification ->
+                        if (notification.bookingId != null) {
+                            // Check booking status for notifications with bookingId
+                            FirebaseDatabase.getInstance().getReference("bookings")
+                                .child(notification.bookingId!!)
+                                .child("bookingStatus")
+                                .get()
+                                .addOnSuccessListener { statusSnapshot ->
+                                    val status = statusSnapshot.getValue(String::class.java)
+                                    if (status != "Completed") {
+                                        // Add if booking is not completed
+                                        notifications.add(notification)
+                                    } else {
+                                        // Remove completed booking notifications
+                                        notificationsRef.child(notification.id).removeValue()
+                                        removeCallNotifications(notification.senderId)
+                                    }
+                                    // Update UI after checking status
+                                    updateNotificationsUI(notifications.sortedByDescending { it.timestamp })
+                                }
+                        } else if (notification.type in listOf(
+                                "booking", "call", "chat", "ongoing",
+                                "post_request", "post_status", "application_status",
+                                "post_application"
+                            )) {
+                            // Add non-booking notifications of specific types
+                            notifications.add(notification)
+                        }
+                    }
+
+                    // Update UI for non-booking notifications
+                    updateNotificationsUI(notifications.sortedByDescending { it.timestamp })
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("NotificationDebug", "Error loading notifications: ${error.message}")
                 }
             }
 
-            override fun onCancelled(error: DatabaseError) {
-                Log.e("NotificationDebug", "Error loading notifications: ${error.message}")
-            }
+            notificationsRef.addValueEventListener(notificationListener!!)
         }
-
-        notificationsRef.addValueEventListener(notificationListener!!)
     }
 
     private fun removeCallNotifications(userId: String) {
@@ -172,72 +189,120 @@ class NotificationFragmentSProvider : Fragment() {
                 notificationsRef.child(notificationId).child("isRead").setValue(true)
             }
 
-        when (notification.type) {
-            "chat" -> {
-                val intent = Intent(requireContext(), ChatActivity::class.java).apply {
-                    putExtra("userId", notification.senderId)
-                    putExtra("name", notification.senderName)
-                    notification.channelId?.let { putExtra("channelId", it) }
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                }
-                startActivity(intent)
-            }
-            "call" -> {
-                try {
-                    // Use the callLink from the notification
-                    notification.callLink?.let { callLink ->
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(callLink))
-                        startActivity(intent)
-                        Toast.makeText(context, "Joining video call...", Toast.LENGTH_SHORT).show()
-                    } ?: run {
-                        Toast.makeText(context, "Call link not found", Toast.LENGTH_SHORT).show()
+            when (notification.type) {
+                "chat" -> {
+                    val intent = Intent(requireContext(), ChatActivity::class.java).apply {
+                        putExtra("userId", notification.senderId)
+                        putExtra("name", notification.senderName)
+                        notification.channelId?.let { putExtra("channelId", it) }
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                     }
-                } catch (e: Exception) {
-                    Log.e("NotificationFragment", "Error opening call link", e)
-                    Toast.makeText(context, "Unable to join call", Toast.LENGTH_SHORT).show()
+                    startActivity(intent)
                 }
-            }
-            "booking" -> {
-                Log.d("NotificationClick", "Booking ID: ${notification.bookingId}")
-                notification.bookingId?.let { bookingId ->
-                    // Create and navigate to BookingDetailsFragment
-                    val bookingDetailsFragment = BookingDetailsFragment.newInstance(bookingId, false)
-                    requireActivity().supportFragmentManager.beginTransaction()
-                        .replace(R.id.frame_layout, bookingDetailsFragment)
-                        .addToBackStack(null)
-                        .commit()
-                } ?: run {
-                    Log.e("NotificationClick", "Booking ID is null")
-                    Toast.makeText(context, "Booking details not found", Toast.LENGTH_SHORT).show()
+                "call" -> {
+                    try {
+                        // Use the callLink from the notification
+                        notification.callLink?.let { callLink ->
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(callLink))
+                            startActivity(intent)
+                            Toast.makeText(context, "Joining video call...", Toast.LENGTH_SHORT).show()
+                        } ?: run {
+                            Toast.makeText(context, "Call link not found", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        Log.e("NotificationFragment", "Error opening call link", e)
+                        Toast.makeText(context, "Unable to join call", Toast.LENGTH_SHORT).show()
+                    }
                 }
-            }
+                "booking" -> {
+                    Log.d("NotificationClick", "Booking ID: ${notification.bookingId}")
+                    notification.bookingId?.let { bookingId ->
+                        // Create and navigate to BookingDetailsFragment
+                        val bookingDetailsFragment = BookingDetailsFragment.newInstance(bookingId, false)
+                        requireActivity().supportFragmentManager.beginTransaction()
+                            .replace(R.id.frame_layout, bookingDetailsFragment)
+                            .addToBackStack(null)
+                            .commit()
+                    } ?: run {
+                        Log.e("NotificationClick", "Booking ID is null")
+                        Toast.makeText(context, "Booking details not found", Toast.LENGTH_SHORT).show()
+                    }
+                }
 
-            "ongoing" -> {
-                notification.bookingId?.let { bookingId ->
-                    // Get the booking details first to get correct emails
-                    FirebaseDatabase.getInstance().getReference("bookings")
-                        .child(bookingId)
-                        .get()
-                        .addOnSuccessListener { snapshot ->
-                            val booking = snapshot.getValue(Bookings::class.java)
-                            if (booking != null) {
-                                val ongoingFragment = OngoingFragmentSProvider.newInstance(
-                                    bookingId = bookingId,
-                                    clientEmail = booking.bookByEmail,  // Use actual client email
-                                    providerEmail = booking.providerEmail  // Use actual provider email
-                                )
-                                requireActivity().supportFragmentManager.beginTransaction()
-                                    .replace(R.id.frame_layout, ongoingFragment)
-                                    .addToBackStack(null)
-                                    .commit()
+                "ongoing" -> {
+                    notification.bookingId?.let { bookingId ->
+                        // Get the booking details first to get correct emails
+                        FirebaseDatabase.getInstance().getReference("bookings")
+                            .child(bookingId)
+                            .get()
+                            .addOnSuccessListener { snapshot ->
+                                val booking = snapshot.getValue(Bookings::class.java)
+                                if (booking != null) {
+                                    val ongoingFragment = OngoingFragmentSProvider.newInstance(
+                                        bookingId = bookingId,
+                                        clientEmail = booking.bookByEmail,  // Use actual client email
+                                        providerEmail = booking.providerEmail  // Use actual provider email
+                                    )
+                                    requireActivity().supportFragmentManager.beginTransaction()
+                                        .replace(R.id.frame_layout, ongoingFragment)
+                                        .addToBackStack(null)
+                                        .commit()
+                                }
                             }
-                        }
-                        .addOnFailureListener {
-                            Toast.makeText(context, "Error loading booking details", Toast.LENGTH_SHORT).show()
-                        }
+                            .addOnFailureListener {
+                                Toast.makeText(context, "Error loading booking details", Toast.LENGTH_SHORT).show()
+                            }
+                    }
+                }
+
+                "post_request" -> {
+                    // Navigate to post details when service provider clicks the notification
+                    notification.postId?.let { postId ->
+                        FirebaseDatabase.getInstance().reference
+                            .child("posts")
+                            .child(postId)
+                            .get()
+                            .addOnSuccessListener { snapshot ->
+                                val post = snapshot.getValue(Post::class.java)
+                                if (post != null) {
+                                    val postDetailsFragment = PostDetailsFragment.newInstance(
+                                        post = post,
+                                        isFromProvider = true,
+                                        providerEmail = FirebaseAuth.getInstance().currentUser?.email
+                                    )
+                                    requireActivity().supportFragmentManager.beginTransaction()
+                                        .replace(R.id.frame_layout, postDetailsFragment)
+                                        .addToBackStack(null)
+                                        .commit()
+                                }
+                            }
+                    }
+                }
+
+                "application_status" -> {
+                    // Navigate to post details when provider clicks accept/reject notification
+                    notification.postId?.let { postId ->
+                        FirebaseDatabase.getInstance().reference
+                            .child("posts")
+                            .child(postId)
+                            .get()
+                            .addOnSuccessListener { snapshot ->
+                                val post = snapshot.getValue(Post::class.java)
+                                if (post != null) {
+                                    val postDetailsFragment = PostDetailsFragment.newInstance(
+                                        post = post,
+                                        isFromProvider = true,
+                                        providerEmail = FirebaseAuth.getInstance().currentUser?.email
+                                    )
+                                    requireActivity().supportFragmentManager.beginTransaction()
+                                        .replace(R.id.frame_layout, postDetailsFragment)
+                                        .addToBackStack(null)
+                                        .commit()
+                                }
+                            }
+                    }
                 }
             }
-        }
         } catch (e: Exception) {
             Log.e("NotificationClick", "Error handling notification click", e)
             Toast.makeText(context, "Error opening booking details", Toast.LENGTH_SHORT).show()

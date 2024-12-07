@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -19,6 +20,8 @@ import com.google.firebase.database.FirebaseDatabase
 import io.getstream.chat.android.client.ChatClient
 import io.getstream.chat.android.models.Device
 import io.getstream.chat.android.models.PushProvider
+import com.capstone.peopleconnect.Client.ClientMainActivity
+import com.capstone.peopleconnect.SPrvoider.SProviderMainActivity
 
 class FCMService : FirebaseMessagingService() {
 
@@ -81,6 +84,7 @@ class FCMService : FirebaseMessagingService() {
                 val senderName = remoteMessage.data["senderName"]
                 val type = remoteMessage.data["type"] ?: "chat"
                 val channelId = remoteMessage.data["channelId"]
+                val postId = remoteMessage.data["postId"]
 
                 // Create and store notification
                 createNotification(
@@ -90,11 +94,19 @@ class FCMService : FirebaseMessagingService() {
                     type = type,
                     senderId = senderId ?: "",
                     senderName = senderName ?: "",
-                    channelId = channelId
+                    channelId = channelId,
+                    postId = postId
                 )
 
-                // Show the notification
-                sendNotification(title, message, senderId, senderName)
+                // Show the notification with appropriate pattern
+                if (type == "post_request" || type == "post_application" ||
+                    type == "post_status" || type == "application_status") {
+                    // Use stronger vibration + sound for post-related notifications
+                    sendNotification(title, message, senderId, senderName, true)
+                } else {
+                    // Use normal pattern for other notifications
+                    sendNotification(title, message, senderId, senderName, false)
+                }
             }
         } catch (e: Exception) {
             Log.e("FCMService", "Error handling push message", e)
@@ -106,6 +118,7 @@ class FCMService : FirebaseMessagingService() {
         val senderId = data["senderId"] ?: return
         val senderName = data["senderName"] ?: "User"
         val channelId = data["channelId"]
+        val postId = data["postId"]
 
         createNotification(
             userId = currentUserId,
@@ -114,7 +127,8 @@ class FCMService : FirebaseMessagingService() {
             type = "chat",
             senderId = senderId,
             senderName = senderName,
-            channelId = channelId
+            channelId = channelId,
+            postId = postId
         )
     }
 
@@ -155,7 +169,7 @@ class FCMService : FirebaseMessagingService() {
             .addOnSuccessListener {
                 Log.d("FCMService", "Booking notification stored successfully")
                 // Send system notification
-                sendNotification(title, description, senderId, senderName)
+                sendNotification(title, description, senderId, senderName, false)
             }
             .addOnFailureListener { e ->
                 Log.e("FCMService", "Error storing booking notification", e)
@@ -169,7 +183,8 @@ class FCMService : FirebaseMessagingService() {
         type: String,
         senderId: String,
         senderName: String,
-        channelId: String?
+        channelId: String? = null,
+        postId: String? = null
     ) {
         val notification = NotificationModel(
             id = database.reference.push().key ?: return,
@@ -180,7 +195,8 @@ class FCMService : FirebaseMessagingService() {
             senderName = senderName,
             timestamp = System.currentTimeMillis(),
             isRead = false,
-            channelId = channelId
+            channelId = channelId,
+            postId = postId
         )
 
         // Store notification in Firebase
@@ -197,9 +213,74 @@ class FCMService : FirebaseMessagingService() {
             }
     }
 
-    private fun sendNotification(title: String, message: String, senderId: String?, senderName: String?) {
+    private fun sendNotification(title: String, message: String, senderId: String?, senderName: String?, isPostNotification: Boolean) {
         val channelId = "chat_messages"
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val currentUser = FirebaseAuth.getInstance().currentUser
+
+        // Create intent based on notification type
+        val intent = when {
+            title.contains("Video Call") -> {
+                Intent(Intent.ACTION_VIEW).apply {
+                    data = Uri.parse(message)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                }
+            }
+            title.contains("New Application") ||
+                    title.contains("Post") ||
+                    title.contains("Booking") ||
+                    title.contains("Service Provider") -> {
+                // Default to SProviderMainActivity, will be updated when user type is checked
+                val defaultIntent = Intent(this, SProviderMainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    putExtra("OPEN_NOTIFICATIONS", true)
+                }
+
+                // Check user type asynchronously
+                currentUser?.let { user ->
+                    FirebaseDatabase.getInstance().reference
+                        .child("users")
+                        .child(user.uid)
+                        .child("userType")
+                        .get()
+                        .addOnSuccessListener { snapshot ->
+                            val isClient = snapshot.getValue(String::class.java) == "client"
+                            if (isClient) {
+                                val clientIntent = Intent(this, ClientMainActivity::class.java).apply {
+                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                                    putExtra("OPEN_NOTIFICATIONS", true)
+                                }
+                                showNotificationWithIntent(title, message, clientIntent, channelId, notificationManager)
+                            }
+                        }
+                }
+                defaultIntent
+            }
+            else -> {
+                Intent(this, SProviderMainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    putExtra("OPEN_NOTIFICATIONS", true)
+                }
+            }
+        }
+
+        // Show initial notification
+        showNotificationWithIntent(title, message, intent, channelId, notificationManager)
+    }
+
+    private fun showNotificationWithIntent(
+        title: String,
+        message: String,
+        intent: Intent,
+        channelId: String,
+        notificationManager: NotificationManager
+    ) {
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            intent,
+            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+        )
 
         // Create notification channel for Android O and above
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -234,6 +315,7 @@ class FCMService : FirebaseMessagingService() {
             .setContentText(message)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent)
 
         // Set notification pattern based on type
         if (title.contains("Work") || title.contains("Service Provider") ||
