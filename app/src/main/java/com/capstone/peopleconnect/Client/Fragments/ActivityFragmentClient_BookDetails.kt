@@ -534,7 +534,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         val providerEmail = providerEmailFetched
         val bookingStartTime = startTimeEditText.text.toString()
         val bookingEndTime = endTimeEditText.text.toString()
-        val bookingDay = dateEditText.text.toString()
+        val bookingDay = startDateTimeTextView.toString().split(" - ")[0]
         val bookingAmountString = view?.findViewById<EditText>(R.id.etRate)?.text?.toString()
         val bookingAmount = bookingAmountString?.toDoubleOrNull() ?: 0.0 // Fallback to 0.0 if the conversion fails
 
@@ -620,7 +620,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
                             existingBooking.serviceOffered == serviceOffered &&
                             existingBooking.bookingStatus == "Pending"
                         ) {
-                            val existingBookingDay = existingBooking.bookingDay
+                            val existingBookingDay = existingBooking.bookingStartTime.split(" - ")[0]
                             val existingStartMinutes = convertToMinutesSinceMidnight(existingBooking.bookingStartTime)
                             val existingEndMinutes = convertToMinutesSinceMidnight(existingBooking.bookingEndTime)
 

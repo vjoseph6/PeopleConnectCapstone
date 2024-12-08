@@ -47,6 +47,7 @@ class BookingDetailsFragment : Fragment() {
     private lateinit var bookingEndTimeTextView: TextView
     private lateinit var bookingDescriptionTextView: TextView
     private lateinit var bookingDayTextView: TextView
+    private lateinit var resaonTextView: TextView
     private lateinit var bookingAmountTextView: TextView
     private lateinit var bookingTotalTextView: TextView
     private lateinit var paymentMethodTextView: TextView
@@ -118,6 +119,7 @@ class BookingDetailsFragment : Fragment() {
         imagesRecyclerView = view.findViewById(R.id.imageContainer)
         clientRatingTextView = view.findViewById(R.id.clientRating)
         providerRatingTextView = view.findViewById(R.id.providerRating)
+        resaonTextView = view.findViewById(R.id.tVCancellation)
 
         btnBackClient = view.findViewById(R.id.btnBack)
         btnBackClient.setOnClickListener {
@@ -191,11 +193,23 @@ class BookingDetailsFragment : Fragment() {
                 bookingAmountTextView.text = booking.bookingScope
                 bookingTotalTextView.text = "${booking.bookingAmount} PHP"
                 paymentMethodTextView.text = booking.bookingPaymentMethod
+                resaonTextView.text = booking.bookingCancelClient
 
                 if (booking.bookingScope == "Select Task Scope") {
                     // Ensure view is not null before accessing it
                     view?.findViewById<RelativeLayout>(R.id.layoutHide)?.visibility = View.GONE
                 }
+
+                if (booking.bookingCancelClient.isNullOrEmpty() ){
+                    view?.findViewById<RelativeLayout>(R.id.layoutHide1)?.visibility = View.GONE
+                }
+                if (isClient) {
+                    if (booking.bookingCancelProvider.isNullOrEmpty() ){
+                        view?.findViewById<RelativeLayout>(R.id.layoutHide1)?.visibility = View.GONE
+                    }
+                    resaonTextView.text = booking.bookingCancelProvider
+                }
+
 
                 // Set up RecyclerView for displaying images
                 setupImageRecyclerView(booking.bookingUploadImages)
@@ -310,7 +324,7 @@ class BookingDetailsFragment : Fragment() {
         val color = when (status) {
             "Pending" -> R.color.orange
             "Accepted" -> R.color.green
-            "Rejected" -> R.color.red
+            "Canceled" -> R.color.red
             "Complete", "Completed" -> if (isClient) R.color.green else R.color.blue
             else -> R.color.black
         }

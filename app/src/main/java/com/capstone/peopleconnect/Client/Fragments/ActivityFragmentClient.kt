@@ -575,46 +575,104 @@ class ActivityFragmentClient : Fragment() {
         val builder = AlertDialog.Builder(requireContext())
             .setView(dialogView)
             .setCancelable(true)
-
         val alertDialog = builder.create()
+
         val btnYes: Button = dialogView.findViewById(R.id.btnYes)
         val btnNo: TextView = dialogView.findViewById(R.id.btnNo)
         val radioGroup: RadioGroup = dialogView.findViewById(R.id.optionsRadioGroup)
-
 
         btnYes.setOnClickListener {
             val selectedOptionId = radioGroup.checkedRadioButtonId
             if (selectedOptionId != -1) {
                 val selectedRadioButton: RadioButton = dialogView.findViewById(selectedOptionId)
                 val cancellationReason = selectedRadioButton.text.toString()
-
                 var successCount = 0
-                bookingsToCancel.forEach { (bookingKey, _) ->
-                    val databaseReference = FirebaseDatabase.getInstance()
-                        .getReference("bookings/$bookingKey")
 
+                bookingsToCancel.forEach { (bookingKey, booking) ->
+                    val databaseReference = FirebaseDatabase.getInstance().getReference("bookings/$bookingKey")
                     val updates = mapOf(
-                        "bookingCancelClient" to cancellationReason
+                        "bookingCancelClient" to cancellationReason,
+                        "bookingStatus" to "Canceled"
                     )
 
-                    databaseReference.updateChildren(updates).addOnCompleteListener { task ->
-                        if (task.isSuccessful) {
-                            databaseReference.removeValue().addOnCompleteListener { removeTask ->
-                                if (removeTask.isSuccessful) {
-                                    successCount++
-                                    if (successCount == bookingsToCancel.size) {
-                                        Toast.makeText(
-                                            context,
-                                            "Successfully canceled ${bookingsToCancel.size} booking(s)",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                        email?.let { fetchBookingsForClient(it) }
+                    databaseReference.updateChildren(updates).addOnSuccessListener {
+                        // Send notification to provider
+                        FirebaseAuth.getInstance().currentUser?.let { currentUser ->
+                            FirebaseDatabase.getInstance().getReference("users")
+                                .child(currentUser.uid)
+                                .child("name")
+                                .get()
+                                .addOnSuccessListener { clientNameSnapshot ->
+                                    val clientName = clientNameSnapshot.getValue(String::class.java) ?: "Client"
+
+                                    // Find provider's ID using their email
+                                    FirebaseDatabase.getInstance().getReference("users")
+                                        .orderByChild("email")
+                                        .equalTo(booking.providerEmail)
+                                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                                            override fun onDataChange(snapshot: DataSnapshot) {
+                                                val providerId = snapshot.children.firstOrNull()?.key
+
+                                                if (providerId != null) {
+                                                    // Create cancellation notification
+                                                    val notification = NotificationModel(
+                                                        id = FirebaseDatabase.getInstance().reference.push().key ?: return,
+                                                        title = "Booking Cancelled by Client",
+                                                        description = "$clientName has cancelled the booking for ${booking.bookingDay}",
+                                                        type = "booking",
+                                                        senderId = currentUser.uid,
+                                                        senderName = clientName,
+                                                        timestamp = System.currentTimeMillis(),
+                                                        bookingId = bookingKey,
+                                                        bookingStatus = "Cancelled",
+                                                        bookingDate = booking.bookingDay,
+                                                        bookingTime = booking.bookingStartTime,
+                                                        cancellationReason = cancellationReason
+                                                    )
+
+                                                    // Save notification
+                                                    FirebaseDatabase.getInstance()
+                                                        .getReference("notifications")
+                                                        .child(providerId)
+                                                        .child(notification.id)
+                                                        .setValue(notification)
+                                                }
+                                            }
+
+                                            override fun onCancelled(error: DatabaseError) {
+                                                Log.e("Notification", "Error finding provider", error.toException())
+                                            }
+                                        })
+                                }
+                        }
+
+                        // Remove the booking
+                        databaseReference.removeValue().addOnCompleteListener { removeTask ->
+                            if (removeTask.isSuccessful) {
+                                successCount++
+                                if (successCount == bookingsToCancel.size) {
+                                    Toast.makeText(
+                                        context,
+                                        "Successfully canceled ${bookingsToCancel.size} booking(s)",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+
+                                    // Refresh bookings list
+                                    email?.let {
+                                        fetchBookingsForClient(it)
                                     }
                                 }
                             }
                         }
+                    }.addOnFailureListener { exception ->
+                        Toast.makeText(
+                            context,
+                            "Error canceling booking: ${exception.message}",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
+
                 alertDialog.dismiss()
             } else {
                 Toast.makeText(
