@@ -66,7 +66,7 @@
 
             <!-- Name -->
             <TextView
-                android:id="@+id/providerName"
+                android:id="@+id/clientName"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
@@ -94,7 +94,7 @@
                 android:textSize="14sp"
                 app:layout_constraintBottom_toBottomOf="@id/profileImage"
                 app:layout_constraintStart_toEndOf="@+id/profileImage"
-                app:layout_constraintTop_toBottomOf="@+id/providerName" />
+                app:layout_constraintTop_toBottomOf="@+id/clientName" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvRatingsProvider"
@@ -104,7 +104,6 @@
                 tools:listitem="@layout/item_rating_provider_client_ratings"
                 app:layout_constraintTop_toBottomOf="@id/clientRatings"
                 app:layout_constraintBottom_toBottomOf="parent" />
-
 
 
         </androidx.constraintlayout.widget.ConstraintLayout>

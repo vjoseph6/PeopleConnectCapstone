@@ -1,10 +1,12 @@
 package com.capstone.peopleconnect.Adapters
 
+import android.app.AlertDialog
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -12,7 +14,13 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.capstone.peopleconnect.Classes.Bookings
 import com.capstone.peopleconnect.Classes.User
+import com.capstone.peopleconnect.Notifications.model.NotificationModel
 import com.capstone.peopleconnect.R
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.squareup.picasso.Picasso
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -35,6 +43,7 @@ class BookingSProviderAdapter(
         val btnAccept: Button = itemView.findViewById(R.id.btnAccept_Present)
         val btnCancel: Button = itemView.findViewById(R.id.btnCancel_Present)
         val serviceTextView: TextView = itemView.findViewById(R.id.tvService)
+        val negotiateTextView: TextView = itemView.findViewById(R.id.tvNegotiation)
 
         init {
             // Existing click listener
@@ -204,6 +213,85 @@ class BookingSProviderAdapter(
 
 
         holder.serviceTextView.text = booking.serviceOffered
+
+
+
+        holder.negotiateTextView.visibility = if (booking.bookingStatus == "Pending") View.VISIBLE else View.GONE
+        holder.negotiateTextView.visibility = if (booking.bookingScope == "Select Task Scope") View.GONE else View.VISIBLE
+
+        holder.negotiateTextView.setOnClickListener {
+            val context = holder.itemView.context
+            val builder = AlertDialog.Builder(context)
+            val inflater = LayoutInflater.from(context)
+            val dialogView = inflater.inflate(R.layout.dialog_negotiate_rate, null)
+
+            val currentRate = dialogView.findViewById<EditText>(R.id.etCurrentRate)
+            val newRate = dialogView.findViewById<EditText>(R.id.etNewRate)
+
+            // Set current rate
+            currentRate.setText(booking.bookingAmount.toString())
+            currentRate.isEnabled = false // Make it read-only
+
+            builder.setView(dialogView)
+                .setTitle("Negotiate Rate")
+                .setPositiveButton("Submit") { dialog, _ ->
+                    val proposedRate = newRate.text.toString().toDoubleOrNull()
+                    if (proposedRate != null) {
+                        // Update the rate in Firebase
+                        FirebaseDatabase.getInstance().getReference("bookings")
+                            .child(bookingKey)
+                            .child("bookingAmount")
+                            .setValue(proposedRate)
+                            .addOnSuccessListener {
+                                Toast.makeText(context, "Rate negotiation submitted", Toast.LENGTH_SHORT).show()
+
+                                // Create and send notification to client
+                                val notification = NotificationModel(
+                                    id = FirebaseDatabase.getInstance().reference.push().key ?: return@addOnSuccessListener,
+                                    title = "Rate Negotiation",
+                                    description = "Service Provider has proposed a new rate of ₱$proposedRate",
+                                    type = "negotiation",
+                                    senderId = FirebaseAuth.getInstance().currentUser?.uid ?: return@addOnSuccessListener,
+                                    senderName = "Service Provider",
+                                    timestamp = System.currentTimeMillis(),
+                                    bookingId = bookingKey
+                                )
+
+                                // Find client's ID and send notification
+                                FirebaseDatabase.getInstance().getReference("users")
+                                    .orderByChild("email")
+                                    .equalTo(booking.bookByEmail)
+                                    .addListenerForSingleValueEvent(object : ValueEventListener {
+                                        override fun onDataChange(snapshot: DataSnapshot) {
+                                            val clientId = snapshot.children.firstOrNull()?.key
+                                            if (clientId != null) {
+                                                FirebaseDatabase.getInstance()
+                                                    .getReference("notifications")
+                                                    .child(clientId)
+                                                    .child(notification.id)
+                                                    .setValue(notification)
+                                            }
+                                        }
+
+                                        override fun onCancelled(error: DatabaseError) {
+                                            Log.e("Negotiation", "Error finding client", error.toException())
+                                        }
+                                    })
+                            }
+                            .addOnFailureListener {
+                                Toast.makeText(context, "Failed to submit negotiation", Toast.LENGTH_SHORT).show()
+                            }
+                    } else {
+                        Toast.makeText(context, "Please enter a valid rate", Toast.LENGTH_SHORT).show()
+                    }
+                    dialog.dismiss()
+                }
+                .setNegativeButton("Cancel") { dialog, _ ->
+                    dialog.dismiss()
+                }
+
+            builder.create().show()
+        }
     }
 
     fun updateBookings(newBookings: List<Pair<String, Bookings>>) {

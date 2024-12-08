@@ -16,17 +16,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.capstone.peopleconnect.Adapters.CategoryAdapter
 import com.capstone.peopleconnect.Adapters.ProviderServicesAdapter
-import com.capstone.peopleconnect.Adapters.RatingsAdapter
 import com.capstone.peopleconnect.Classes.Category
 import com.capstone.peopleconnect.R
-import com.capstone.peopleconnect.SPrvoider.Fragments.SkillsPostFragmentSProvider
 import com.capstone.peopleconnect.SPrvoider.Fragments.YourProjectsFragmentSProvider
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.squareup.picasso.Picasso
-import com.capstone.peopleconnect.Classes.Rating
 
 
 class ActivityFragmentClient_ProviderProfile : Fragment() {
@@ -133,7 +130,8 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
     }
 
     private fun navigateToProviderRatings(email: String) {
-        val providerRatingsFragment = ActivityFragmentClient_ProviderRatings.newInstance(email, serviceOffered)
+        val providerRatingsFragment = ActivityFragmentClient_ProviderRatings.newInstance(email, serviceOffered.toString())
+        Log.d("FROM PROVIDER", "${serviceOffered.toString()}")
         requireActivity().supportFragmentManager.beginTransaction()
             .replace(R.id.frame_layout, providerRatingsFragment)
             .addToBackStack(null)
@@ -156,6 +154,7 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
                             if (email != null) {
                                 fetchSkills(email)
                                 fetchWorks(email)
+
                                 viewAllBtn.setOnClickListener {
 
                                     val skillPostFragment = YourProjectsFragmentSProvider.newInstance(
@@ -170,6 +169,7 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
                                         .commit()
 
                                 }
+
                             }
                         }
                     } else {
@@ -185,91 +185,56 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
 
     private fun fetchSkills(email: String) {
         val skillsRef = FirebaseDatabase.getInstance().getReference("skills")
-        val ratingsRef = FirebaseDatabase.getInstance().getReference("ratings")
 
         skillsRef.orderByChild("user").equalTo(email).addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (snapshot.exists()) {
                     Log.d(TAG, "Skills data exists for user: $email")
-                    val categories = mutableListOf<Category>()
+                    val categories = mutableListOf<Category>() // Prepare a new list for categories
                     var totalItems = 0
                     var fetchedItems = 0
 
-                    // First, fetch all ratings for this provider
-                    ratingsRef.orderByChild("ratedEmail").equalTo(email)
-                        .addListenerForSingleValueEvent(object : ValueEventListener {
-                            override fun onDataChange(ratingsSnapshot: DataSnapshot) {
-                                // Group ratings by service
-                                val serviceRatings = mutableMapOf<String, MutableList<Float>>()
-                                val serviceBookings = mutableMapOf<String, Int>() // Track number of ratings per service
+                    for (skillSnapshot in snapshot.children) {
+                        totalItems += skillSnapshot.child("skillItems").childrenCount.toInt()
+                        val skillItemsSnapshot = skillSnapshot.child("skillItems")
+                        for (itemSnapshot in skillItemsSnapshot.children) {
+                            val name = itemSnapshot.child("name").getValue(String::class.java) ?: ""
+                            val description = itemSnapshot.child("description").getValue(String::class.java) ?: ""
+                            val noOfBookings = itemSnapshot.child("noOfBookings").getValue(Int::class.java) ?: 0
+                            val rating = itemSnapshot.child("rating").getValue(Float::class.java) ?: 0.0f
 
-                                // Collect all ratings grouped by service
-                                ratingsSnapshot.children.forEach { ratingSnapshot ->
-                                    val rating = ratingSnapshot.getValue(Rating::class.java)
-                                    if (rating != null) {
-                                        // Add rating to service-specific list
-                                        val ratingsList = serviceRatings.getOrPut(rating.serviceOffered) { mutableListOf() }
-                                        ratingsList.add(rating.rating)
+                            // Log the current skill details
+                            Log.d(TAG, "Skill details - Name: $name, Description: $description, NoOfBookings: $noOfBookings, Rating: $rating")
 
-                                        // Increment booking count for this service
-                                        serviceBookings[rating.serviceOffered] = (serviceBookings[rating.serviceOffered] ?: 0) + 1
-                                    }
-                                }
+                            // Check if the selected service matches the skill name
+                            if (serviceOffered == name) {
+                                providerDescription.text = description // Update the provider description
+                                providerRatingTextView.text = "★ $rating ($noOfBookings Bookings)"
 
-                                // Now process skills with their corresponding ratings
-                                for (skillSnapshot in snapshot.children) {
-                                    totalItems += skillSnapshot.child("skillItems").childrenCount.toInt()
-                                    val skillItemsSnapshot = skillSnapshot.child("skillItems")
-
-                                    for (itemSnapshot in skillItemsSnapshot.children) {
-                                        val name = itemSnapshot.child("name").getValue(String::class.java) ?: ""
-                                        val description = itemSnapshot.child("description").getValue(String::class.java) ?: ""
-
-                                        // Get ratings only for this specific service
-                                        val serviceRatingsList = serviceRatings[name] ?: listOf()
-                                        val numBookings = serviceBookings[name] ?: 0 // Get number of ratings for this service
-
-                                        // Calculate average rating for this specific service
-                                        val averageRating = if (serviceRatingsList.isNotEmpty()) {
-                                            serviceRatingsList.average().toFloat()
-                                        } else {
-                                            0.0f
-                                        }
-
-                                        // Update the skill item's rating and bookings in Firebase
-                                        itemSnapshot.ref.child("rating").setValue(averageRating)
-                                        itemSnapshot.ref.child("noOfBookings").setValue(numBookings)
-
-                                        // If this is the selected service, update the UI with service-specific rating
-                                        if (serviceOffered == name) {
-                                            providerDescription.text = description
-                                            providerRatingTextView.text = "★ ${String.format("%.1f", averageRating)} ($numBookings Reviews)"
-                                            Log.d(TAG, "Match found! Service: $name, Rating: $averageRating, Reviews: $numBookings")
-                                        }
-
-                                        // Fetch image and create category
-                                        fetchImage(name) { imageUrl ->
-                                            val category = Category(
-                                                name = name,
-                                                image = imageUrl,
-                                            )
-                                            categories.add(category)
-                                            Log.d(TAG, "Fetched image URL for $name: $imageUrl")
-
-                                            fetchedItems++
-                                            if (fetchedItems == totalItems) {
-                                                servicesAdapter.updateServices(categories)
-                                                servicesAdapter.updateSelectedService(serviceOffered)
-                                            }
-                                        }
-                                    }
-                                }
+                                Log.d(TAG, "Match found! Service offered: $serviceOffered matches skill: $name. Description set to: $description")
+                            } else {
+                                Log.d(TAG, "No match. Service offered: $serviceOffered does not match skill: $name")
                             }
 
-                            override fun onCancelled(error: DatabaseError) {
-                                Log.e(TAG, "Error fetching ratings", error.toException())
+                            // Fetch the image URL using the name
+                            fetchImage(name) { imageUrl ->
+                                // Create a new Category object and add it to the list
+                                val category = Category(
+                                    name = name,
+                                    image = imageUrl,
+                                )
+                                categories.add(category)
+                                Log.d(TAG, "Fetched image URL for $name: $imageUrl")
+
+                                fetchedItems++
+                                // Update the adapter only after all items have been fetched
+                                if (fetchedItems == totalItems) {
+                                    servicesAdapter.updateServices(categories)
+                                    servicesAdapter.updateSelectedService(serviceOffered)
+                                }
                             }
-                        })
+                        }
+                    }
                 } else {
                     Log.d(TAG, "No skills data found for user: $email")
                 }
@@ -280,6 +245,7 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
             }
         })
     }
+
 
     private fun fetchWorks(email: String) {
         val postsRef = FirebaseDatabase.getInstance().getReference("posts")
@@ -308,10 +274,9 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
                             view?.findViewById<TextView>(R.id.noItemsTextView)?.visibility = View.GONE
                             setupRecyclerView(approvedImages)
                         }
+                        setupRecyclerView(approvedImages)
                     } else {
-                        // No posts exist
-                        view?.findViewById<TextView>(R.id.viewAll)?.visibility = View.GONE
-                        view?.findViewById<TextView>(R.id.noItemsTextView)?.visibility = View.VISIBLE
+                        Log.d(TAG, "No approved posts found for email: $email")
                     }
                 }
 
@@ -320,7 +285,6 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
                 }
             })
     }
-
 
     private fun setupRecyclerView(postImages: List<String>) {
         val recyclerView = view?.findViewById<RecyclerView>(R.id.worksRecyclerView)
@@ -332,9 +296,6 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
 
             // Load the image into the full-screen view using Picasso
             Picasso.get().load(imageUrl).into(fullScreenImageView)
-
-            val btnClose: ImageButton = fullScreenDialog.findViewById(R.id.btnClose)
-            btnClose.setOnClickListener { fullScreenDialog.dismiss() }
 
             // Show the full-screen dialog
             fullScreenDialog.show()
@@ -384,35 +345,8 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
             serviceOffered = newService
             servicesAdapter.updateSelectedService(newService)
 
-            // Fetch ratings for the selected service
-            val ratingsRef = FirebaseDatabase.getInstance().getReference("ratings")
-            ratingsRef.orderByChild("ratedEmail").equalTo(email)
-                .addListenerForSingleValueEvent(object : ValueEventListener {
-                    override fun onDataChange(snapshot: DataSnapshot) {
-                        // Count ratings and calculate average for this specific service
-                        var totalRating = 0f
-                        var numRatings = 0
-
-                        snapshot.children.forEach { ratingSnapshot ->
-                            val rating = ratingSnapshot.getValue(Rating::class.java)
-                            if (rating != null && rating.serviceOffered == newService) {
-                                totalRating += rating.rating
-                                numRatings++
-                            }
-                        }
-
-                        // Update the rating display for this service
-                        val averageRating = if (numRatings > 0) totalRating / numRatings else 0f
-                        providerRatingTextView.text = "★ ${String.format("%.1f", averageRating)} ($numRatings Reviews)"
-                    }
-
-                    override fun onCancelled(error: DatabaseError) {
-                        Log.e(TAG, "Error fetching service ratings", error.toException())
-                    }
-                })
-
             // Re-fetch skills to update the description based on the selected service
-            fetchSkills(email)
+            fetchSkills(email) // Pass the email to fetchSkills
         }
 
         recyclerView.apply {

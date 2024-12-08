@@ -121,6 +121,8 @@
                         android:id="@+id/imgClientProfile"
                         android:layout_width="50dp"
                         android:layout_height="50dp"
+                        android:scaleType="centerCrop"
+                        app:shapeAppearanceOverlay="@style/CircularImageViewStyle"
                         android:layout_marginEnd="8dp"
                         android:src="@drawable/profile" />
 
@@ -181,6 +183,8 @@
                         android:layout_width="50dp"
                         android:layout_height="50dp"
                         android:layout_marginEnd="8dp"
+                        android:scaleType="centerCrop"
+                        app:shapeAppearanceOverlay="@style/CircularImageViewStyle"
                         android:src="@drawable/profile1" />
 
                     <LinearLayout

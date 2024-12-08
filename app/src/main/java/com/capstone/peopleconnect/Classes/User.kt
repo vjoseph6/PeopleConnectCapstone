@@ -16,5 +16,5 @@ data class User(
     val userRating: Float = 0.0f,
     val userNoOfBookings: Int = 0,
     val userTotalRating: Float = 0.0f,
-    val status: String = ""
+    val status: String = "enabled"
 )

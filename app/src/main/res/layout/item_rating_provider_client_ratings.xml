@@ -5,12 +5,14 @@
     android:paddingVertical="8dp">
 
     <!-- Profile Image -->
-    <ImageView
+    <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/imageProfile"
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:layout_marginStart="8dp"
         android:src="@drawable/profile1"
+        android:scaleType="centerCrop"
+        app:shapeAppearanceOverlay="@style/CircularImageViewStyle"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -80,5 +82,15 @@
         app:layout_constraintBottom_toBottomOf="@id/iconRating"
         app:layout_constraintStart_toEndOf="@id/iconRating"
         app:layout_constraintTop_toTopOf="@id/iconRating" />
+
+    <TextView
+        android:id="@+id/textService"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/regular_poppins"
+        android:textColor="@color/light_gray"
+        android:textSize="12sp"
+        app:layout_constraintStart_toStartOf="@id/textName"
+        app:layout_constraintTop_toBottomOf="@id/textDate" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -537,7 +537,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
         val bookingDay = startDateTimeTextView.toString().split(" - ")[0]
         val bookingAmountString = view?.findViewById<EditText>(R.id.etRate)?.text?.toString()
         val bookingAmount = bookingAmountString?.toDoubleOrNull() ?: 0.0 // Fallback to 0.0 if the conversion fails
-
+        
         // Validate input fields
         if (providerEmail.isEmpty() ||
             serviceOffered.isEmpty() ||
@@ -550,19 +550,31 @@ class ActivityFragmentClient_BookDetails : Fragment() {
             return
         }
 
-        // Check for duplicate booking first
-        checkForDuplicateBooking(userEmail, providerEmail, bookingDay, bookingStartTime, bookingEndTime, serviceOffered.toString()) { duplicateFound ->
-            if (duplicateFound) {
-                requireContext().let {
-                    dismissLoadingDialog()
-                    Toast.makeText(it, "You already have a pending booking with this provider for this service.", Toast.LENGTH_SHORT).show()
-                }
-            }else {
-                // Proceed to initiate payment
+        // Show verification dialog
+        val builder = AlertDialog.Builder(requireContext())
+        val dialogView = layoutInflater.inflate(R.layout.dialog_card_verification, null)
+        val cardNumberEditText = dialogView.findViewById<EditText>(R.id.cardNumberEditText)
+        
+        builder.setView(dialogView)
+            .setTitle("Card Verification")
+            .setPositiveButton("Verify") { _, _ ->
+                // Always succeed and proceed with booking
                 showLoadingDialog()
-                stripeHelper.fetchPayment(bookingAmount, currency, userEmail, providerEmail, serviceOffered)
+                val bookingAmountString = view?.findViewById<EditText>(R.id.etRate)?.text?.toString()
+                val bookingAmount = bookingAmountString?.toDoubleOrNull() ?: 0.0
+                
+                // Directly save booking with mock payment details
+                saveBooking(
+                    originalAmount = bookingAmount,
+                    commissionAmount = bookingAmount * 0.15,
+                    totalAmount = bookingAmount * 1.15,
+                    paymentId = "mock_payment_${System.currentTimeMillis()}",
+                    paymentMethod = "card",
+                    paymentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+                )
             }
-        }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
 

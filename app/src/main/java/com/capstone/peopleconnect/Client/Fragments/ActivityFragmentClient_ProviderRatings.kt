@@ -1,10 +1,12 @@
 package com.capstone.peopleconnect.Client.Fragments
 
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.capstone.peopleconnect.Adapters.RatingsAdapter
@@ -14,22 +16,22 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import android.util.Log
 
 class ActivityFragmentClient_ProviderRatings : Fragment() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var ratingsAdapter: RatingsAdapter
     private val ratingsList = mutableListOf<Rating>()
     private var email: String? = null
-    private var selectedService: String? = null  // Add this line
+    private var serviceType: String? = null
+
+    private val serviceRatings = mutableMapOf<String, MutableList<Rating>>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
             email = it.getString("EMAIL")
-            selectedService = it.getString("SERVICE")  // Add this line
+            serviceType = it.getString("serviceType")
         }
-
     }
 
     override fun onCreateView(
@@ -41,7 +43,11 @@ class ActivityFragmentClient_ProviderRatings : Fragment() {
         recyclerView = view.findViewById(R.id.rvRatings)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
-        ratingsAdapter = RatingsAdapter(ratingsList)
+        val backBtn = view.findViewById<ImageButton>(R.id.btnBackClient)
+        backBtn.setOnClickListener {requireActivity().supportFragmentManager.popBackStack()}
+
+        // Modified adapter initialization to handle service-specific grouping
+        ratingsAdapter = RatingsAdapter(ratingsList, true) // Add parameter for showing service
         recyclerView.adapter = ratingsAdapter
 
         fetchRatings()
@@ -52,24 +58,49 @@ class ActivityFragmentClient_ProviderRatings : Fragment() {
     private fun fetchRatings() {
         val ratingsRef = FirebaseDatabase.getInstance().getReference("ratings")
 
-        ratingsRef.orderByChild("ratedEmail").equalTo(email)
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    ratingsList.clear()
+        ratingsRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                ratingsList.clear()
+                serviceRatings.clear()
 
-                    for (ratingSnapshot in snapshot.children) {
-                        val rating = ratingSnapshot.getValue(Rating::class.java)
-                        if (rating != null && rating.serviceOffered == selectedService) {
-                            fetchUser(rating)  // Only call fetchUser once
+                Log.d("SERVICE OFFERED", "$serviceType")
+                // Modified to filter by serviceType if specified
+                snapshot.children.forEach { ratingSnapshot ->
+                    val rating = ratingSnapshot.getValue(Rating::class.java)
+                    if (rating != null && rating.ratedEmail == email) {
+                        // Only add ratings that match the serviceType (if specified)
+                        if (serviceType == null || rating.serviceOffered == serviceType) {
+                            val serviceList = serviceRatings.getOrPut(rating.serviceOffered) { mutableListOf() }
+                            serviceList.add(rating)
                         }
                     }
                 }
 
-                override fun onCancelled(error: DatabaseError) {
-                    Log.e("ProviderRatings", "Error fetching ratings", error.toException())
+                // Sort services alphabetically
+                val sortedServices = serviceRatings.keys.sorted()
+
+                // Process ratings service by service
+                sortedServices.forEach { service ->
+                    serviceRatings[service]?.let { serviceRatingsList ->
+                        // Sort ratings by timestamp (newest first)
+                        val sortedRatings = serviceRatingsList.sortedByDescending { it.timestamp }
+
+                        // Fetch user details for each rating
+                        sortedRatings.forEach { rating ->
+                            fetchUser(rating)
+                        }
+                    }
                 }
-            })
+            }
+
+
+            override fun onCancelled(error: DatabaseError) {
+                // Handle error
+            }
+        })
     }
+
+
 
     private fun fetchUser(rating: Rating) {
         val usersRef = FirebaseDatabase.getInstance().getReference("users")
@@ -83,8 +114,19 @@ class ActivityFragmentClient_ProviderRatings : Fragment() {
                             rating.profileImageUrl = userSnapshot.child("profileImageUrl").getValue(String::class.java) ?: ""
                         }
                     }
-                    ratingsList.add(rating)
-                    updateAdapter()
+
+                    // Add rating only if it's not already in the list
+                    if (!ratingsList.contains(rating)) {
+                        ratingsList.add(rating)
+
+                        // Sort the entire list by service and then by timestamp
+                        ratingsList.sortWith(
+                            compareBy<Rating> { it.serviceOffered }
+                                .thenByDescending { it.timestamp }
+                        )
+
+                        updateAdapter()
+                    }
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -95,21 +137,20 @@ class ActivityFragmentClient_ProviderRatings : Fragment() {
 
     private fun updateAdapter() {
         if (!::ratingsAdapter.isInitialized) {
-            ratingsAdapter = RatingsAdapter(ratingsList)
+            ratingsAdapter = RatingsAdapter(ratingsList, true)
             recyclerView.adapter = ratingsAdapter
         } else {
             ratingsAdapter.notifyDataSetChanged()
         }
     }
 
-
     companion object {
         @JvmStatic
-        fun newInstance(email: String, service: String) =  // Update this line
+        fun newInstance(email: String, serviceType: String?) =
             ActivityFragmentClient_ProviderRatings().apply {
                 arguments = Bundle().apply {
                     putString("EMAIL", email)
-                    putString("SERVICE", service)  // Add this line
+                    serviceType?.let { putString("serviceType", it) }
                 }
             }
     }

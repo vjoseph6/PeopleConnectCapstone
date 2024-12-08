@@ -26,6 +26,7 @@ import com.capstone.peopleconnect.Message.chat.ChatActivity
 import com.capstone.peopleconnect.Notifications.model.NotificationModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseReference
+import com.capstone.peopleconnect.Helper.StripeHelper
 
 class OngoingFragmentClient : Fragment() {
     private lateinit var binding: FragmentOngoingClientBinding
@@ -35,7 +36,7 @@ class OngoingFragmentClient : Fragment() {
     private lateinit var notificationsRef: DatabaseReference
     private var currentState = BookingProgress.STATE_PENDING
     private var progressListener: ValueEventListener? = null
-
+    private lateinit var stripeHelper: StripeHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,6 +45,8 @@ class OngoingFragmentClient : Fragment() {
             providerEmail = it.getString(ARG_PROVIDER_EMAIL)
             email = it.getString(ARG_CLIENT_EMAIL)  // Add this line
         }
+        // Initialize StripeHelper here
+        stripeHelper = StripeHelper(requireContext(), this)
     }
 
     override fun onCreateView(
@@ -236,7 +239,26 @@ class OngoingFragmentClient : Fragment() {
             .setMessage("Has the work been completed?")
             .setPositiveButton("Yes") { _, _ ->
                 bookingId?.let { id ->
-                    handleWorkCompletion(id)
+                    // Get booking details and initiate payment directly
+                    FirebaseDatabase.getInstance().getReference("bookings")
+                        .child(id)
+                        .get()
+                        .addOnSuccessListener { snapshot ->
+                            val bookingAmount = snapshot.child("bookingAmount").getValue(Double::class.java) ?: 0.0
+                            val serviceOffered = snapshot.child("serviceOffered").getValue(String::class.java) ?: ""
+                            
+                            // Show payment sheet
+                            stripeHelper.fetchPayment(
+                                amount = bookingAmount,
+                                currency = "php",
+                                userEmail = email ?: "",
+                                providerEmail = providerEmail ?: "",
+                                serviceOffered = serviceOffered
+                            )
+                        }
+                        .addOnFailureListener { e ->
+                            Toast.makeText(requireContext(), "Error fetching booking details: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
                 }
             }
             .setNegativeButton("No") { _, _ ->
@@ -246,39 +268,6 @@ class OngoingFragmentClient : Fragment() {
             }
             .setCancelable(false)
             .show()
-    }
-
-    private fun handleWorkCompletion(bookingId: String) {
-        // First update the booking status
-        val bookingRef = FirebaseDatabase.getInstance().getReference("bookings/$bookingId")
-        bookingRef.child("bookingStatus").setValue("Completed")
-            .addOnSuccessListener {
-                // After booking status is updated, update the progress
-                val progress = BookingProgress(
-                    state = BookingProgress.STATE_COMPLETE,
-                    bookingId = bookingId,
-                    providerEmail = providerEmail ?: "",
-                    clientEmail = email ?: "",
-                    timestamp = System.currentTimeMillis()
-                )
-
-                DatabaseHelper.updateBookingProgress(bookingId, progress)
-                    .addOnSuccessListener {
-                        // Remove notifications only after both updates are successful
-                        FirebaseAuth.getInstance().currentUser?.let { currentUser ->
-                            removeOngoingNotifications(currentUser.uid, bookingId) {
-                                // Navigate to rating screen only after all updates are complete
-                                navigateToRating(bookingId)
-                            }
-                        }
-                    }
-                    .addOnFailureListener { error ->
-                        handleError("Failed to update progress", error)
-                    }
-            }
-            .addOnFailureListener { error ->
-                handleError("Failed to update booking status", error)
-            }
     }
 
     private fun handleWorkDeclined(bookingId: String) {
@@ -533,5 +522,49 @@ class OngoingFragmentClient : Fragment() {
                 override fun onCancelled(error: DatabaseError) {}
             })
         }
+    }
+
+    fun onPaymentSuccess(paymentId: String) {
+        bookingId?.let { id ->
+            handleWorkCompletion(id, paymentId)
+        }
+    }
+
+    private fun handleWorkCompletion(bookingId: String, paymentId: String) {
+        val bookingRef = FirebaseDatabase.getInstance().getReference("bookings/$bookingId")
+        
+        // Update booking status and payment ID
+        val updates = hashMapOf<String, Any>(
+            "bookingStatus" to "Completed",
+            "bookingPaymentId" to paymentId
+        )
+        
+        bookingRef.updateChildren(updates)
+            .addOnSuccessListener {
+                // Update progress state
+                val progress = BookingProgress(
+                    state = BookingProgress.STATE_COMPLETE,
+                    bookingId = bookingId,
+                    providerEmail = providerEmail ?: "",
+                    clientEmail = email ?: "",
+                    timestamp = System.currentTimeMillis()
+                )
+
+                DatabaseHelper.updateBookingProgress(bookingId, progress)
+                    .addOnSuccessListener {
+                        // Remove notifications and navigate to rating
+                        FirebaseAuth.getInstance().currentUser?.let { currentUser ->
+                            removeOngoingNotifications(currentUser.uid, bookingId) {
+                                navigateToRating(bookingId)
+                            }
+                        }
+                    }
+                    .addOnFailureListener { error ->
+                        handleError("Failed to update progress", error)
+                    }
+            }
+            .addOnFailureListener { error ->
+                handleError("Failed to update booking status", error)
+            }
     }
 }

@@ -145,74 +145,84 @@ class RateFragmentClient : Fragment() {
     }
 
     // Add this check before submitting rating
+    // Add this check before submitting rating
     private fun submitRating(customFeedback: String = "") {
         bookingId?.let { id ->
-            val ratingsRef = FirebaseDatabase.getInstance().getReference("ratings")
-            ratingsRef.orderByChild("bookingId").equalTo(id)
-                .addListenerForSingleValueEvent(object : ValueEventListener {
-                    override fun onDataChange(snapshot: DataSnapshot) {
-                        val hasRated = snapshot.children.any {
-                            it.getValue(Rating::class.java)?.raterEmail == email
-                        }
+            // First fetch the booking to get the serviceOffered
+            FirebaseDatabase.getInstance().getReference("bookings").child(id)
+                .get()
+                .addOnSuccessListener { bookingSnapshot ->
+                    val serviceOffered = bookingSnapshot.child("serviceOffered").getValue(String::class.java)
 
-                        if (hasRated) {
-                            Toast.makeText(context, "You have already submitted a rating", Toast.LENGTH_SHORT).show()
-                            parentFragmentManager.popBackStack()
-                            return
-                        }
+                    // Add logging to track serviceOffered
+                    Log.d("RateFragmentClient", "Service Offered: $serviceOffered")
 
-                        val rating = Rating(
-                            bookingId = id,
-                            raterEmail = email ?: "",
-                            ratedEmail = providerEmail ?: "",
-                            serviceOffered = serviceOffered.toString(),
-                            rating = binding.ratingBar.rating,
-                            feedback = customFeedback.ifEmpty { binding.ratingDescription.text.toString() },
-                            timestamp = System.currentTimeMillis()
-                        )
+                    // Continue with existing rating check
+                    val ratingsRef = FirebaseDatabase.getInstance().getReference("ratings")
+                    ratingsRef.orderByChild("bookingId").equalTo(id)
+                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                            override fun onDataChange(snapshot: DataSnapshot) {
+                                val hasRated = snapshot.children.any {
+                                    it.getValue(Rating::class.java)?.raterEmail == email
+                                }
 
-                        val ratingRef = ratingsRef.push()
-                        ratingRef.setValue(rating).addOnSuccessListener {
-                            Toast.makeText(context, "Rating submitted successfully", Toast.LENGTH_SHORT).show()
-
-                            // Call updateUserRating after successfully submitting the rating
-                            updateUserRating(providerEmail ?: "", id) // Pass the rater email and booking ID
-
-                            // Create an intent to go back to ClientMainActivity
-                            val intent = Intent(context, ClientMainActivity::class.java)
-
-                            // Put the extra string data to indicate the fragment to load
-                            intent.putExtra("FRAGMENT_TO_LOAD", "ActivityFragmentClient")
-                            intent.putExtra("EMAIL", email)
-
-                            // Set flags to ensure we clear the current activity stack, if necessary
-                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-
-                            // Start ClientMainActivity
-                            context?.startActivity(intent)
-
-                            // Optionally, you can finish the current activity (if applicable)
-                            activity?.finish()
-
-                            // Make HTTP request to the URL after success
-                            makeHttpRequest()
-
-                        }.addOnFailureListener { e ->
-                            // Handle failure, maybe show a toast or log the error
-                            Toast.makeText(
-                                context,
-                                "Failed to submit rating: ${e.message}",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
+                                if (hasRated) {
+                                    Toast.makeText(context, "You have already submitted a rating", Toast.LENGTH_SHORT).show()
+                                    parentFragmentManager.popBackStack()
+                                    return
+                                }
 
 
-                    }
+                                val rating = Rating(
+                                    bookingId = id,
+                                    raterEmail = email ?: "",
+                                    ratedEmail = providerEmail ?: "",
+                                    serviceOffered = serviceOffered ?: "", // Ensure serviceOffered is saved
+                                    rating = binding.ratingBar.rating,
+                                    feedback = customFeedback.ifEmpty { binding.ratingDescription.text.toString() },
+                                    timestamp = System.currentTimeMillis()
+                                )
 
-                    override fun onCancelled(error: DatabaseError) {
-                        Log.e("RateFragmentClient", "Error checking existing rating", error.toException())
-                    }
-                })
+
+                                // Add logging for rating object
+                                Log.d("RateFragmentClient", "Rating being saved: $rating")
+
+                                val ratingRef = ratingsRef.push()
+                                ratingRef.setValue(rating).addOnSuccessListener {
+                                    Toast.makeText(context, "Rating submitted successfully", Toast.LENGTH_SHORT).show()
+
+                                    // Call updateUserRating with serviceOffered
+                                    updateUserRating(providerEmail ?: "", id)
+
+                                    // Create an intent to go back to ClientMainActivity
+                                    val intent = Intent(context, ClientMainActivity::class.java)
+                                    intent.putExtra("FRAGMENT_TO_LOAD", "ActivityFragmentClient")
+                                    intent.putExtra("EMAIL", email)
+
+                                    makeHttpRequest()
+
+                                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                    context?.startActivity(intent)
+                                    activity?.finish()
+
+                                }.addOnFailureListener { e ->
+                                    Toast.makeText(
+                                        context,
+                                        "Failed to submit rating: ${e.message}",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            }
+
+                            override fun onCancelled(error: DatabaseError) {
+                                Log.e("RateFragmentClient", "Error checking existing rating", error.toException())
+                            }
+                        })
+                }
+                .addOnFailureListener { e ->
+                    Log.e("RateFragmentClient", "Error fetching booking details", e)
+                    Toast.makeText(context, "Error submitting rating", Toast.LENGTH_SHORT).show()
+                }
         }
     }
 

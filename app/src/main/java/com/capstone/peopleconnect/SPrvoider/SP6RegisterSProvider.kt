@@ -268,14 +268,17 @@ class SP6RegisterSProvider : AppCompatActivity() {
         val user = User(
             email = email,
             roles = listOf(userRole),
-            userId = userId  // Ensure this field is passed correctly
+            userId = userId,
+            status = "enabled"  // Set default status
         )
 
         databaseReference.child(userId).setValue(user).addOnCompleteListener { task ->
             progressBar.visibility = View.GONE
             if (task.isSuccessful) {
-                Toast.makeText(this, "Registration successful!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Registration successful! Please verify your email before logging in.", Toast.LENGTH_LONG).show()
+                auth.signOut() // Sign out after registration to force email verification
                 startActivity(Intent(this, SP5LoginSProvider::class.java))
+                finish()
             } else {
                 Toast.makeText(this, "Failed to save user data: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
             }

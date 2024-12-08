@@ -7,6 +7,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.capstone.peopleconnect.Client.Fragments.ActivityFragmentClient_BookDetails
+import com.capstone.peopleconnect.Client.Fragments.OngoingFragmentClient
 import com.stripe.android.PaymentConfiguration
 import com.stripe.android.paymentsheet.PaymentSheet
 import com.stripe.android.paymentsheet.PaymentSheetResult
@@ -82,8 +83,7 @@ class StripeHelper(
                         paymentMethod = json.getString("paymentMethod")
                         paymentDate = json.getString("paymentDate")
 
-                        // Calculate commission amount (15% of original amount)
-                        commissionAmount = originalAmount * 0.15
+                        commissionAmount = originalAmount * 0.10
 
                         // Get payment details for Stripe
                         val clientSecret = json.getString("clientSecret")
@@ -159,15 +159,9 @@ class StripeHelper(
                 Log.d("StripeHelper", "Payment Successful")
                 showToast("Payment successful! Total amount: ₱${"%.2f".format(totalAmount)}")
 
-                (fragment as? ActivityFragmentClient_BookDetails)?.let { fragment ->
-                    fragment.saveBooking(
-                        originalAmount = originalAmount,
-                        commissionAmount = commissionAmount,
-                        totalAmount = totalAmount,
-                        paymentId = paymentId,
-                        paymentMethod = paymentMethod,
-                        paymentDate = paymentDate
-                    )
+                // Get the payment ID from the response
+                if (fragment is OngoingFragmentClient) {
+                    fragment.onPaymentSuccess(paymentId)
                 }
             }
         }

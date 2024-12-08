@@ -179,108 +179,69 @@ class SP5LoginSProvider : AppCompatActivity() {
         val email = emailEditText.text.toString().trim()
         val password = passwordEditText.text.toString().trim()
 
-        // Validate email and password input
-        if (email.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            emailEditText.error = "Please enter a valid email"
+        if (email.isEmpty() || password.isEmpty()) {
+            Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
             return
         }
 
-        if (password.isEmpty()) {
-            passwordEditText.error = "Password cannot be empty"
-            return
-        }
-
-        // Sign in using Firebase Authentication
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    // Check user roles
-                    checkUserRoles(email)
+                    // Directly check user in database without email verification
+                    checkUserInDatabase(email)
                 } else {
-                    // Sign in failed, handle the error
                     handleSignInError(task.exception)
                 }
             }
     }
 
-    private fun checkUserRoles(email: String) {
-        databaseReference.orderByChild("email").equalTo(email)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (snapshot.exists()) {
-                        var isServiceProvider = false
-                        var userName = ""
-                        var userAddress = ""
-                        var profileImageUrl = ""
-                        var fName = ""
-                        var mName = ""
-                        var lName = ""
-                        var userStatus: String? = null
-
-                        for (userSnapshot in snapshot.children) {
-                            val user = userSnapshot.getValue(User::class.java)
-                            if (user != null) {
-                                val userRoles = user.roles ?: listOf()
-                                userStatus = user.status
-                                if (userRoles.contains("Service Provider")) {
-                                    isServiceProvider = true
-                                    userName = user.name ?: ""
-                                    fName = user.firstName ?: ""
-                                    mName = user.middleName ?: ""
-                                    lName = user.lastName ?: ""
-                                    userAddress = user.address ?: ""
-                                    profileImageUrl = user.profileImageUrl ?: ""
-                                    break
+    private fun checkUserInDatabase(email: String) {
+        val query = databaseReference.orderByChild("email").equalTo(email)
+        query.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    for (userSnapshot in snapshot.children) {
+                        val user = userSnapshot.getValue(User::class.java)
+                        if (user != null) {
+                            val userRoles = user.roles ?: listOf()
+                            if (userRoles.contains("Service Provider")) {
+                                if (user.status == "enabled") {
+                                    // User is enabled, proceed with login
+                                    handleSuccessfulLogin(
+                                        email,
+                                        user.name ?: "",
+                                        user.address ?: "",
+                                        user.profileImageUrl ?: "",
+                                        user.firstName ?: "",
+                                        user.middleName ?: "",
+                                        user.lastName ?: ""
+                                    )
+                                } else {
+                                    auth.signOut()
+                                    Toast.makeText(this@SP5LoginSProvider, "Your account has been disabled. Please contact support.", Toast.LENGTH_LONG).show()
                                 }
-                            } else {
-                                Log.e("FirebaseError", "Unable to parse user data.")
+                                return
                             }
                         }
-
-                        if (userStatus == "enabled") {
-                            if (isServiceProvider) {
-                                // Please do not delete this, as this code is the connection for the notification.
-                                // It's just missing something, which is why it isn't functioning yet.
-
-                                FirebaseAuth.getInstance().currentUser?.let { user ->
-                                    SelectAccount.registerDeviceForPushNotifications(user, this@SP5LoginSProvider)
-                                }
-
-                                // Save current user details in shared preferences
-                                saveCurrentUser(email, userName, userAddress, profileImageUrl)
-
-                                // Pass user details to the next activity
-                                val intent = Intent(this@SP5LoginSProvider, SProviderMainActivity::class.java).apply {
-                                    putExtra("USER_NAME", userName)
-                                    putExtra("FIRST_NAME", fName)
-                                    putExtra("MIDDLE_NAME", mName)
-                                    putExtra("LAST_NAME", lName)
-                                    putExtra("USER_ADDRESS", userAddress)
-                                    putExtra("EMAIL", email)
-                                    putExtra("PROFILE_IMAGE_URL", profileImageUrl)
-                                }
-                                Toast.makeText(this@SP5LoginSProvider, "Welcome Service Provider $fName", Toast.LENGTH_SHORT).show()
-                                startActivity(intent)
-                            } else {
-                                Toast.makeText(this@SP5LoginSProvider, "User does not exist", Toast.LENGTH_SHORT).show()
-                            }
-                        } else {
-                            Toast.makeText(this@SP5LoginSProvider, "Your account is disabled. Please contact support.", Toast.LENGTH_SHORT).show()
-                        }
-                    } else {
-                        Toast.makeText(this@SP5LoginSProvider, "No account found with this email.", Toast.LENGTH_SHORT).show()
                     }
+                    // If we get here, user exists but is not a Service Provider
+                    auth.signOut()
+                    Toast.makeText(this@SP5LoginSProvider, "This account is not registered as a Service Provider", Toast.LENGTH_SHORT).show()
+                } else {
+                    auth.signOut()
+                    Toast.makeText(this@SP5LoginSProvider, "No account found with this email.", Toast.LENGTH_SHORT).show()
                 }
+            }
 
-                override fun onCancelled(error: DatabaseError) {
-                    Toast.makeText(this@SP5LoginSProvider, "Database Error: ${error.message}", Toast.LENGTH_SHORT).show()
-                }
-            })
+            override fun onCancelled(error: DatabaseError) {
+                auth.signOut()
+                Toast.makeText(this@SP5LoginSProvider, "Database Error: ${error.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
     }
 
-
-    private fun saveCurrentUser(email: String, firstName: String, address: String, profileImageUrl: String) {
-        // Save the current user's details in shared preferences
+    private fun handleSuccessfulLogin(email: String, username: String, address: String, profileImageUrl: String, firstName: String, middleName: String, lastName: String) {
+        // Save current user details in shared preferences
         val sharedPref = getSharedPreferences("com.capstone.peopleconnect.PREFERENCE_FILE_KEY", Context.MODE_PRIVATE)
         with(sharedPref.edit()) {
             putString("currentEmail", email)
@@ -289,9 +250,20 @@ class SP5LoginSProvider : AppCompatActivity() {
             putString("currentProfileImageUrl", profileImageUrl)
             apply()
         }
+
+        // Pass user details to the next activity
+        val intent = Intent(this@SP5LoginSProvider, SProviderMainActivity::class.java).apply {
+            putExtra("USER_NAME", username)
+            putExtra("FIRST_NAME", firstName)
+            putExtra("MIDDLE_NAME", middleName)
+            putExtra("LAST_NAME", lastName)
+            putExtra("USER_ADDRESS", address)
+            putExtra("EMAIL", email)
+            putExtra("PROFILE_IMAGE_URL", profileImageUrl)
+        }
+        Toast.makeText(this@SP5LoginSProvider, "Welcome Service Provider $firstName", Toast.LENGTH_SHORT).show()
+        startActivity(intent)
     }
-
-
 
     private fun handleSignInError(exception: Exception?) {
         val exceptionMessage = exception?.localizedMessage

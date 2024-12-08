@@ -198,119 +198,141 @@ class C5LoginClient : AppCompatActivity() {
         val email = emailEditText.text.toString().trim()
         val password = passwordEditText.text.toString().trim()
 
-        // Validate email and password input
-        if (email.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            emailEditText.error = "Please enter a valid email"
+        if (email.isEmpty() || password.isEmpty()) {
+            Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
             return
         }
 
-        if (password.isEmpty()) {
-            passwordEditText.error = "Password cannot be empty"
-            return
-        }
-
-        // Sign in using Firebase Authentication
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    // Check user status after successful sign-in
-                    checkUserStatus(email)
+                    val user = auth.currentUser
+                    if (user != null) {
+                        // Reload user to get latest verification status
+                        user.reload().addOnCompleteListener { reloadTask ->
+                            if (reloadTask.isSuccessful) {
+                                if (user.isEmailVerified) {
+                                    // Email is verified, check user status and role
+                                    checkUserInDatabase(email)
+                                } else {
+                                    // Email not verified, sign out and show dialog
+                                    auth.signOut()
+                                    showVerificationDialog()
+                                }
+                            }
+                        }
+                    }
                 } else {
                     handleSignInError(task.exception)
                 }
             }
     }
 
-    // New method to check user status
-    private fun checkUserStatus(email: String) {
-        databaseReference.orderByChild("email").equalTo(email)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (snapshot.exists()) {
-                        val user = snapshot.children.first().getValue(User::class.java)
-                        if (user?.status == "enabled") {
-                            // Proceed to check user roles if status is enabled
-                            checkUserRoles(email)
+    private fun checkUserInDatabase(email: String) {
+        val query = databaseReference.orderByChild("email").equalTo(email)
+        query.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    var isClient = false
+                    var userName = ""
+                    var userAddress = ""
+                    var profileImageUrl = ""
+                    var fName = ""
+                    var mName = ""
+                    var lName = ""
+                    var userStatus = ""
+
+                    for (userSnapshot in snapshot.children) {
+                        val user = userSnapshot.getValue(User::class.java)
+                        val userRoles = user?.roles ?: listOf()
+                        if (userRoles.contains("Client")) {
+                            isClient = true
+                            userName = user?.name ?: ""
+                            fName = user?.firstName ?: ""
+                            mName = user?.middleName ?: ""
+                            lName = user?.lastName ?: ""
+                            userAddress = user?.address ?: ""
+                            profileImageUrl = user?.profileImageUrl ?: ""
+                            userStatus = user?.status ?: ""
+                            break
+                        }
+                    }
+
+                    if (isClient) {
+                        if (userStatus == "enabled") {
+                            // User is verified and enabled, proceed with login
+                            handleSuccessfulLogin(email, userName, userAddress, profileImageUrl, fName, mName, lName)
                         } else {
-                            Toast.makeText(this@C5LoginClient, "Your account is disabled.", Toast.LENGTH_SHORT).show()
+                            auth.signOut()
+                            Toast.makeText(this@C5LoginClient, "Your account has been disabled. Please contact support.", Toast.LENGTH_LONG).show()
                         }
                     } else {
-                        Toast.makeText(this@C5LoginClient, "No account found with this email.", Toast.LENGTH_SHORT).show()
+                        auth.signOut()
+                        Toast.makeText(this@C5LoginClient, "User does not exist", Toast.LENGTH_SHORT).show()
                     }
+                } else {
+                    auth.signOut()
+                    Toast.makeText(this@C5LoginClient, "No account found with this email.", Toast.LENGTH_SHORT).show()
                 }
+            }
 
-                override fun onCancelled(error: DatabaseError) {
-                    Toast.makeText(this@C5LoginClient, "Database Error: ${error.message}", Toast.LENGTH_SHORT).show()
-                }
-            })
+            override fun onCancelled(error: DatabaseError) {
+                auth.signOut()
+                Toast.makeText(this@C5LoginClient, "Database Error: ${error.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
     }
 
-    private fun checkUserRoles(email: String) {
-        databaseReference.orderByChild("email").equalTo(email)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if (snapshot.exists()) {
-                        var isClient = false
-                        var userName = ""
-                        var userAddress = ""
-                        var profileImageUrl = ""
-                        var fName = ""
-                        var mName = ""
-                        var lName = ""
+    private fun handleSuccessfulLogin(email: String, userName: String, userAddress: String, profileImageUrl: String, 
+                                    fName: String, mName: String, lName: String) {
+        // Register device for push notifications
+        FirebaseAuth.getInstance().currentUser?.let { user ->
+            SelectAccount.registerDeviceForPushNotifications(user, this@C5LoginClient)
+        }
 
-                        for (userSnapshot in snapshot.children) {
-                            val user = userSnapshot.getValue(User::class.java)
-                            val userRoles = user?.roles ?: listOf()
-                            if (userRoles.contains("Client")) {
-                                isClient = true
-                                userName = user?.name ?: ""
-                                fName = user?.firstName ?: ""
-                                mName = user?.middleName ?: ""
-                                lName = user?.lastName ?: ""
-                                userAddress = user?.address ?: ""
-                                profileImageUrl = user?.profileImageUrl ?: ""
-                                break
-                            }
-                        }
+        // Save current user details
+        saveCurrentUser(email, userName, userAddress, profileImageUrl)
 
-                        if (isClient) {
+        // Navigate to next activity
+        val intent = Intent(this@C5LoginClient, C7ChoosingInterestClient::class.java).apply {
+            putExtra("USER_NAME", userName)
+            putExtra("FIRST_NAME", fName)
+            putExtra("MIDDLE_NAME", mName)
+            putExtra("LAST_NAME", lName)
+            putExtra("USER_ADDRESS", userAddress)
+            putExtra("EMAIL", email)
+            putExtra("PROFILE_IMAGE_URL", profileImageUrl)
+        }
+        Toast.makeText(this@C5LoginClient, "Welcome Client $fName", Toast.LENGTH_SHORT).show()
+        startActivity(intent)
+        finish()
+    }
 
+    private fun showVerificationDialog() {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Email Not Verified")
+            .setMessage("Please verify your email by clicking the verification link sent to your email address.")
+            .setPositiveButton("OK") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .setCancelable(false)
+            .show()
+    }
 
-                            // Register device for push notifications (uncommented out) // PART OF NOTIFICATION
-                            FirebaseAuth.getInstance().currentUser?.let { user ->
-                                SelectAccount.registerDeviceForPushNotifications(user, this@C5LoginClient)
-                            }
-
-                            // Save current user details in shared preferences
-                            saveCurrentUser(email, userName, userAddress, profileImageUrl)
-
-                            // Pass user details to the next activity
-                            val intent = Intent(this@C5LoginClient, C7ChoosingInterestClient::class.java).apply {
-                                putExtra("USER_NAME", userName)
-                                putExtra("FIRST_NAME", fName)
-                                putExtra("MIDDLE_NAME", mName)
-                                putExtra("LAST_NAME", lName)
-                                putExtra("USER_ADDRESS", userAddress)
-                                putExtra("EMAIL", email)
-                                putExtra("PROFILE_IMAGE_URL", profileImageUrl)
-                            }
-                            Toast.makeText(this@C5LoginClient, "Welcome Client $fName", Toast.LENGTH_SHORT).show()
-                            startActivity(intent)
-                        } else {
-                            // User is not a Service Provider
-                            Toast.makeText(this@C5LoginClient, "User does not exist", Toast.LENGTH_SHORT).show()
-                        }
-                    } else {
-                        // Email does not exist in the database
-                        Toast.makeText(this@C5LoginClient, "No account found with this email.", Toast.LENGTH_SHORT).show()
+    override fun onResume() {
+        super.onResume()
+        // Check verification status when returning to the activity
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            currentUser.reload().addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    if (currentUser.isEmailVerified) {
+                        // If verified, proceed with login
+                        checkUserInDatabase(currentUser.email ?: "")
                     }
                 }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Toast.makeText(this@C5LoginClient, "Database Error: ${error.message}", Toast.LENGTH_SHORT).show()
-                }
-            })
-
+            }
+        }
     }
 
     private fun handleSignInError(exception: Exception?) {

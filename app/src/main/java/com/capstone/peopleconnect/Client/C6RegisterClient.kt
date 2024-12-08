@@ -251,20 +251,23 @@ class C6RegisterClient : AppCompatActivity() {
 
 
     private fun saveUserData(email: String, pass: String, userId: String) {
-        // Create a User object with default userRating
+        // Create a User object with default userRating and enabled status
         val user = User(
             email = email,
             roles = listOf(userRole),
             userId = userId,
-            userRating = 0.0f  // Set default rating
+            userRating = 0.0f,  // Set default rating
+            status = "enabled"  // Set default status
         )
 
         // Save the user object under their UID in the database
         databaseReference.child(userId).setValue(user).addOnCompleteListener { task ->
             progressBar.visibility = View.GONE
             if (task.isSuccessful) {
-                Toast.makeText(this, "Registration successful!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Registration successful! Please verify your email before logging in.", Toast.LENGTH_LONG).show()
+                auth.signOut() // Sign out after registration to force email verification
                 startActivity(Intent(this, C5LoginClient::class.java))
+                finish()
             } else {
                 Toast.makeText(this, "Failed to save user data: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
             }

@@ -131,36 +131,14 @@
                 android:layout_height="wrap_content"
                 android:text="Total paid"
                 android:layout_marginTop="8dp"
+                android:visibility="invisible"
                 android:textColor="@color/light_gray"
                 app:layout_constraintTop_toBottomOf="@id/ratingDescription"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 android:fontFamily="@font/regular_poppins" />
 
-            <TextView
-                android:id="@+id/totalAmount"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="₱369.00"
-                android:textColor="@color/black"
-                android:fontFamily="@font/semibold_poppins"
-                app:layout_constraintTop_toBottomOf="@id/txt_totalPaid"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                android:textSize="18sp" />
 
-            <TextView
-                android:id="@+id/viewDetails"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="View details"
-                android:textColor="@color/green"
-                android:fontFamily="@font/regular_poppins"
-                app:layout_constraintTop_toBottomOf="@id/totalAmount"
-                app:layout_constraintStart_toStartOf="parent"
-                />
 
             <Button
                 android:id="@+id/btnSubmit"
@@ -172,11 +150,10 @@
                 android:textColor="@color/white"
                 android:textSize="16sp"
                 android:fontFamily="@font/regular_poppins"
-                app:layout_constraintTop_toBottomOf="@id/viewDetails"
+                app:layout_constraintTop_toBottomOf="@id/txt_totalPaid"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 />
-
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

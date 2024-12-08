@@ -30,13 +30,28 @@ class ServiceProviderAdapter(
         val user = serviceProviderList[position]
 
         holder.tvName.text = user.name
-        Picasso.get().load(user.profileImageUrl).into(holder.tvImage)
-        
+
+        // Check if profileImageUrl is not empty or null
+        val imageUrl = user.profileImageUrl
+        if (!imageUrl.isNullOrEmpty()) {
+            Picasso.get()
+                .load(imageUrl)
+                .placeholder(R.drawable.profile1)  // Placeholder image while loading
+                .error(R.drawable.profile1)        // Fallback error image if loading fails
+                .into(holder.tvImage)
+        } else {
+            // If URL is empty or null, load the placeholder image
+            Picasso.get()
+                .load(R.drawable.profile1)
+                .into(holder.tvImage)
+        }
+
         // Set click listener for the entire item
         holder.itemView.setOnClickListener {
             onItemClick(user)
         }
     }
+
 
     override fun getItemCount(): Int {
         return serviceProviderList.size
