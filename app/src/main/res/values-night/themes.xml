@@ -17,6 +17,11 @@
         <item name="android:textSize">12sp</item>
     </style>
 
+    <style name="RedButtonStyle" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">@color/red</item>  <!-- Blue color -->
+        <item name="android:textSize">12sp</item>
+    </style>
+
     <!-- Base application theme. -->
     <style name="Base.Theme.PeopleConnect" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->

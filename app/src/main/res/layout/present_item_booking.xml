@@ -80,14 +80,13 @@
                     android:id="@+id/btnAccept_Present"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:backgroundTint="@color/blue"
-                    android:text="Accept"
+                    android:backgroundTint="@color/orange"
+                    android:text="Pending"
                     android:textSize="12sp"
                     android:textAllCaps="false"
-                    style="@style/BlueButtonStyle"
                     android:fontFamily="@font/regular_poppins"
                     android:textColor="@color/white"
-                    android:layout_marginEnd="10dp"/>
+                    android:layout_marginEnd="8dp"/>
 
                 <!-- Cancel Button -->
                 <Button
