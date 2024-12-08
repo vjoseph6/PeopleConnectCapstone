@@ -53,6 +53,7 @@
         android:paddingHorizontal="12dp"
         android:paddingVertical="4dp"
         android:text="Pefect"
+        android:visibility="gone"
         android:textColor="@color/white"
         android:textSize="12sp"
         app:layout_constraintBottom_toBottomOf="@id/imageProfile"
@@ -75,21 +76,25 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="4dp"
-        android:layout_marginEnd="8dp"
         android:text="4.9"
         android:textColor="@color/black"
         android:textSize="16sp"
         app:layout_constraintBottom_toBottomOf="@id/iconRating"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/iconRating"
         app:layout_constraintTop_toTopOf="@id/iconRating" />
 
     <TextView
         android:id="@+id/textService"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginEnd="20dp"
+        android:maxLines="2"
         android:fontFamily="@font/regular_poppins"
         android:textColor="@color/light_gray"
         android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:text="asd"
         app:layout_constraintStart_toStartOf="@id/textName"
         app:layout_constraintTop_toBottomOf="@id/textDate" />
 

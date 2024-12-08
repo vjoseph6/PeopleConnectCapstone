@@ -19,9 +19,10 @@ import java.util.Date
 import java.util.Locale
 
 class RatingsAdapter(
-    private val ratings: List<Rating>,
+    private var ratings: List<Rating>,
     private val showServiceHeader: Boolean = false
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
 
     private companion object {
         const val VIEW_TYPE_HEADER = 0
@@ -97,14 +98,14 @@ class RatingsAdapter(
 
                 holder.textName.text = rating.name ?: "Unknown"
                 holder.textRating.text = rating.rating.toString()
-                holder.textService.text = rating.serviceOffered
+                holder.textService.text = ratings[getAdjustedPosition(position)].feedback
 
                 // Format and set date
                 val date = rating.timestamp?.let {
                     val sdf = SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault())
                     sdf.format(Date(it))
                 } ?: "Date not available"
-                holder.textDate.text = date
+                holder.textDate.text = rating.raterEmail.toString()
 
                 // Set category text based on rating value
                 val categoryText = when (rating.rating) {
@@ -127,8 +128,13 @@ class RatingsAdapter(
                 }
             }
         }
+
     }
 
+    fun updateRatings(newRatings: List<Rating>) {
+        ratings = newRatings
+        notifyDataSetChanged()
+    }
     override fun getItemCount(): Int {
         var count = ratings.size
         if (showServiceHeader) {

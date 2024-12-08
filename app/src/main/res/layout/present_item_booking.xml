@@ -33,7 +33,7 @@
             android:layout_height="48dp"
             android:layout_gravity="center"
             android:src="@drawable/profile1"
-            android:scaleType="fitCenter"
+            android:scaleType="centerCrop"
             app:shapeAppearanceOverlay="@style/CircularImageViewStyle"
             android:layout_marginEnd="16dp"/>
 
@@ -92,7 +92,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:backgroundTint="@color/orange"
-                    android:text="Pending"
+                    android:text="Accept"
                     android:textSize="12sp"
                     android:textAllCaps="false"
                     android:fontFamily="@font/regular_poppins"

@@ -136,7 +136,7 @@ class BookingDetailsFragment : Fragment() {
             viewProfileTextView.text = "Visit Provider"}
 
         // Set click listener for the view profile TextView
-        viewProfileTextView.setOnClickListener {
+       /* viewProfileTextView.setOnClickListener {
             if (!isClient) {
                 // Navigate to ActivityFragmentSProvider_ClientRatings and pass the booking.bookByEmail
                 val bookingEmail = bookByEmail
@@ -154,7 +154,7 @@ class BookingDetailsFragment : Fragment() {
                     .addToBackStack(null)
                     .commit()
             }
-        }
+        }*/
 
         // Initialize the location button and animate it
         val viewLocationBtn: ImageButton = view.findViewById(R.id.viewLocationBtn)
@@ -194,6 +194,30 @@ class BookingDetailsFragment : Fragment() {
                 bookingTotalTextView.text = "${booking.bookingAmount} PHP"
                 paymentMethodTextView.text = booking.bookingPaymentMethod
                 resaonTextView.text = booking.bookingCancelClient
+
+                val viewProfileTextView: TextView? = view?.findViewById(R.id.tvViewProfile)
+
+                viewProfileTextView?.setOnClickListener {
+                    if (!isClient) {
+                        // Navigate to ActivityFragmentSProvider_ClientRatings and pass the booking.bookByEmail
+                        val bookingEmail = booking.bookByEmail.toString()
+                        Log.d("CLIENT EMAIL", "$bookingEmail")
+                        val ratingsFragment = ActivityFragmentSProvider_ClientRatings.newInstance(bookingEmail.toString())
+                        requireActivity().supportFragmentManager.beginTransaction()
+                            .replace(R.id.frame_layout, ratingsFragment)
+                            .addToBackStack(null)
+                            .commit()
+                    } else {
+                        // Navigate to ActivityFragmentClient_ProviderProfile and pass the provider's name
+                        val providerName = providerNameTextView.text.toString()
+                        val profileFragment = ActivityFragmentClient_ProviderProfile.newInstance(name = providerName, tag = "fromApplicants")
+                        requireActivity().supportFragmentManager.beginTransaction()
+                            .replace(R.id.frame_layout, profileFragment)
+                            .addToBackStack(null)
+                            .commit()
+                    }
+                }
+
 
                 if (booking.bookingScope == "Select Task Scope") {
                     // Ensure view is not null before accessing it

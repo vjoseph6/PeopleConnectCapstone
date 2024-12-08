@@ -195,9 +195,11 @@ class BookingSProviderAdapter(
         }
 
         when (booking.bookingStatus) {
-            "Accepted", "Accept" -> holder.btnAccept.backgroundTintList =
+            "Accepted"-> holder.btnAccept.backgroundTintList =
                 ContextCompat.getColorStateList(holder.itemView.context, R.color.green)
             "Pending" -> holder.btnAccept.backgroundTintList =
+                ContextCompat.getColorStateList(holder.itemView.context, R.color.orange)
+            "Canceled" -> holder.btnAccept.backgroundTintList =
                 ContextCompat.getColorStateList(holder.itemView.context, R.color.red)
             "Complete", "Completed" -> holder.btnAccept.backgroundTintList =
                 ContextCompat.getColorStateList(holder.itemView.context, R.color.blue)

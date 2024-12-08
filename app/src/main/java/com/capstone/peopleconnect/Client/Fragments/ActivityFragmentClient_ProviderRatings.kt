@@ -7,8 +7,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.RelativeLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.capstone.peopleconnect.Adapters.RatingsAdapter
 import com.capstone.peopleconnect.Classes.Rating
 import com.capstone.peopleconnect.R
@@ -23,7 +26,7 @@ class ActivityFragmentClient_ProviderRatings : Fragment() {
     private val ratingsList = mutableListOf<Rating>()
     private var email: String? = null
     private var serviceType: String? = null
-
+    private lateinit var emptyView: RelativeLayout
     private val serviceRatings = mutableMapOf<String, MutableList<Rating>>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,6 +44,7 @@ class ActivityFragmentClient_ProviderRatings : Fragment() {
         val view = inflater.inflate(R.layout.fragment_activity_client__provider_ratings, container, false)
 
         recyclerView = view.findViewById(R.id.rvRatings)
+        emptyView = view.findViewById(R.id.emptyView)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
         val backBtn = view.findViewById<ImageButton>(R.id.btnBackClient)
@@ -49,6 +53,11 @@ class ActivityFragmentClient_ProviderRatings : Fragment() {
         // Modified adapter initialization to handle service-specific grouping
         ratingsAdapter = RatingsAdapter(ratingsList, true) // Add parameter for showing service
         recyclerView.adapter = ratingsAdapter
+
+        val emptyImage: ImageView = view.findViewById(R.id.image)
+        Glide.with(this)
+            .load(R.drawable.nothing)
+            .into(emptyImage)
 
         fetchRatings()
 
@@ -73,6 +82,21 @@ class ActivityFragmentClient_ProviderRatings : Fragment() {
                             val serviceList = serviceRatings.getOrPut(rating.serviceOffered) { mutableListOf() }
                             serviceList.add(rating)
                         }
+                    }
+                }
+
+                if (ratingsList.isEmpty()) {
+                    emptyView.visibility = View.VISIBLE
+                    recyclerView.visibility = View.GONE
+                } else {
+                    emptyView.visibility = View.GONE
+                    recyclerView.visibility = View.VISIBLE
+
+                    if (!::ratingsAdapter.isInitialized) {
+                        ratingsAdapter = RatingsAdapter(ratingsList, true)
+                        recyclerView.adapter = ratingsAdapter
+                    } else {
+                        ratingsAdapter.notifyDataSetChanged()
                     }
                 }
 
@@ -143,6 +167,7 @@ class ActivityFragmentClient_ProviderRatings : Fragment() {
             ratingsAdapter.notifyDataSetChanged()
         }
     }
+
 
     companion object {
         @JvmStatic
