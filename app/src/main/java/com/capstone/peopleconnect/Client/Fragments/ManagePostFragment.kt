@@ -22,6 +22,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.bumptech.glide.Glide
+import com.google.firebase.auth.FirebaseAuth
 
 class ManagePostFragment : Fragment() {
 
@@ -49,19 +50,56 @@ class ManagePostFragment : Fragment() {
                 Handler().postDelayed({
                     if (serviceType.isNullOrEmpty() || serviceType == "Service Type not found") {
                         navigateToAddPost()
-                    } else { navigateToAddPost()}
+                    } else {
+                        navigateToAddPost()
+                    }
                 }, 500)
             }
         }
     }
 
     private fun navigateToAddPost() {
+
+        if (checkProfile()) {
+
+            return
+        }
+
+
         val email = email
         val addPostFragment = AddPostClientFragment.newInstance(email.toString(), serviceType = serviceType)
         requireActivity().supportFragmentManager.beginTransaction()
             .replace(R.id.frame_layout, addPostFragment)
             .addToBackStack(null)
             .commit()
+    }
+
+    private fun checkProfile(): Boolean {
+
+
+        val userRef = FirebaseDatabase.getInstance().getReference("users").orderByChild("email")
+            .equalTo(email)
+        var isProfileComplete = true
+
+        userRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val name = snapshot.child("name").getValue(String::class.java) ?: ""
+                val profileImageUrl = snapshot.child("profileImageUrl").getValue(String::class.java) ?: ""
+                val address = snapshot.child("address").getValue(String::class.java) ?: ""
+
+                if (name.isEmpty() || profileImageUrl.isEmpty() || address.isEmpty()) {
+                    Toast.makeText(requireContext(), "Please set up your profile", Toast.LENGTH_SHORT).show()
+                    isProfileComplete = false
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(requireContext(), "Error checking profile", Toast.LENGTH_SHORT).show()
+                isProfileComplete = false
+            }
+        })
+
+        return isProfileComplete
     }
 
     override fun onCreateView(
@@ -83,6 +121,9 @@ class ManagePostFragment : Fragment() {
 
         // Handle add post button
         view.findViewById<ImageButton>(R.id.addPostBtn).setOnClickListener {
+            if (checkProfile()) {
+                return@setOnClickListener
+            }
             val addPostFragment = AddPostClientFragment.newInstance(email.toString())
             requireActivity().supportFragmentManager.beginTransaction()
                 .replace(R.id.frame_layout, addPostFragment)
@@ -115,6 +156,8 @@ class ManagePostFragment : Fragment() {
             adapter = this@ManagePostFragment.adapter
         }
     }
+
+
 
     private fun fetchPosts() {
         val databaseRef = FirebaseDatabase.getInstance().getReference("posts")

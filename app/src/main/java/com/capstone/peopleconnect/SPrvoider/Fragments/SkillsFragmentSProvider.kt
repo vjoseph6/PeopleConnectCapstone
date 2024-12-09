@@ -125,7 +125,11 @@ class SkillsFragmentSProvider : Fragment() {
         //add skill button
         val addBtn = view.findViewById<ImageButton>(R.id.addBtn)
         addBtn.setOnClickListener {
-            // Create the intent to start AddSkillsSProvider activity
+
+            if (checkProfile()) {
+                return@setOnClickListener
+            }
+
             val intent = Intent(requireContext(), AddSkillsSProvider::class.java)
 
             // Check if email is not null before adding it to the intent
@@ -192,6 +196,34 @@ class SkillsFragmentSProvider : Fragment() {
                 }
             }
         }
+    }
+
+    private fun checkProfile(): Boolean {
+
+
+        val userRef = FirebaseDatabase.getInstance().getReference("users").orderByChild("email")
+            .equalTo(email)
+        var isProfileComplete = true
+
+        userRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val name = snapshot.child("name").getValue(String::class.java) ?: ""
+                val profileImageUrl = snapshot.child("profileImageUrl").getValue(String::class.java) ?: ""
+                val address = snapshot.child("address").getValue(String::class.java) ?: ""
+
+                if (name.isEmpty() || profileImageUrl.isEmpty() || address.isEmpty()) {
+                    Toast.makeText(requireContext(), "Please set up your profile", Toast.LENGTH_SHORT).show()
+                    isProfileComplete = false
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(requireContext(), "Error checking profile", Toast.LENGTH_SHORT).show()
+                isProfileComplete = false
+            }
+        })
+
+        return isProfileComplete
     }
 
 

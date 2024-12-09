@@ -12,6 +12,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import com.capstone.peopleconnect.Classes.User
@@ -107,6 +108,10 @@ class ProfileFragmentSProvider : Fragment() {
         val email = email
         val intent = arguments?.getString("intent") ?: arguments?.getString("target")
 
+        if (checkProfile()) {
+            return
+        }
+
         val securityFragment = YourProjectsFragmentSProvider.newInstance(email = email, tag = null, serviceType = serviceType.toString())
         Log.d("SERVICE OFFERED IN PROVIDER", "${serviceType.toString()}")
         parentFragmentManager.beginTransaction()
@@ -198,6 +203,11 @@ class ProfileFragmentSProvider : Fragment() {
         // Security icons
         val projectIcons: LinearLayout = view.findViewById(R.id.projects_sprovider)
         projectIcons.setOnClickListener {
+
+            if (checkProfile()) {
+                return@setOnClickListener
+            }
+
             val projectFragment = YourProjectsFragmentSProvider.newInstance(email = email, tag = null)
             parentFragmentManager.beginTransaction()
                 .replace(R.id.frame_layout, projectFragment)
@@ -210,6 +220,34 @@ class ProfileFragmentSProvider : Fragment() {
         logoutIcons.setOnClickListener {
             showLogoutDialog()
         }
+    }
+
+    private fun checkProfile(): Boolean {
+
+
+        val userRef = FirebaseDatabase.getInstance().getReference("users").orderByChild("email")
+            .equalTo(email)
+        var isProfileComplete = true
+
+        userRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val name = snapshot.child("name").getValue(String::class.java) ?: ""
+                val profileImageUrl = snapshot.child("profileImageUrl").getValue(String::class.java) ?: ""
+                val address = snapshot.child("address").getValue(String::class.java) ?: ""
+
+                if (name.isEmpty() || profileImageUrl.isEmpty() || address.isEmpty()) {
+                    Toast.makeText(requireContext(), "Please set up your profile", Toast.LENGTH_SHORT).show()
+                    isProfileComplete = false
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(requireContext(), "Error checking profile", Toast.LENGTH_SHORT).show()
+                isProfileComplete = false
+            }
+        })
+
+        return isProfileComplete
     }
 
     private fun showLogoutDialog() {

@@ -12,6 +12,7 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.capstone.peopleconnect.Adapters.CategoryAdapter
@@ -80,6 +81,11 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
 
         val bookNowButton: ImageButton = view.findViewById(R.id.bookNowButton)
         bookNowButton.setOnClickListener {
+
+            if (checkProfile()) {
+                return@setOnClickListener
+            }
+
             val bookingFragment = ActivityFragmentClient_BookDetails().apply {
                 arguments = Bundle().apply {
                     putString("NAME", providerName)
@@ -127,6 +133,34 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
         }
 
         return view
+    }
+
+    private fun checkProfile(): Boolean {
+
+
+        val userRef = FirebaseDatabase.getInstance().getReference("users").orderByChild("email")
+            .equalTo(email)
+        var isProfileComplete = true
+
+        userRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val name = snapshot.child("name").getValue(String::class.java) ?: ""
+                val profileImageUrl = snapshot.child("profileImageUrl").getValue(String::class.java) ?: ""
+                val address = snapshot.child("address").getValue(String::class.java) ?: ""
+
+                if (name.isEmpty() || profileImageUrl.isEmpty() || address.isEmpty()) {
+                    Toast.makeText(requireContext(), "Please set up your profile", Toast.LENGTH_SHORT).show()
+                    isProfileComplete = false
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(requireContext(), "Error checking profile", Toast.LENGTH_SHORT).show()
+                isProfileComplete = false
+            }
+        })
+
+        return isProfileComplete
     }
 
     private fun navigateToProviderRatings(email: String) {

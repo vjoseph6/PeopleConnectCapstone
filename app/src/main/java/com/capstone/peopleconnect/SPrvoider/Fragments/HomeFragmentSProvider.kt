@@ -69,6 +69,11 @@ class HomeFragmentSProvider : Fragment() {
         setupNotificationBadge()
 
         updateDateText(view)
+        
+        val emptyImage: ImageView = view.findViewById(R.id.image)
+        Glide.with(this)
+            .load(R.drawable.nothing)  // Replace with your drawable resource or image URL
+            .into(emptyImage)
 
         nameTextView = view.findViewById(R.id.tvName)
 

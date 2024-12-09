@@ -155,7 +155,7 @@
                 android:layout_marginStart="8dp"
                 app:layout_constraintStart_toEndOf="@id/tvTaskOverView"
                 app:layout_constraintTop_toTopOf="@id/tvTaskOverView"
-                android:visibility="visible" />
+                android:visibility="gone" />
 
             <!-- RecyclerView for Task List -->
             <androidx.recyclerview.widget.RecyclerView
