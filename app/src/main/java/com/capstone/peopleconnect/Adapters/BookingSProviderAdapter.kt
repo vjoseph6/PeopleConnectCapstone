@@ -218,9 +218,8 @@ class BookingSProviderAdapter(
 
 
 
-        holder.negotiateTextView.visibility = if (booking.bookingStatus == "Pending") View.VISIBLE else View.GONE
-        holder.negotiateTextView.visibility = if (booking.bookingScope == "Select Task Scope") View.GONE else View.VISIBLE
         holder.negotiateTextView.visibility = if (booking.bookingStatus != "Pending") View.GONE else View.VISIBLE
+        holder.negotiateTextView.visibility = if (booking.bookingScope == "Select Task Scope") View.GONE else View.VISIBLE
 
         holder.negotiateTextView.setOnClickListener {
             val context = holder.itemView.context
