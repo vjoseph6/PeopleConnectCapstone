@@ -54,12 +54,12 @@ class RatingsClientAdapter(
         holder.ratingTextView.text = String.format("%.1f", rating.rating)
 
         // Set service category
-        if (showServiceCategory && rating.serviceOffered.isNotEmpty()) {
+       /* if (showServiceCategory && rating.serviceOffered.isNotEmpty()) {
             holder.categoryTextView.text = rating.serviceOffered
             holder.categoryTextView.visibility = View.VISIBLE
         } else {
             holder.categoryTextView.visibility = View.GONE
-        }
+        }*/
 
         // Set service text (if needed)
         holder.serviceTextView.text = rating.feedback

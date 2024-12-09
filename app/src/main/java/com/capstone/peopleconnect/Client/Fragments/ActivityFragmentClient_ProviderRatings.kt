@@ -85,7 +85,7 @@ class ActivityFragmentClient_ProviderRatings : Fragment() {
                     }
                 }
 
-                if (ratingsList.isEmpty()) {
+               /* if (ratingsList.isEmpty()) {
                     emptyView.visibility = View.VISIBLE
                     recyclerView.visibility = View.GONE
                 } else {
@@ -98,7 +98,7 @@ class ActivityFragmentClient_ProviderRatings : Fragment() {
                     } else {
                         ratingsAdapter.notifyDataSetChanged()
                     }
-                }
+                }*/
 
                 // Sort services alphabetically
                 val sortedServices = serviceRatings.keys.sorted()

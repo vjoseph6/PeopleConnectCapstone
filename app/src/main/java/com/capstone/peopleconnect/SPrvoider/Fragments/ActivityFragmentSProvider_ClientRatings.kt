@@ -71,10 +71,6 @@ class ActivityFragmentSProvider_ClientRatings : Fragment() {
             requireActivity().supportFragmentManager.popBackStack()
         }
 
-        val emptyImage: ImageView = view.findViewById(R.id.image)
-        Glide.with(this)
-            .load(R.drawable.nothing)
-            .into(emptyImage)
 
         // Fetch user and ratings
         email?.let {
@@ -93,20 +89,26 @@ class ActivityFragmentSProvider_ClientRatings : Fragment() {
 
         ratingsRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+                // Log the number of ratings found
+                Log.d("RatingsFetch", "Total ratings found: ${snapshot.childrenCount}")
+
                 // Clear previous ratings
                 ratingsList.clear()
 
                 if (!snapshot.exists()) {
+                    Log.d("RatingsFetch", "No ratings exist for email: $email")
                     updateRatingsUI(emptyList())
                     return
                 }
 
                 // Process each rating
                 val ratingsToProcess = snapshot.children.toList()
+                Log.d("RatingsFetch", "Ratings to process: ${ratingsToProcess.size}")
                 processRatings(ratingsToProcess)
             }
 
             override fun onCancelled(error: DatabaseError) {
+                Log.e("RatingsFetch", "Error fetching ratings: ${error.message}")
                 Toast.makeText(
                     requireContext(),
                     "Error fetching ratings: ${error.message}",
@@ -123,13 +125,23 @@ class ActivityFragmentSProvider_ClientRatings : Fragment() {
         val totalRatings = ratingsSnapshots.size
         var processedCount = 0
 
+        Log.d("RatingsFetch", "Starting to process $totalRatings ratings")
+
         ratingsSnapshots.forEach { ratingSnapshot ->
+            // Log each rating snapshot details
+            Log.d("RatingsFetch", "Rating Snapshot: ${ratingSnapshot.value}")
+
             // Extract rating details
-            val raterEmail = ratingSnapshot.child("raterEmail").value?.toString() ?: return@forEach
+            val raterEmail = ratingSnapshot.child("raterEmail").value?.toString() ?: run {
+                Log.e("RatingsFetch", "Rater email is null")
+                return@forEach
+            }
             val ratingValue = ratingSnapshot.child("rating").value?.toString()?.toFloatOrNull() ?: 0f
             val serviceOffered = ratingSnapshot.child("serviceOffered").value?.toString() ?: ""
             val feedback = ratingSnapshot.child("feedback").value?.toString() ?: ""
             val timestamp = ratingSnapshot.child("timestamp").value?.toString()?.toLongOrNull() ?: 0L
+
+            Log.d("RatingsFetch", "Extracted rating - Rater: $raterEmail, Value: $ratingValue")
 
             // Fetch rater's detailed information
             fetchRaterDetails(
@@ -142,10 +154,13 @@ class ActivityFragmentSProvider_ClientRatings : Fragment() {
                 processedRatings.add(raterInfo)
                 processedCount++
 
+                Log.d("RatingsFetch", "Processed rating count: $processedCount / $totalRatings")
+
                 // When all ratings are processed
                 if (processedCount == totalRatings) {
                     // Sort ratings by timestamp (most recent first)
                     val sortedRatings = processedRatings.sortedByDescending { it.timestamp }
+                    Log.d("RatingsFetch", "Final processed ratings: ${sortedRatings.size}")
                     updateRatingsUI(sortedRatings)
                 }
             }
@@ -206,27 +221,18 @@ class ActivityFragmentSProvider_ClientRatings : Fragment() {
     }
 
     private fun updateRatingsUI(ratings: List<Rating>) {
-        val emptyView: RelativeLayout = view?.findViewById(R.id.emptyView) ?: return
-        val recyclerView: RecyclerView = ratingsRecyclerView
+        // Update adapter
+        ratingsAdapter.updateRatings(ratings)
 
-        if (ratings.isEmpty()) {
-            // Show empty view and hide RecyclerView
-            emptyView.visibility = View.VISIBLE
-            recyclerView.visibility = View.GONE
-            clientRatingsTextView.text = "★ 0.0 (0 Reviews)"
+        // Calculate and update overall rating
+        val averageRating = if (ratings.isNotEmpty()) {
+            ratings.map { it.rating }.average().toFloat()
         } else {
-            // Hide empty view and show RecyclerView
-            emptyView.visibility = View.GONE
-            recyclerView.visibility = View.VISIBLE
-
-            // Update adapter
-            ratingsAdapter.updateRatings(ratings)
-
-            // Calculate and update overall rating
-            val averageRating = ratings.map { it.rating }.average()
-            val roundedRating = String.format("%.1f", averageRating)
-            clientRatingsTextView.text = "★ $roundedRating (${ratings.size} Reviews)"
+            0f
         }
+
+        val roundedRating = String.format("%.1f", averageRating)
+        clientRatingsTextView.text = "★ $roundedRating (${ratings.size} Reviews)"
     }
 
 
