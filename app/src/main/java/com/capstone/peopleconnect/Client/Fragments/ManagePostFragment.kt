@@ -60,47 +60,52 @@ class ManagePostFragment : Fragment() {
 
     private fun navigateToAddPost() {
 
-        if (checkProfile()) {
+        checkProfile { isProfileComplete ->
+            if (!isProfileComplete) {
+                return@checkProfile
+            }
 
-            return
+
+            val email = email
+            val addPostFragment =
+                AddPostClientFragment.newInstance(email.toString(), serviceType = serviceType)
+            requireActivity().supportFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, addPostFragment)
+                .addToBackStack(null)
+                .commit()
         }
-
-
-        val email = email
-        val addPostFragment = AddPostClientFragment.newInstance(email.toString(), serviceType = serviceType)
-        requireActivity().supportFragmentManager.beginTransaction()
-            .replace(R.id.frame_layout, addPostFragment)
-            .addToBackStack(null)
-            .commit()
     }
 
-    private fun checkProfile(): Boolean {
-
-
+    private fun checkProfile(onComplete: (Boolean) -> Unit) {
         val userRef = FirebaseDatabase.getInstance().getReference("users").orderByChild("email")
             .equalTo(email)
-        var isProfileComplete = true
 
         userRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val name = snapshot.child("name").getValue(String::class.java) ?: ""
-                val profileImageUrl = snapshot.child("profileImageUrl").getValue(String::class.java) ?: ""
-                val address = snapshot.child("address").getValue(String::class.java) ?: ""
+                var isProfileComplete = true
 
-                if (name.isEmpty() || profileImageUrl.isEmpty() || address.isEmpty()) {
-                    Toast.makeText(requireContext(), "Please set up your profile", Toast.LENGTH_SHORT).show()
-                    isProfileComplete = false
+                for (data in snapshot.children) { // Handle snapshots as multiple results
+                    val name = data.child("name").getValue(String::class.java) ?: ""
+                    val profileImageUrl = data.child("profileImageUrl").getValue(String::class.java) ?: ""
+                    val address = data.child("address").getValue(String::class.java) ?: ""
+
+                    if (name.isEmpty() || profileImageUrl.isEmpty() || address.isEmpty()) {
+                        Toast.makeText(requireContext(), "Please set up your profile", Toast.LENGTH_SHORT).show()
+                        isProfileComplete = false
+                        break
+                    }
                 }
+
+                onComplete(isProfileComplete)
             }
 
             override fun onCancelled(error: DatabaseError) {
                 Toast.makeText(requireContext(), "Error checking profile", Toast.LENGTH_SHORT).show()
-                isProfileComplete = false
+                onComplete(false)
             }
         })
-
-        return isProfileComplete
     }
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -121,14 +126,17 @@ class ManagePostFragment : Fragment() {
 
         // Handle add post button
         view.findViewById<ImageButton>(R.id.addPostBtn).setOnClickListener {
-            if (checkProfile()) {
-                return@setOnClickListener
+            checkProfile { isProfileComplete ->
+                if (!isProfileComplete) {
+                    return@checkProfile
+                }
+
+                val addPostFragment = AddPostClientFragment.newInstance(email.toString())
+                requireActivity().supportFragmentManager.beginTransaction()
+                    .replace(R.id.frame_layout, addPostFragment)
+                    .addToBackStack(null)
+                    .commit()
             }
-            val addPostFragment = AddPostClientFragment.newInstance(email.toString())
-            requireActivity().supportFragmentManager.beginTransaction()
-                .replace(R.id.frame_layout, addPostFragment)
-                .addToBackStack(null)
-                .commit()
         }
 
         // Add this to load the GIF

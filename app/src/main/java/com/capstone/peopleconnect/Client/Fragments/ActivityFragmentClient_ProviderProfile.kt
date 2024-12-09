@@ -82,24 +82,27 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
         val bookNowButton: ImageButton = view.findViewById(R.id.bookNowButton)
         bookNowButton.setOnClickListener {
 
-            if (checkProfile()) {
-                return@setOnClickListener
-            }
-
-            val bookingFragment = ActivityFragmentClient_BookDetails().apply {
-                arguments = Bundle().apply {
-                    putString("NAME", providerName)
-                    putString("SERVICE_OFFERED", serviceOffered)
-                    putString("bookDay", bookDay)
-                    putString("startTime", startTime)
-                    putString("endTime", endTime)
+            checkProfile { isProfileComplete ->
+                if (!isProfileComplete) {
+                    return@checkProfile
                 }
-            }
 
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.frame_layout, bookingFragment)
-                .addToBackStack(null)
-                .commit()
+                val bookingFragment = ActivityFragmentClient_BookDetails().apply {
+                    arguments = Bundle().apply {
+                        putString("NAME", providerName)
+                        putString("SERVICE_OFFERED", serviceOffered)
+                        putString("bookDay", bookDay)
+                        putString("startTime", startTime)
+                        putString("endTime", endTime)
+                    }
+                }
+
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.frame_layout, bookingFragment)
+                    .addToBackStack(null)
+                    .commit()
+
+            }
         }
 
 
@@ -135,34 +138,6 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
         return view
     }
 
-    private fun checkProfile(): Boolean {
-
-
-        val userRef = FirebaseDatabase.getInstance().getReference("users").orderByChild("email")
-            .equalTo(email)
-        var isProfileComplete = true
-
-        userRef.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val name = snapshot.child("name").getValue(String::class.java) ?: ""
-                val profileImageUrl = snapshot.child("profileImageUrl").getValue(String::class.java) ?: ""
-                val address = snapshot.child("address").getValue(String::class.java) ?: ""
-
-                if (name.isEmpty() || profileImageUrl.isEmpty() || address.isEmpty()) {
-                    Toast.makeText(requireContext(), "Please set up your profile", Toast.LENGTH_SHORT).show()
-                    isProfileComplete = false
-                }
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                Toast.makeText(requireContext(), "Error checking profile", Toast.LENGTH_SHORT).show()
-                isProfileComplete = false
-            }
-        })
-
-        return isProfileComplete
-    }
-
     private fun navigateToProviderRatings(email: String) {
         val providerRatingsFragment = ActivityFragmentClient_ProviderRatings.newInstance(email, serviceOffered.toString())
         Log.d("FROM PROVIDER", "${serviceOffered.toString()}")
@@ -171,6 +146,37 @@ class ActivityFragmentClient_ProviderProfile : Fragment() {
             .addToBackStack(null)
             .commit()
     }
+
+    private fun checkProfile(onComplete: (Boolean) -> Unit) {
+        val userRef = FirebaseDatabase.getInstance().getReference("users").orderByChild("email")
+            .equalTo(email)
+
+        userRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                var isProfileComplete = true
+
+                for (data in snapshot.children) { // Handle snapshots as multiple results
+                    val name = data.child("name").getValue(String::class.java) ?: ""
+                    val profileImageUrl = data.child("profileImageUrl").getValue(String::class.java) ?: ""
+                    val address = data.child("address").getValue(String::class.java) ?: ""
+
+                    if (name.isEmpty() || profileImageUrl.isEmpty() || address.isEmpty()) {
+                        Toast.makeText(requireContext(), "Please set up your profile", Toast.LENGTH_SHORT).show()
+                        isProfileComplete = false
+                        break
+                    }
+                }
+
+                onComplete(isProfileComplete)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(requireContext(), "Error checking profile", Toast.LENGTH_SHORT).show()
+                onComplete(false)
+            }
+        })
+    }
+
 
     private fun fetchUser(providerName: String) {
         val usersRef = FirebaseDatabase.getInstance().getReference("users")

@@ -126,19 +126,21 @@ class SkillsFragmentSProvider : Fragment() {
         val addBtn = view.findViewById<ImageButton>(R.id.addBtn)
         addBtn.setOnClickListener {
 
-            if (checkProfile()) {
-                return@setOnClickListener
+            checkProfile { isProfileComplete ->
+                if (!isProfileComplete) {
+                    return@checkProfile
+                }
+
+                val intent = Intent(requireContext(), AddSkillsSProvider::class.java)
+
+                // Check if email is not null before adding it to the intent
+                email?.let { emailAddress ->
+                    intent.putExtra("EMAIL", emailAddress)
+                }
+
+                // Start the activity
+                startActivity(intent)
             }
-
-            val intent = Intent(requireContext(), AddSkillsSProvider::class.java)
-
-            // Check if email is not null before adding it to the intent
-            email?.let { emailAddress ->
-                intent.putExtra("EMAIL", emailAddress)
-            }
-
-            // Start the activity
-            startActivity(intent)
         }
 
         return view
@@ -198,32 +200,34 @@ class SkillsFragmentSProvider : Fragment() {
         }
     }
 
-    private fun checkProfile(): Boolean {
-
-
+    private fun checkProfile(onComplete: (Boolean) -> Unit) {
         val userRef = FirebaseDatabase.getInstance().getReference("users").orderByChild("email")
             .equalTo(email)
-        var isProfileComplete = true
 
         userRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val name = snapshot.child("name").getValue(String::class.java) ?: ""
-                val profileImageUrl = snapshot.child("profileImageUrl").getValue(String::class.java) ?: ""
-                val address = snapshot.child("address").getValue(String::class.java) ?: ""
+                var isProfileComplete = true
 
-                if (name.isEmpty() || profileImageUrl.isEmpty() || address.isEmpty()) {
-                    Toast.makeText(requireContext(), "Please set up your profile", Toast.LENGTH_SHORT).show()
-                    isProfileComplete = false
+                for (data in snapshot.children) { // Handle snapshots as multiple results
+                    val name = data.child("name").getValue(String::class.java) ?: ""
+                    val profileImageUrl = data.child("profileImageUrl").getValue(String::class.java) ?: ""
+                    val address = data.child("address").getValue(String::class.java) ?: ""
+
+                    if (name.isEmpty() || profileImageUrl.isEmpty() || address.isEmpty()) {
+                        Toast.makeText(requireContext(), "Please set up your profile", Toast.LENGTH_SHORT).show()
+                        isProfileComplete = false
+                        break
+                    }
                 }
+
+                onComplete(isProfileComplete)
             }
 
             override fun onCancelled(error: DatabaseError) {
                 Toast.makeText(requireContext(), "Error checking profile", Toast.LENGTH_SHORT).show()
-                isProfileComplete = false
+                onComplete(false)
             }
         })
-
-        return isProfileComplete
     }
 
 

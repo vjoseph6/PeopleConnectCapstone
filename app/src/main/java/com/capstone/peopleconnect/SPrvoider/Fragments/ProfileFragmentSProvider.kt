@@ -108,16 +108,22 @@ class ProfileFragmentSProvider : Fragment() {
         val email = email
         val intent = arguments?.getString("intent") ?: arguments?.getString("target")
 
-        if (checkProfile()) {
-            return
-        }
+        checkProfile { isProfileComplete ->
+            if (!isProfileComplete) {
+                return@checkProfile
+            }
 
-        val securityFragment = YourProjectsFragmentSProvider.newInstance(email = email, tag = null, serviceType = serviceType.toString())
-        Log.d("SERVICE OFFERED IN PROVIDER", "${serviceType.toString()}")
-        parentFragmentManager.beginTransaction()
-            .replace(R.id.frame_layout, securityFragment)
-            .addToBackStack(null)
-            .commit()
+            val securityFragment = YourProjectsFragmentSProvider.newInstance(
+                email = email,
+                tag = null,
+                serviceType = serviceType.toString()
+            )
+            Log.d("SERVICE OFFERED IN PROVIDER", "${serviceType.toString()}")
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.frame_layout, securityFragment)
+                .addToBackStack(null)
+                .commit()
+        }
     }
 
 
@@ -204,15 +210,18 @@ class ProfileFragmentSProvider : Fragment() {
         val projectIcons: LinearLayout = view.findViewById(R.id.projects_sprovider)
         projectIcons.setOnClickListener {
 
-            if (checkProfile()) {
-                return@setOnClickListener
-            }
+            checkProfile { isProfileComplete ->
+                if (!isProfileComplete) {
+                    return@checkProfile
+                }
 
-            val projectFragment = YourProjectsFragmentSProvider.newInstance(email = email, tag = null)
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.frame_layout, projectFragment)
-                .addToBackStack(null)
-                .commit()
+                val projectFragment =
+                    YourProjectsFragmentSProvider.newInstance(email = email, tag = null)
+                parentFragmentManager.beginTransaction()
+                    .replace(R.id.frame_layout, projectFragment)
+                    .addToBackStack(null)
+                    .commit()
+            }
         }
 
         // Logout icons
@@ -222,32 +231,34 @@ class ProfileFragmentSProvider : Fragment() {
         }
     }
 
-    private fun checkProfile(): Boolean {
-
-
+    private fun checkProfile(onComplete: (Boolean) -> Unit) {
         val userRef = FirebaseDatabase.getInstance().getReference("users").orderByChild("email")
             .equalTo(email)
-        var isProfileComplete = true
 
         userRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val name = snapshot.child("name").getValue(String::class.java) ?: ""
-                val profileImageUrl = snapshot.child("profileImageUrl").getValue(String::class.java) ?: ""
-                val address = snapshot.child("address").getValue(String::class.java) ?: ""
+                var isProfileComplete = true
 
-                if (name.isEmpty() || profileImageUrl.isEmpty() || address.isEmpty()) {
-                    Toast.makeText(requireContext(), "Please set up your profile", Toast.LENGTH_SHORT).show()
-                    isProfileComplete = false
+                for (data in snapshot.children) { // Handle snapshots as multiple results
+                    val name = data.child("name").getValue(String::class.java) ?: ""
+                    val profileImageUrl = data.child("profileImageUrl").getValue(String::class.java) ?: ""
+                    val address = data.child("address").getValue(String::class.java) ?: ""
+
+                    if (name.isEmpty() || profileImageUrl.isEmpty() || address.isEmpty()) {
+                        Toast.makeText(requireContext(), "Please set up your profile", Toast.LENGTH_SHORT).show()
+                        isProfileComplete = false
+                        break
+                    }
                 }
+
+                onComplete(isProfileComplete)
             }
 
             override fun onCancelled(error: DatabaseError) {
                 Toast.makeText(requireContext(), "Error checking profile", Toast.LENGTH_SHORT).show()
-                isProfileComplete = false
+                onComplete(false)
             }
         })
-
-        return isProfileComplete
     }
 
     private fun showLogoutDialog() {
