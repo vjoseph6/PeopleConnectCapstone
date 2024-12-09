@@ -62,6 +62,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
 
     private var serviceOffered: String = ""
     private var userEmail: String? = null
+    private var hourRateTextWatcher: TextWatcher? = null // Store the TextWatcher reference
     private lateinit var dateEditText: EditText
     private lateinit var auth: FirebaseAuth
     private lateinit var dateIcon: ImageView
@@ -171,10 +172,11 @@ class ActivityFragmentClient_BookDetails : Fragment() {
     }
 
 
-    private fun handlePerTaskTabClick() {
+    /*private fun handlePerTaskTabClick() {
         if (isPerHourSelected) {
             // Switch to per task mode
             isPerHourSelected = false
+
 
             // Enable the etRate EditText and set it to display only a hint
             etRate.isEnabled = true
@@ -187,6 +189,42 @@ class ActivityFragmentClient_BookDetails : Fragment() {
 
             // Reset spinner to first item
             spinnerScope.setSelection(0)
+
+            // Highlight selected tab
+            highlightSelectedTab(perTaskTab, perHourTab)
+        }
+    }*/
+
+    private fun handlePerTaskTabClick() {
+        if (isPerHourSelected) {
+            // Switch to per task mode
+            isPerHourSelected = false
+
+            val rateEditText = view?.findViewById<EditText>(R.id.etRate)
+            val hourRateEditText = view?.findViewById<EditText>(R.id.etHourRate)
+
+            // Remove the TextWatcher from hourRateEditText
+            hourRateTextWatcher?.let { watcher ->
+                hourRateEditText?.removeTextChangedListener(watcher)
+            }
+            hourRateTextWatcher = null // Clear reference
+
+            // Reset hourRateEditText to avoid conflicting calculations
+            hourRateEditText?.setText("")
+
+            // Enable the etRate EditText and set it to display only a hint
+            rateEditText?.apply {
+                isEnabled = true
+                setText("") // Clear any existing value
+                hint = "Enter task rate" // Set hint text (customize as needed)
+            }
+
+            // Show task scope views
+            view?.findViewById<TextView>(R.id.tvScope)?.visibility = View.VISIBLE
+            view?.findViewById<Spinner>(R.id.spinnerScope)?.apply {
+                visibility = View.VISIBLE
+                setSelection(0) // Reset spinner to first item
+            }
 
             // Highlight selected tab
             highlightSelectedTab(perTaskTab, perHourTab)
@@ -1127,7 +1165,7 @@ class ActivityFragmentClient_BookDetails : Fragment() {
 
 
     private fun calculateHourRate() {
-        if (startTimeCalendar != null && endTimeCalendar != null) {
+        if (isPerHourSelected && startTimeCalendar != null && endTimeCalendar != null) {
             var endCalendar = endTimeCalendar!!.clone() as Calendar
 
             // If end time is before start time, assume it's next day
