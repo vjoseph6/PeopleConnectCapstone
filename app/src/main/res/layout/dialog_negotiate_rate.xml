@@ -26,7 +26,7 @@
         android:enabled="false"
         android:background="@drawable/edit_text_rounded_corner"
         android:paddingHorizontal="16dp"
-        android:textColor="@color/white"
+        android:textColor="@color/black"
         android:textColorHint="#80FFFFFF"
         android:layout_marginBottom="24dp"/>
 
@@ -47,19 +47,8 @@
         android:hint="Enter new rate"
         android:background="@drawable/edit_text_rounded_corner"
         android:paddingHorizontal="16dp"
-        android:textColor="@color/white"
+        android:textColor="@color/black"
         android:textColorHint="#80FFFFFF"
         android:layout_marginBottom="24dp"/>
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnSubmit"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Submit"
-        android:textAllCaps="false"
-        android:background="@drawable/edit_text_rounded_corner"
-        app:backgroundTint="@color/white"
-        android:textColor="#59A52C"
-        android:padding="12dp"
-        android:fontFamily="@font/bold_poppins"/>
 </LinearLayout>

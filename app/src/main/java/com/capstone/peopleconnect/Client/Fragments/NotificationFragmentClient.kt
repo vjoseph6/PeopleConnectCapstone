@@ -129,7 +129,7 @@ class NotificationFragmentClient : Fragment() {
                                 } else if (notification.type in listOf(
                                         "booking", "call", "chat", "ongoing",
                                         "post_request", "post_status", "application_status",
-                                        "post_application"
+                                        "post_application", "provider_accepted"
                                     )
                                 ) {
                                     // Add non-booking related notifications of specific types
@@ -278,116 +278,34 @@ class NotificationFragmentClient : Fragment() {
                         }
                 }
             }
-        }
-    }
-    private fun showCompletionConfirmationDialog(bookingId: String, providerEmail: String, clientEmail: String) {
-        val builder = AlertDialog.Builder(requireContext())
-        builder.setTitle("Work Completion")
-            .setMessage("Has the work been completed?")
-            .setPositiveButton("Yes") { _, _ ->
-                // Update booking progress
-                val progress = BookingProgress(
-                    state = BookingProgress.STATE_COMPLETE,
-                    bookingId = bookingId,
-                    providerEmail = providerEmail,
-                    clientEmail = clientEmail,
-                    timestamp = System.currentTimeMillis()
-                )
-                DatabaseHelper.updateBookingProgress(bookingId, progress).addOnSuccessListener {
-                    // Update booking status in main bookings table
-                    val bookingRef = FirebaseDatabase.getInstance().getReference("bookings/$bookingId")
-                    bookingRef.child("bookingStatus").setValue("Completed").addOnSuccessListener {
-                        // Navigate to rating screen
-                        val rateFragment = RateFragmentClient.newInstance(
-                            bookingId = bookingId,
-                            providerEmail = providerEmail,
-                            clientEmail = clientEmail
-                        )
-                        parentFragmentManager.beginTransaction()
-                            .replace(R.id.frame_layout, rateFragment)
-                            .addToBackStack(null)
-                            .commit()
-                    }
-                }
-            }
-            .setNegativeButton("No") { _, _ ->
-                // Update progress back to working state
-                val progress = BookingProgress(
-                    state = BookingProgress.STATE_WORKING,
-                    bookingId = bookingId,
-                    providerEmail = providerEmail,
-                    clientEmail = clientEmail,
-                    timestamp = System.currentTimeMillis()
-                )
-                DatabaseHelper.updateBookingProgress(bookingId, progress).addOnSuccessListener {
-                    // Remove the current completion notification
-                    notificationsRef.orderByChild("bookingId")
-                        .equalTo(bookingId)
+            "provider_accepted" -> {
+                // Navigate to provider profile
+                notification.senderId?.let { providerEmail ->
+                    FirebaseDatabase.getInstance().reference
+                        .child("users")
+                        .orderByChild("email")
+                        .equalTo(providerEmail)
                         .addListenerForSingleValueEvent(object : ValueEventListener {
                             override fun onDataChange(snapshot: DataSnapshot) {
-                                snapshot.children.forEach { notificationSnapshot ->
-                                    val notification = notificationSnapshot.getValue(NotificationModel::class.java)
-                                    if (notification?.progressState == "awaiting_confirmation") {
-                                        notificationSnapshot.ref.removeValue()
-                                    }
+                                val providerName = snapshot.children.firstOrNull()
+                                    ?.child("name")?.getValue(String::class.java)
+
+                                if (providerName != null) {
+                                    val profileFragment = ActivityFragmentClient_ProviderProfile.newInstance(providerName)
+                                    parentFragmentManager.beginTransaction()
+                                        .replace(R.id.frame_layout, profileFragment)
+                                        .addToBackStack(null)
+                                        .commit()
                                 }
-
-                                // Send notification to service provider
-                                FirebaseDatabase.getInstance().getReference("users")
-                                    .orderByChild("email")
-                                    .equalTo(providerEmail)
-                                    .addListenerForSingleValueEvent(object : ValueEventListener {
-                                        override fun onDataChange(providerSnapshot: DataSnapshot) {
-                                            val providerId = providerSnapshot.children.firstOrNull()?.key
-                                            if (providerId != null) {
-                                                // Get client name
-                                                FirebaseAuth.getInstance().currentUser?.let { currentUser ->
-                                                    FirebaseDatabase.getInstance().getReference("users")
-                                                        .child(currentUser.uid)
-                                                        .child("name")
-                                                        .get()
-                                                        .addOnSuccessListener { clientNameSnapshot ->
-                                                            val clientName = clientNameSnapshot.getValue(String::class.java) ?: "Client"
-
-                                                            // Create notification for service provider
-                                                            val providerNotification = NotificationModel(
-                                                                id = FirebaseDatabase.getInstance().reference.push().key ?: return@addOnSuccessListener,
-                                                                title = "Work Completion Declined",
-                                                                description = "$clientName has declined the work completion. Please double-check your work.",
-                                                                type = "ongoing",
-                                                                progressState = "work_declined",
-                                                                senderId = currentUser.uid,
-                                                                senderName = clientName,
-                                                                timestamp = System.currentTimeMillis(),
-                                                                bookingId = bookingId,
-                                                                bookingStatus = "Ongoing"
-                                                            )
-
-                                                            // Save notification for service provider
-                                                            FirebaseDatabase.getInstance()
-                                                                .getReference("notifications")
-                                                                .child(providerId)
-                                                                .child(providerNotification.id)
-                                                                .setValue(providerNotification)
-                                                        }
-                                                }
-                                            }
-                                        }
-
-                                        override fun onCancelled(error: DatabaseError) {
-                                            Log.e("NotificationFragment", "Error finding provider", error.toException())
-                                        }
-                                    })
                             }
 
                             override fun onCancelled(error: DatabaseError) {
-                                Log.e("NotificationFragment", "Error removing notification", error.toException())
+                                Log.e(TAG, "Error finding provider", error.toException())
                             }
                         })
                 }
             }
-            .setCancelable(false)
-            .show()
+        }
     }
 
     override fun onDestroyView() {

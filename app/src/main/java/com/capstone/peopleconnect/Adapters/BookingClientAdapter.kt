@@ -33,8 +33,78 @@ class BookingClientAdapter(
     private val fetchUserData: (String, (User) -> Unit) -> Unit,
     private val onCancelBooking: (String) -> Unit,
     private val onItemClickListener: (String) -> Unit,
-    private val onItemLongClickListener: (String, Bookings) -> Unit  // Add this new parameter
+    private val onItemLongClickListener: (String, Bookings) -> Unit
 ) : RecyclerView.Adapter<BookingClientAdapter.ViewHolder>() {
+
+    // Add this property to track accepted bookings
+    private var acceptedBookingIds: Set<String> = emptySet()
+
+    // Add this function to update accepted bookings
+    fun setAcceptedBookings(bookingIds: Set<String>) {
+        acceptedBookingIds = bookingIds
+        notifyDataSetChanged()
+    }
+
+    private fun isBookingTimeValid(booking: Bookings): Boolean {
+        val currentTime = System.currentTimeMillis()
+        val bookingStartTime = booking.bookingStartTime ?: return false
+        val bookingDate = booking.bookingDay ?: return false
+
+        try {
+            // Parse date (yyyy-MM-dd format)
+            val dateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply {
+                timeZone = TimeZone.getTimeZone("GMT+8")  // Set timezone to GMT+8
+            }
+            val parsedDate = dateFormatter.parse(bookingDate) ?: return false
+
+            // Parse time (hh:mm a format, e.g., "10:30 PM")
+            val timeFormatter = SimpleDateFormat("hh:mm a", Locale.getDefault()).apply {
+                timeZone = TimeZone.getTimeZone("GMT+8")  // Set timezone to GMT+8
+            }
+            val parsedTime = timeFormatter.parse(bookingStartTime) ?: return false
+
+            // Create calendar for booking time
+            val bookingCalendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8")).apply {
+                time = parsedDate
+                val timeCalendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8")).apply {
+                    time = parsedTime
+                }
+                set(Calendar.HOUR_OF_DAY, timeCalendar.get(Calendar.HOUR_OF_DAY))
+                set(Calendar.MINUTE, timeCalendar.get(Calendar.MINUTE))
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+
+            // Create calendar for current time
+            val currentCalendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8")).apply {
+                timeInMillis = currentTime
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+
+            // Debug log for parsed values
+            Log.d("TimeValidation", """
+                Booking Details:
+                - Raw Date: $bookingDate
+                - Raw Time: $bookingStartTime
+                - Parsed Date-Time: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).apply { 
+                    timeZone = TimeZone.getTimeZone("GMT+8") 
+                }.format(bookingCalendar.time)}
+                - Current Time: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).apply { 
+                    timeZone = TimeZone.getTimeZone("GMT+8") 
+                }.format(currentCalendar.time)}
+                - Time Difference (minutes): ${(currentCalendar.timeInMillis - bookingCalendar.timeInMillis) / (60 * 1000)}
+                - Is Valid: ${currentCalendar.timeInMillis >= bookingCalendar.timeInMillis}
+            """.trimIndent())
+
+            return currentCalendar.timeInMillis >= bookingCalendar.timeInMillis
+
+        } catch (e: Exception) {
+            Log.e("TimeValidation", "Error parsing date/time: ${e.message}")
+            e.printStackTrace()
+            return false
+        }
+    }
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val nameTextView: TextView = itemView.findViewById(R.id.tvName)
@@ -105,66 +175,133 @@ class BookingClientAdapter(
             }
         }
 
-    }
+        fun bind(bookingPair: Pair<String, Bookings>) {
+            val (bookingId, booking) = bookingPair
 
-    private fun isBookingTimeValid(booking: Bookings): Boolean {
-        val currentTime = System.currentTimeMillis()
-        val bookingStartTime = booking.bookingStartTime ?: return false
-        val bookingDate = booking.bookingDay ?: return false
-
-        try {
-            // Parse date (yyyy-MM-dd format)
-            val dateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply {
-                timeZone = TimeZone.getTimeZone("GMT+8")  // Set timezone to GMT+8
+            // Fetch and display user data using the provider's email
+            fetchUserData(booking.providerEmail) { user ->
+                nameTextView.text = user.name
+                Picasso.get().load(user.profileImageUrl).into(profileImageView)
             }
-            val parsedDate = dateFormatter.parse(bookingDate) ?: return false
 
-            // Parse time (hh:mm a format, e.g., "10:30 PM")
-            val timeFormatter = SimpleDateFormat("hh:mm a", Locale.getDefault()).apply {
-                timeZone = TimeZone.getTimeZone("GMT+8")  // Set timezone to GMT+8
+            // Set the status of the booking
+            btnAccept.text = when (booking.bookingStatus) {
+                "Complete" -> "Completed"
+                else -> booking.bookingStatus
             }
-            val parsedTime = timeFormatter.parse(bookingStartTime) ?: return false
+            when (booking.bookingStatus) {
+                "Accepted" -> btnAccept.backgroundTintList =
+                    ContextCompat.getColorStateList(itemView.context, R.color.green)
+                "Canceled" -> btnAccept.backgroundTintList =
+                    ContextCompat.getColorStateList(itemView.context, R.color.red)
+                "Complete", "Completed" -> btnAccept.backgroundTintList =
+                    ContextCompat.getColorStateList(itemView.context, R.color.green)
+                else -> btnAccept.backgroundTintList =
+                    ContextCompat.getColorStateList(itemView.context, R.color.orange)
+            }
 
-            // Create calendar for booking time
-            val bookingCalendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8")).apply {
-                time = parsedDate
-                val timeCalendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8")).apply {
-                    time = parsedTime
+            // Set visibility of the cancel button based on status
+            if (booking.bookingStatus != "Pending") {
+                btnCancel.visibility = View.GONE
+            } else {
+                btnCancel.visibility = View.VISIBLE
+            }
+
+            // Handle booking cancellation
+            btnCancel.setOnClickListener {
+                onCancelBooking(bookingId)  // Use the key (e.g., providerEmail or booking ID)
+            }
+
+            // Set the service offered in the booking
+            serviceTextView.text = booking.serviceOffered
+
+            negotiateTextView.visibility = if (booking.bookingStatus != "Pending" ) View.GONE else View.VISIBLE
+            negotiateTextView.visibility = if (booking.bookingScope == "Select Task Scope") View.GONE else View.VISIBLE
+
+            negotiateTextView.setOnClickListener {
+                val context = itemView.context
+                val builder = AlertDialog.Builder(context)
+                val inflater = LayoutInflater.from(context)
+                val dialogView = inflater.inflate(R.layout.dialog_negotiate_rate, null)
+
+                val currentRate = dialogView.findViewById<EditText>(R.id.etCurrentRate)
+                val newRate = dialogView.findViewById<EditText>(R.id.etNewRate)
+
+                // Set current rate
+                currentRate.setText(booking.bookingAmount.toString())
+                currentRate.isEnabled = false // Make it read-only
+
+                builder.setView(dialogView)
+                    .setTitle("Negotiate Rate")
+                    .setPositiveButton("Submit") { dialog, _ ->
+                        val proposedRate = newRate.text.toString().toDoubleOrNull()
+                        if (proposedRate != null) {
+                            // Update the rate in Firebase
+                            FirebaseDatabase.getInstance().getReference("bookings")
+                                .child(bookingId)
+                                .child("bookingAmount")
+                                .setValue(proposedRate)
+                                .addOnSuccessListener {
+                                    Toast.makeText(context, "Rate negotiation submitted", Toast.LENGTH_SHORT).show()
+
+                                    // Create and send notification to provider
+                                    val notification = NotificationModel(
+                                        id = FirebaseDatabase.getInstance().reference.push().key ?: return@addOnSuccessListener,
+                                        title = "Rate Negotiation",
+                                        description = "Client has proposed a new rate of ₱$proposedRate",
+                                        type = "negotiation",
+                                        senderId = FirebaseAuth.getInstance().currentUser?.uid ?: return@addOnSuccessListener,
+                                        senderName = "Client",
+                                        timestamp = System.currentTimeMillis(),
+                                        bookingId = bookingId
+                                    )
+
+                                    // Find provider's ID and send notification
+                                    FirebaseDatabase.getInstance().getReference("users")
+                                        .orderByChild("email")
+                                        .equalTo(booking.providerEmail)
+                                        .addListenerForSingleValueEvent(object : ValueEventListener {
+                                            override fun onDataChange(snapshot: DataSnapshot) {
+                                                val providerId = snapshot.children.firstOrNull()?.key
+                                                if (providerId != null) {
+                                                    FirebaseDatabase.getInstance()
+                                                        .getReference("notifications")
+                                                        .child(providerId)
+                                                        .child(notification.id)
+                                                        .setValue(notification)
+                                                }
+                                            }
+
+                                            override fun onCancelled(error: DatabaseError) {
+                                                Log.e("Negotiation", "Error finding provider", error.toException())
+                                            }
+                                        })
+                                }
+                                .addOnFailureListener {
+                                    Toast.makeText(context, "Failed to submit negotiation", Toast.LENGTH_SHORT).show()
+                                }
+                        } else {
+                            Toast.makeText(context, "Please enter a valid rate", Toast.LENGTH_SHORT).show()
+                        }
+                        dialog.dismiss()
+                    }
+                    .setNegativeButton("Cancel") { dialog, _ ->
+                        dialog.dismiss()
+                    }
+
+                val dialog = builder.create()
+                dialog.show()
+            }
+
+            // Only enable long press for accepted bookings
+            if (booking.bookingStatus == "Accepted") {
+                itemView.setOnLongClickListener {
+                    onItemLongClickListener(bookingId, booking)
+                    true
                 }
-                set(Calendar.HOUR_OF_DAY, timeCalendar.get(Calendar.HOUR_OF_DAY))
-                set(Calendar.MINUTE, timeCalendar.get(Calendar.MINUTE))
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
+            } else {
+                itemView.setOnLongClickListener(null)
             }
-
-            // Create calendar for current time
-            val currentCalendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8")).apply {
-                timeInMillis = currentTime
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }
-
-            // Debug log for parsed values
-            val debugFormatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).apply {
-                timeZone = TimeZone.getTimeZone("GMT+8")
-            }
-
-            Log.d("TimeValidation", """
-            Booking Details:
-            - Raw Date: $bookingDate
-            - Raw Time: $bookingStartTime
-            - Parsed Date-Time: ${debugFormatter.format(bookingCalendar.time)}
-            - Current Time: ${debugFormatter.format(currentCalendar.time)}
-            - Time Difference (minutes): ${(currentCalendar.timeInMillis - bookingCalendar.timeInMillis) / (60 * 1000)}
-            - Is Valid: ${currentCalendar.timeInMillis >= bookingCalendar.timeInMillis}
-        """.trimIndent())
-
-            return currentCalendar.timeInMillis >= bookingCalendar.timeInMillis
-
-        } catch (e: Exception) {
-            Log.e("TimeValidation", "Error parsing date/time: ${e.message}")
-            e.printStackTrace()
-            return false
         }
     }
 
@@ -214,22 +351,23 @@ class BookingClientAdapter(
         // Set the service offered in the booking
         holder.serviceTextView.text = booking.serviceOffered
 
-        holder.negotiateTextView.visibility = if (booking.bookingStatus != "Pending" ) View.GONE else View.VISIBLE
+
         holder.negotiateTextView.visibility = if (booking.bookingScope == "Select Task Scope") View.GONE else View.VISIBLE
+        holder.negotiateTextView.visibility = if (booking.bookingStatus != "Pending" ) View.GONE else View.VISIBLE
 
         holder.negotiateTextView.setOnClickListener {
             val context = holder.itemView.context
             val builder = AlertDialog.Builder(context)
             val inflater = LayoutInflater.from(context)
             val dialogView = inflater.inflate(R.layout.dialog_negotiate_rate, null)
-            
+
             val currentRate = dialogView.findViewById<EditText>(R.id.etCurrentRate)
             val newRate = dialogView.findViewById<EditText>(R.id.etNewRate)
-            
+
             // Set current rate
             currentRate.setText(booking.bookingAmount.toString())
             currentRate.isEnabled = false // Make it read-only
-            
+
             builder.setView(dialogView)
                 .setTitle("Negotiate Rate")
                 .setPositiveButton("Submit") { dialog, _ ->
@@ -242,7 +380,7 @@ class BookingClientAdapter(
                             .setValue(proposedRate)
                             .addOnSuccessListener {
                                 Toast.makeText(context, "Rate negotiation submitted", Toast.LENGTH_SHORT).show()
-                                
+
                                 // Create and send notification to provider
                                 val notification = NotificationModel(
                                     id = FirebaseDatabase.getInstance().reference.push().key ?: return@addOnSuccessListener,
@@ -254,7 +392,7 @@ class BookingClientAdapter(
                                     timestamp = System.currentTimeMillis(),
                                     bookingId = key
                                 )
-                                
+
                                 // Find provider's ID and send notification
                                 FirebaseDatabase.getInstance().getReference("users")
                                     .orderByChild("email")
@@ -270,7 +408,7 @@ class BookingClientAdapter(
                                                     .setValue(notification)
                                             }
                                         }
-                                        
+
                                         override fun onCancelled(error: DatabaseError) {
                                             Log.e("Negotiation", "Error finding provider", error.toException())
                                         }
@@ -287,9 +425,19 @@ class BookingClientAdapter(
                 .setNegativeButton("Cancel") { dialog, _ ->
                     dialog.dismiss()
                 }
-            
+
             val dialog = builder.create()
             dialog.show()
+        }
+
+        // Only enable long press for accepted bookings
+        if (booking.bookingStatus == "Accepted") {
+            holder.itemView.setOnLongClickListener {
+                onItemLongClickListener(key, booking)
+                true
+            }
+        } else {
+            holder.itemView.setOnLongClickListener(null)
         }
     }
 

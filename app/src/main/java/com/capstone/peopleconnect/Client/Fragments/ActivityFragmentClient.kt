@@ -276,10 +276,21 @@ class ActivityFragmentClient : Fragment() {
     private fun filterBookings(statusFilter: String) {
         val filteredBookings = when (statusFilter) {
             "Booking" -> allBookings.filter { it.second.bookingStatus == "Pending" }
-            "Successful" -> allBookings.filter { it.second.bookingStatus == "Accepted"}
-            "Failed" -> allBookings.filter { it.second.bookingStatus == "Canceled" || it.second.bookingStatus == "Complete" || it.second.bookingStatus == "Completed"}
+            "Successful" -> allBookings.filter { it.second.bookingStatus == "Accepted" }
+            "Failed" -> allBookings.filter { 
+                it.second.bookingStatus == "Canceled" || 
+                it.second.bookingStatus == "Complete" || 
+                it.second.bookingStatus == "Completed"
+            }
             else -> allBookings
         }
+
+        // Before updating adapter, check if we should enable long press
+        adapter.setAcceptedBookings(
+            filteredBookings.filter { it.second.bookingStatus == "Accepted" }
+                .map { it.first }
+                .toSet()
+        )
 
         adapter.updateBookings(filteredBookings)
 

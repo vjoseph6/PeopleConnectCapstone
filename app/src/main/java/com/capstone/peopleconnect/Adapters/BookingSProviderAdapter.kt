@@ -36,6 +36,15 @@ class BookingSProviderAdapter(
     private val onItemLongClickListener: (String, Bookings) -> Unit
 ) : RecyclerView.Adapter<BookingSProviderAdapter.ViewHolder>() {
 
+    // Add this property to track accepted bookings
+    private var acceptedBookingIds: Set<String> = emptySet()
+
+    // Add this function to update accepted bookings
+    fun setAcceptedBookings(bookingIds: Set<String>) {
+        acceptedBookingIds = bookingIds
+        notifyDataSetChanged()
+    }
+
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val btnStatus: Button = itemView.findViewById(R.id.btnStatus)
         val nameTextView: TextView = itemView.findViewById(R.id.tvName)
@@ -218,8 +227,9 @@ class BookingSProviderAdapter(
 
 
 
-        holder.negotiateTextView.visibility = if (booking.bookingStatus != "Pending") View.GONE else View.VISIBLE
+
         holder.negotiateTextView.visibility = if (booking.bookingScope == "Select Task Scope") View.GONE else View.VISIBLE
+        holder.negotiateTextView.visibility = if (booking.bookingStatus != "Pending") View.GONE else View.VISIBLE
 
         holder.negotiateTextView.setOnClickListener {
             val context = holder.itemView.context
@@ -293,6 +303,16 @@ class BookingSProviderAdapter(
                 }
 
             builder.create().show()
+        }
+
+        // Only enable long press for accepted bookings
+        if (booking.bookingStatus == "Accepted") {
+            holder.itemView.setOnLongClickListener {
+                onItemLongClickListener(bookingKey, booking)
+                true
+            }
+        } else {
+            holder.itemView.setOnLongClickListener(null)
         }
     }
 

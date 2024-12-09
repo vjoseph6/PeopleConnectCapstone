@@ -216,12 +216,18 @@ class   ApplicantsListFragment : Fragment() {
                             val currentApp = applicationSnapshot.getValue(PostApplication::class.java)
                             if (currentApp?.providerEmail == application.providerEmail) {
                                 applicationSnapshot.ref.child("status").setValue("Accepted")
+                                    .addOnSuccessListener {
+                                        // Send acceptance notification to provider
+                                        sendAcceptanceNotification(application.providerEmail)
 
-                                // Send notification to service provider
-                                sendAcceptanceNotification(application.providerEmail)
+                                        // Send booking notification to client
+                                        sendBookingNotificationToClient(application.providerEmail)
 
-                                Toast.makeText(context, "Application accepted", Toast.LENGTH_SHORT).show()
-                                break
+                                        // Remove other notifications
+                                        removeOtherNotifications(postId!!)
+
+                                        Toast.makeText(context, "Application accepted", Toast.LENGTH_SHORT).show()
+                                    }
                             }
                         }
                         dialog.dismiss()
@@ -367,6 +373,80 @@ class   ApplicantsListFragment : Fragment() {
                 }
         }
     }
+
+    private fun removeOtherNotifications(postId: String) {
+        // Remove notifications for other providers and client
+        FirebaseDatabase.getInstance().reference
+            .child("notifications")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    for (userNotifications in snapshot.children) {
+                        userNotifications.children.forEach { notification ->
+                            val notif = notification.getValue(NotificationModel::class.java)
+                            // For service providers: remove "post_request" notifications
+                            // For client: remove "post_status" and "post_application" notifications
+                            if (notif?.postId == postId &&
+                                (notif.type == "post_request" || // For other providers
+                                        notif.type == "post_status" ||  // For client
+                                        notif.type == "post_application")) { // For client
+                                notification.ref.removeValue()
+                                    .addOnSuccessListener {
+                                        Log.d("ApplicantsList", "Successfully removed notification: ${notif.type}")
+                                    }
+                                    .addOnFailureListener { e ->
+                                        Log.e("ApplicantsList", "Failed to remove notification", e)
+                                    }
+                            }
+                        }
+                    }
+                }
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("ApplicantsList", "Error removing notifications", error.toException())
+                }
+            })
+    }
+
+    private fun sendBookingNotificationToClient(providerEmail: String) {
+        // Get provider's name
+        FirebaseDatabase.getInstance().reference
+            .child("users")
+            .orderByChild("email")
+            .equalTo(providerEmail)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val providerName = snapshot.children.firstOrNull()
+                        ?.child("name")?.getValue(String::class.java) ?: "Service Provider"
+
+                    // Get current user (client) ID
+                    FirebaseAuth.getInstance().currentUser?.let { currentUser ->
+                        // Create notification
+                        val notification = NotificationModel(
+                            id = FirebaseDatabase.getInstance().reference.push().key ?: return@let,
+                            title = "Service Provider Accepted",
+                            description = "Your service provider $providerName has been accepted for the post you created. Book them now.",
+                            type = "provider_accepted",
+                            senderId = providerEmail,
+                            senderName = providerName,
+                            timestamp = System.currentTimeMillis(),
+                            postId = postId,
+                            isRead = false
+                        )
+
+                        // Save notification for client
+                        FirebaseDatabase.getInstance().reference
+                            .child("notifications")
+                            .child(currentUser.uid)
+                            .child(notification.id)
+                            .setValue(notification)
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("ApplicantsList", "Error getting provider name", error.toException())
+                }
+            })
+    }
+
     companion object {
         @JvmStatic
         fun newInstance(postId: String, serviceOffered: String) =
